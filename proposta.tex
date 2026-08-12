@@ -1,0 +1,627 @@
+% ======================================================================
+%  PROPOSTA PRELIMINAR DE TCC
+%  Engenharia de Controle e Automação - IFSP / Campus São José dos Campos
+%  Aluno: Gustavo Henrique Ferraioli
+%  Tema: Controlador de atitude para quadrirrotor embarcado no ArduPilot,
+%        validado em simulação SITL (Software-In-The-Loop)
+%  Modelo baseado na "Proposta de TCC - Guilherme - Revisado"
+% ======================================================================
+\documentclass[12pt,a4paper]{article}
+
+% ---------- Pacotes ----------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage[a4paper,left=3cm,right=2cm,top=3cm,bottom=2cm]{geometry}
+\usepackage{indentfirst}      % indenta o primeiro parágrafo de cada seção
+\usepackage{setspace}         % espaçamento entre linhas
+\usepackage{enumitem}         % listas customizadas
+\usepackage{titlesec}         % formatação dos títulos de seção
+\usepackage{graphicx}
+\usepackage{array}            % colunas customizadas nas tabelas
+\usepackage{amsmath}          % equações
+\usepackage{hyperref}
+\hypersetup{hidelinks}
+
+% ---------- Espaçamentos ----------
+\onehalfspacing               % 1,5 linha
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0.3em}
+
+% ---------- Estilo das seções (numeradas, em negrito) ----------
+\titleformat{\section}{\normalfont\bfseries}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\normalfont\bfseries}{\thesubsection.}{0.5em}{}
+\titlespacing*{\section}{0pt}{1.2em}{0.6em}
+\titlespacing*{\subsection}{0pt}{0.8em}{0.4em}
+
+% ---------- Tipo de coluna para tabelas ----------
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+% ======================================================================
+\begin{document}
+
+% ----------------------------------------------------------------------
+%  CABEÇALHO
+% ----------------------------------------------------------------------
+\begin{center}
+    {\large\bfseries ENGENHARIA DE CONTROLE E AUTOMAÇÃO}\\[0.3em]
+    (Trabalho de Conclusão de Curso -- 2026)\\[1.2em]
+    {\large\bfseries PROPOSTA PRELIMINAR DE TCC}\\[1.8em]
+\end{center}
+
+\noindent\textbf{Aluno:} Gustavo Henrique Ferraioli\\[0.4em]
+\noindent\textbf{Orientador:} Prof. Clécio Fischer\\[0.2em]
+\noindent\textbf{Coorientador:} [A definir]\\[1.5em]
+
+\begin{center}
+    {\large\bfseries PROJETO E IMPLEMENTAÇÃO EMBARCADA DE UM\\
+    CONTROLADOR DE ATITUDE PARA QUADRIRROTOR NO\\
+    FIRMWARE ARDUPILOT, VALIDADO EM SIMULAÇÃO\\
+    \emph{SOFTWARE-IN-THE-LOOP}}
+\end{center}
+\vspace{1.5em}
+
+% ----------------------------------------------------------------------
+%  1. ÁREA DE INTERESSE
+% ----------------------------------------------------------------------
+\section{Área de Interesse}
+
+\begin{itemize}[leftmargin=2cm,nosep,topsep=2pt]
+    \item Modelagem e Simulação de Sistemas Dinâmicos Não-Lineares
+    \item Sistemas de Controle Moderno (realimentação de estados e controle ótimo)
+    \item Controle Digital e Implementação Embarcada de Leis de Controle
+    \item Identificação de Sistemas
+    \item Modelagem de Distúrbios Atmosféricos e Rejeição de Perturbações
+    \item Sistemas Embarcados de Tempo Real Aplicados a Veículos Aéreos
+          Não Tripulados (VANTs)
+\end{itemize}
+
+% ----------------------------------------------------------------------
+%  2. MOTIVAÇÃO
+% ----------------------------------------------------------------------
+\section{Motivação}
+
+Os veículos aéreos não tripulados de asas rotativas, em especial os
+quadrirrotores, deixaram de ser objeto exclusivo de pesquisa e passaram a ocupar
+aplicações cotidianas de inspeção de estruturas, agricultura de precisão,
+levantamento topográfico, monitoramento ambiental e logística de última milha. Essa
+difusão foi possibilitada tanto pela redução de custo de sensores inerciais quanto
+pela maturidade dos pilotos automáticos de código aberto, que hoje entregam, em
+plataformas de baixo custo, funcionalidades antes restritas a sistemas
+aeronáuticos certificados.
+
+Do ponto de vista da Engenharia de Controle e Automação, essa popularização é
+notável por um motivo específico: o quadrirrotor é uma planta \emph{subatuada} ---
+possui seis graus de liberdade e apenas quatro entradas independentes ---,
+\emph{não-linear}, \emph{fortemente acoplada} entre os eixos de atitude e de
+translação, e \emph{instável em malha aberta}. Sem realimentação, a aeronave
+simplesmente não voa. Todo o comportamento observado em voo é, portanto, produto de
+uma malha de controle executada em tempo real a algumas centenas de hertz, o que faz
+do quadrirrotor uma bancada didática particularmente completa: um único objeto de
+estudo exige modelagem por dinâmica de corpo rígido, linearização em torno de um
+ponto de operação, projeto de controlador, discretização e implementação embarcada
+sob restrições de temporização.
+
+Na prática, quase todos os quadrirrotores civis são governados por controladores
+proporcional-integral-derivativo (PID) organizados em cascata, arranjo consagrado
+pelo bom desempenho, pela robustez e pela facilidade de sintonia empírica. Os
+principais projetos abertos de piloto automático --- entre eles o ArduPilot,
+licenciado sob GPLv3 --- adotam essa estrutura: o comando é refinado sucessivamente
+da posição para a velocidade, desta para a aceleração, para a atitude e, por fim,
+para a taxa angular enviada à alocação de esforços dos motores. Trata-se de uma
+arquitetura sintonizada por décadas de uso em campo, mas cujos ganhos são obtidos
+majoritariamente por procedimentos de sintonia automática, e não a partir de um
+modelo dinâmico explícito da aeronave. Surge daí a pergunta de pesquisa central
+deste trabalho: \emph{um controlador projetado por métodos de controle moderno, a
+partir de um modelo dinâmico obtido analiticamente e refinado por identificação, é
+capaz de igualar ou superar o desempenho do PID nativo quando efetivamente embarcado
+no firmware e submetido às mesmas condições de ensaio?}
+
+Responder a essa pergunta exige mais do que uma simulação em ambiente de projeto.
+Um controlador que se comporta bem em um simulador de propósito geral não é
+equivalente a um controlador que se comporta bem dentro do laço de tempo real de um
+piloto automático, onde a lei de controle convive com taxa de amostragem fixa,
+atrasos de aquisição, filtragem de giroscópio, saturação de atuadores e comutação de
+modos de voo. O ArduPilot oferece exatamente esse ponto de entrada: o
+\emph{framework} \texttt{AC\_CustomControl} permite substituir a malha de atitude e
+de taxa nativa por uma implementação própria em C++, invocada imediatamente antes da
+biblioteca de motores, de modo a minimizar a latência introduzida, e comutável em
+pleno voo por meio de um canal de rádio. Essa comutação é metodologicamente valiosa:
+ela permite obter, em um mesmo ensaio e sob a mesma condição de vento e de
+referência, o desempenho do controlador proposto e o da linha de base.
+
+Há ainda um aspecto que distingue o desempenho aceitável em bancada do desempenho
+aceitável em operação: a aeronave real não voa em ar parado. Vento médio, rajadas e
+turbulência atmosférica constituem a principal fonte de perturbação externa sobre um
+quadrirrotor de pequeno porte, e sua influência é agravada pela baixa inércia e pela
+elevada relação entre área exposta e massa dessas aeronaves. A perturbação atua
+simultaneamente como força sobre o centro de massa e como torque parasita nos eixos
+de atitude, deslocando o ponto de operação em torno do qual o modelo foi linearizado.
+Por esse motivo, avaliar um controlador apenas por sua resposta ao degrau em condição
+nominal diz pouco sobre sua utilidade prática. Este trabalho incorpora, portanto, a
+modelagem explícita de vento e de interferências externas tanto como \emph{cenário de
+ensaio} --- por meio de perfis reprodutíveis de vento constante, rajada e turbulência
+--- quanto como \emph{objeto de projeto}, mediante a inclusão de mecanismos de
+estimação e compensação de distúrbio na estrutura do controlador. A capacidade de
+rejeição de perturbação passa, assim, de efeito colateral a critério explícito de
+comparação com a linha de base.
+
+A validação ocorrerá em ambiente \emph{Software-In-The-Loop} (SITL), no qual o
+firmware efetivamente compilado é executado contra um modelo de dinâmica de voo,
+dispensando hardware e permitindo ensaios plenamente repetíveis, com distúrbios
+programáveis e sem risco material ou de integridade física. Sob a ótica da
+Engenharia de Controle e Automação, o trabalho percorre o ciclo completo de projeto
+de um sistema de controle automático --- modelar a planta, identificá-la, projetar a
+lei de controle, discretizá-la, embarcá-la e avaliá-la experimentalmente ---, o que
+raramente se consegue reunir em um único trabalho de graduação com custo material
+praticamente nulo.
+
+A relevância do tema é reforçada por trabalhos consolidados na área. Bouabdallah
+(2007) desenvolveu a modelagem, a identificação e o controle de um quadrirrotor,
+comparando estratégias lineares e não-lineares em uma plataforma experimental
+construída para esse fim. Sabatino (2015), por sua vez, derivou o modelo não-linear
+de seis graus de liberdade e projetou controladores por realimentação de estados e
+por técnicas não-lineares, avaliando-os exclusivamente em simulação numérica. Este
+trabalho situa-se na lacuna entre essas duas abordagens: em vez de construir uma
+aeronave própria --- o que desloca o esforço para a montagem mecânica e eletrônica
+--- ou de encerrar a avaliação no ambiente de projeto --- o que deixa em aberto a
+questão da implementação ---, a proposta consiste em \emph{embarcar o controlador
+projetado em um piloto automático de uso real e de código aberto}, confrontando-o
+diretamente com o controlador PID de produção sob condições de ensaio idênticas. Um
+resultado adicional esperado é de natureza metodológica: documentar, em português,
+um roteiro reprodutível que vai da equação de Newton-Euler até o código embarcado,
+utilizando exclusivamente software livre.
+
+% ----------------------------------------------------------------------
+%  3. OBJETIVOS
+% ----------------------------------------------------------------------
+\section{Objetivos}
+
+\subsection{Geral}
+
+Projetar, implementar e validar em simulação um controlador de atitude alternativo
+para um quadrirrotor, embarcado no firmware ArduPilot por meio do \emph{framework}
+\texttt{AC\_CustomControl}, comparando quantitativamente seu desempenho ao do
+controlador PID nativo em ambiente \emph{Software-In-The-Loop}, com uso exclusivo de
+ferramentas de código aberto.
+
+\subsection{Específicos}
+
+\begin{itemize}[leftmargin=1.2cm,topsep=2pt]
+    \item Obter o modelo dinâmico não-linear do quadrirrotor a partir das equações
+          de Newton-Euler, incluindo a cinemática de atitude, o modelo dos
+          atuadores e a matriz de alocação de esforços dos rotores, e levantar os
+          parâmetros físicos correspondentes ao modelo simulado.
+    \item Linearizar o modelo em torno da condição de voo pairado
+          (\emph{hover}) por expansão em série de Taylor, obter a representação em
+          espaço de estados contínua e discreta, verificar controlabilidade e
+          observabilidade, e validar a linearização por comparação direta com o
+          modelo não-linear.
+    \item Caracterizar experimentalmente o controlador PID nativo do ArduPilot,
+          estabelecendo-o como linha de base quantitativa de comparação.
+    \item Identificar a dinâmica de atitude da aeronave simulada por meio do modo
+          \emph{System Identification} do ArduPilot, estimando a resposta em
+          frequência dos eixos e confrontando-a com o modelo analítico obtido.
+    \item Projetar o controlador de atitude por técnicas de controle moderno ---
+          adotando como abordagem principal o Regulador Linear Quadrático (LQR) e
+          mantendo a alocação de polos como alternativa ---, verificar as margens de
+          ganho e de fase resultantes e discretizá-lo para a taxa de execução do
+          firmware.
+    \item Modelar e implementar os distúrbios externos atuantes sobre a aeronave,
+          contemplando vento médio constante, rajada determinística e turbulência
+          estocástica segundo modelo espectral consagrado, bem como perturbações
+          impulsivas de torque, de modo a compor cenários de ensaio reprodutíveis e
+          parametrizáveis.
+    \item Incorporar ao controlador um mecanismo de estimação e compensação de
+          distúrbio --- por observador de estado estendido ou estrutura equivalente
+          ---, avaliando o ganho de desempenho obtido em relação à realimentação de
+          estados pura.
+    \item Implementar o controlador em C++ no ArduPilot, com ganhos expostos como
+          parâmetros ajustáveis em tempo de execução, registro dedicado dos sinais
+          internos de referência, erro e esforço de controle, e tratamento adequado
+          da reinicialização dos integradores na comutação entre controladores.
+    \item Avaliar o desempenho em SITL por meio de ensaios de resposta ao degrau,
+          rastreamento de referência, rejeição de distúrbio e variação paramétrica,
+          comparando os resultados aos do PID nativo segundo métricas objetivas de
+          desempenho transitório, de erro de rastreamento e de esforço de controle.
+    \item Documentar todo o procedimento em formato reprodutível, com código e
+          \emph{notebooks} versionados, de modo a permitir a continuidade do trabalho
+          por outros alunos.
+\end{itemize}
+
+% ----------------------------------------------------------------------
+%  4. METODOLOGIA
+% ----------------------------------------------------------------------
+\section{Metodologia}
+
+O trabalho será conduzido em sete etapas encadeadas, descritas a seguir. A ordem é
+deliberada: nenhuma linha de código embarcado será escrita antes de o controlador
+estar validado em simulação numérica no ambiente de projeto, e nenhum ensaio
+comparativo será realizado antes de a linha de base estar caracterizada.
+
+\subsection{Modelagem}
+
+O modelo dinâmico será derivado a partir das equações de Newton-Euler, adotando-se
+o referencial inercial NED (\emph{North-East-Down}) e o referencial de corpo FRD
+(\emph{Forward-Right-Down}), consistentes com a convenção empregada pelo ArduPilot.
+A dinâmica de translação relaciona o empuxo total, orientado pela matriz de rotação,
+à aceleração do centro de massa; a dinâmica de rotação relaciona os torques
+aplicados à derivada da velocidade angular, incluindo o termo giroscópico
+$\boldsymbol{\omega} \times \mathbf{I}\boldsymbol{\omega}$. A cinemática de atitude
+relaciona as velocidades angulares medidas no corpo às derivadas dos ângulos de
+Euler. O vetor de estado adotado reúne posição, velocidade, atitude e velocidade
+angular, totalizando doze estados, e o vetor de entrada reúne o empuxo total e os
+três torques. Cada rotor será modelado por leis quadráticas de empuxo e de torque de
+reação, e a matriz de alocação mapeará os esforços desejados nas rotações
+individuais dos rotores em função da geometria da aeronave. A derivação será
+conduzida simbolicamente, de modo que a linearização da etapa seguinte seja obtida
+diretamente por diferenciação. Efeitos de segunda ordem --- arrasto aerodinâmico do
+corpo, \emph{blade flapping}, efeito solo e dinâmica de motor e ESC --- serão
+inicialmente desprezados e justificados como fontes conhecidas de discrepância entre
+modelo e planta.
+
+\subsection{Linearização e análise}
+
+A linearização será realizada em torno da condição de voo pairado, na qual os
+ângulos de rolagem e arfagem são nulos, as velocidades linear e angular são nulas e
+o empuxo equilibra o peso. As matrizes $\mathbf{A}$ e $\mathbf{B}$ serão obtidas
+pelas matrizes Jacobianas de $\mathbf{f}(\mathbf{x},\mathbf{u})$ avaliadas nesse
+ponto. Espera-se, como resultado estrutural, o desacoplamento aproximado do sistema
+em subsistemas quase independentes de altitude, de atitude e de posição horizontal,
+o que fundamenta tanto a arquitetura em cascata do firmware quanto a decisão de
+projetar o controlador por malhas. Serão verificados o posto das matrizes de
+controlabilidade e de observabilidade e os autovalores de $\mathbf{A}$, e o modelo
+será discretizado por retentor de ordem zero na taxa de execução da malha interna. A
+etapa se encerra com a validação da linearização: a resposta do modelo linear será
+comparada à do modelo não-linear para perturbações de amplitude crescente,
+evidenciando a faixa de validade da aproximação.
+
+\subsection{Identificação do sistema}
+
+O modo \emph{System Identification} do ArduPilot injeta sinais de excitação do tipo
+\emph{chirp} nos eixos da aeronave e permite registrar a resposta correspondente. A
+partir desses registros será estimada a resposta em frequência de cada eixo de
+atitude e ajustada uma função de transferência equivalente por mínimos quadrados. A
+comparação dessa estimativa com o modelo analítico da etapa anterior cumpre duas
+funções: valida a modelagem e permite corrigir parâmetros mal estimados antes do
+projeto do controlador, reduzindo o risco de projetar sobre um modelo incorreto.
+
+\subsection{Modelagem de vento e interferências externas}
+
+Os distúrbios externos serão tratados como parte integrante do modelo, e não como
+ruído residual. Adota-se a decomposição usual do campo de vento em três componentes.
+A primeira é o \emph{vento médio}, representado por um vetor de velocidade constante
+no referencial inercial, definido por intensidade e direção; sua ação é
+predominantemente de regime permanente e exige do controlador ação integral ou
+compensação explícita. A segunda é a \emph{rajada}, modelada de forma determinística
+pelo perfil clássico de meio ciclo de cosseno, parametrizado por amplitude e
+comprimento característico, adequado à avaliação da resposta transitória a uma
+perturbação de curta duração e amplitude conhecida. A terceira é a \emph{turbulência},
+modelada como processo estocástico obtido pela filtragem de ruído branco por funções
+de transferência de conformação espectral, segundo o modelo de Dryden, cujos
+parâmetros de intensidade e de escala de comprimento são tabelados em função da
+altitude e da severidade da condição atmosférica.
+
+A conversão dessas componentes em esforços sobre a aeronave se dá pela velocidade
+relativa entre o ar e o corpo. A força de arrasto resultante atua sobre o centro de
+massa e, quando o centro de pressão não coincide com este, produz um torque parasita
+nos eixos de atitude --- efeito que, no modelo nominal da Seção~4.1, havia sido
+deliberadamente desprezado e que aqui é reintroduzido de maneira controlada, na forma
+de um termo aditivo de perturbação na equação da dinâmica de rotação. Além do vento,
+serão consideradas interferências externas de outras naturezas, tratadas sob a mesma
+formulação de perturbação aditiva: variação abrupta de massa ou de posição do centro
+de gravidade, perda parcial de eficiência de um rotor, e perturbações impulsivas de
+torque, empregadas para avaliar a recuperação do controlador a partir de condições
+iniciais deslocadas.
+
+Do ponto de vista de implementação, os cenários serão reproduzidos por dois caminhos
+complementares. No ambiente de projeto em Python, os modelos de vento serão
+incorporados diretamente à simulação do modelo não-linear, permitindo o projeto e a
+avaliação preliminar da rejeição de perturbação. Em SITL, serão utilizados os
+parâmetros nativos de simulação de vento do ArduPilot, que permitem configurar
+intensidade, direção, turbulência e rajada sem alteração de código, garantindo que os
+ensaios comparativos ocorram sob perfis idênticos para ambos os controladores. A
+consistência entre os dois caminhos --- modelo em Python e simulação em SITL --- será
+verificada previamente aos ensaios definitivos.
+
+\subsection{Projeto do controlador}
+
+O controlador será projetado sobre o subsistema de atitude do modelo linearizado.
+Na abordagem principal, o ganho de realimentação de estados será obtido pela solução
+da equação algébrica de Riccati associada ao problema do Regulador Linear
+Quadrático, com as matrizes de ponderação $\mathbf{Q}$ e $\mathbf{R}$ ajustadas
+iterativamente a partir da resposta em malha fechada desejada. Serão avaliados o
+desempenho transitório em resposta ao degrau, o rastreamento de referências variantes
+no tempo e as margens de ganho e de fase resultantes. A alocação de polos será
+mantida como abordagem alternativa, de valor didático comparativo. Caso a
+disponibilidade de estados medidos se mostre insuficiente ou o ruído de medição se
+mostre relevante, prevê-se a extensão para uma estrutura LQG, com estimador de
+estados.
+
+O projeto contemplará explicitamente a rejeição das perturbações descritas na
+subseção anterior. A realimentação de estados pura, por si só, não anula erro em
+regime permanente diante de um distúrbio constante, situação exatamente
+correspondente ao vento médio. Serão avaliadas, por isso, duas estratégias
+complementares. A primeira é a inclusão de ação integral por aumento do vetor de
+estados com o integral do erro de atitude, o que preserva a formulação quadrática de
+projeto e recai em um problema de mesma natureza, acrescido do tratamento de
+saturação do termo integral. A segunda é a estimação ativa do distúrbio por meio de
+um observador de estado estendido, no qual o torque perturbador é tratado como estado
+adicional a ser estimado e subtraído do sinal de controle, caracterizando uma
+compensação por antecipação. As duas estratégias serão comparadas entre si e com a
+realimentação pura, de modo a quantificar o ganho efetivo atribuível à compensação de
+distúrbio. Antes da implementação, a lei de controle resultante será discretizada na
+taxa de execução da malha interna e reavaliada no domínio discreto, verificando-se em
+particular a sensibilidade do observador ao ruído de medição do giroscópio.
+
+\subsection{Implementação embarcada}
+
+A implementação partirá do \emph{backend} de exemplo fornecido pelo próprio
+\emph{framework} \texttt{AC\_CustomControl}, o que restringe o esforço de programação
+à codificação da lei de controle propriamente dita e ao tratamento de estado interno.
+A função de atualização receberá a atitude e a taxa angular de referência já
+processadas pela cadeia nativa, bem como a medida mais recente do giroscópio, e
+devolverá os esforços de rolagem, arfagem e guinada à alocação de motores. Três
+cuidados serão observados: a limitação do termo integral contra o efeito de
+\emph{windup}; a reinicialização correta dos estados internos na comutação entre
+controladores, de modo a evitar transitórios espúrios; e a exposição dos ganhos como
+parâmetros do firmware, permitindo sintonia em tempo de execução pela estação de
+controle em solo, sem recompilação. Serão adicionadas mensagens de registro
+dedicadas para os sinais internos de cada eixo, planejadas antecipadamente, uma vez
+que são elas que fundamentarão a análise de resultados.
+
+\subsection{Ensaios e métricas}
+
+A bateria de ensaios em SITL compreenderá quatro grupos. O primeiro, em condição
+nominal de ar parado, avaliará a resposta ao degrau em rolagem e arfagem e o
+rastreamento de trajetórias de atitude e de posição, caracterizando o desempenho
+transitório básico. O segundo, de rejeição de perturbação, submeterá a aeronave aos
+cenários de vento definidos na Seção~4.5, organizados em níveis crescentes de
+severidade: vento médio constante em diferentes intensidades e direções relativas ao
+eixo de comando; rajada isolada de amplitude e duração conhecidas; e turbulência
+contínua em condições leve, moderada e severa. O terceiro grupo tratará das demais
+interferências externas, com perturbação impulsiva de torque, variação abrupta de
+massa e perda parcial de eficiência de rotor. O quarto avaliará robustez a
+incertezas de modelagem por variação paramétrica de massa e de momentos de inércia
+do modelo simulado.
+
+Cada ensaio será executado com o controlador proposto, em suas variantes com e sem
+compensação de distúrbio, e com o PID nativo, sob perfis de perturbação idênticos e
+sementes idênticas nos casos estocásticos, o que assegura comparabilidade direta. Os
+registros de voo serão processados computacionalmente e as seguintes métricas serão
+tabeladas: tempo de subida, sobressinal, tempo de acomodação e erro em regime
+permanente, para os ensaios transitórios; desvio máximo de atitude, tempo de
+recuperação e raiz do erro quadrático médio, para os ensaios sob perturbação; e
+esforço de controle acumulado, em todos os casos, como indicador do custo energético
+associado ao desempenho obtido. A discussão dos resultados confrontará as diferenças
+observadas com as previsões da teoria, com as limitações conhecidas do modelo e com o
+compromisso entre agressividade de rejeição e esforço de atuação.
+
+% ----------------------------------------------------------------------
+%  5. INFORMAÇÕES COMPLEMENTARES
+% ----------------------------------------------------------------------
+\section{Informações Complementares}
+
+\subsection{Recursos e ferramentas}
+
+O projeto será desenvolvido integralmente com ferramentas de código aberto,
+organizadas em duas camadas complementares: uma camada de projeto e análise, em
+Python, e uma camada de tempo real, em C++, dentro do próprio firmware. A
+Tabela~\ref{tab:ferramentas} resume os recursos previstos. Não há custo de aquisição
+de material, uma vez que toda a validação ocorre em simulação.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Ferramentas previstas e respectivos papéis no trabalho.}
+\label{tab:ferramentas}
+\begin{tabular}{|L{4.2cm}|L{7.3cm}|L{2.6cm}|}
+\hline
+\textbf{Ferramenta} & \textbf{Papel no trabalho} & \textbf{Camada}\\
+\hline
+Ubuntu (nativo ou WSL2) e Git & Ambiente de desenvolvimento e controle de versão & Base\\
+\hline
+ArduPilot (GPLv3) & Firmware de piloto automático; hospeda o controlador proposto & C++\\
+\hline
+SITL e \texttt{sim\_vehicle.py} & Execução do firmware compilado sem hardware & Simulação\\
+\hline
+MAVProxy e QGroundControl & Estações de controle em solo; comando e ajuste de parâmetros & Telemetria\\
+\hline
+\texttt{sympy} & Derivação simbólica do modelo e linearização por Jacobiana & Python\\
+\hline
+\texttt{python-control} & Projeto do controlador e análise de estabilidade & Python\\
+\hline
+\texttt{numpy} e \texttt{scipy} & Álgebra linear, integração numérica e identificação & Python\\
+\hline
+Modelos de vento (Dryden e rajada) e parâmetros de simulação de vento do SITL & Geração dos cenários de perturbação atmosférica reprodutíveis & Simulação\\
+\hline
+\texttt{pymavlink}, \texttt{pandas} e \texttt{matplotlib} & Leitura dos registros de voo, métricas e gráficos & Python\\
+\hline
+Gazebo com \texttt{ardupilot\_gazebo} & Física e visualização tridimensional (opcional) & Simulação\\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Delimitação do escopo}
+
+O trabalho restringe-se à malha de atitude --- rolagem, arfagem e guinada --- com
+possível extensão à malha de altitude caso o cronograma permita, e à validação em
+ambiente de simulação. Quanto às perturbações, o escopo abrange os modelos de vento
+médio, rajada determinística e turbulência estocástica aplicados de forma uniforme ao
+volume ocupado pela aeronave, além de perturbações aditivas de torque e de variação
+paramétrica; ficam fora do escopo a modelagem de campos de vento espacialmente
+distribuídos, esteiras de obstáculos e efeitos aerodinâmicos de proximidade ao solo
+ou a paredes, que exigiriam simulação fluidodinâmica. Ficam explicitamente fora do escopo o voo em hardware real, o
+controle de trajetória por métodos preditivos, a operação cooperativa de múltiplas
+aeronaves e o uso de visão computacional, todos registrados como possibilidades de
+trabalhos futuros. Caso haja folga significativa de cronograma, prevê-se, como
+extensão opcional, a execução em modo \emph{Simulation on Hardware}, que mantém a
+simulação da planta mas executa o firmware na controladora de voo real.
+
+\subsection{Riscos e mitigações}
+
+Os principais riscos identificados são de natureza técnica e de escopo. O primeiro é
+a configuração do ambiente de compilação do firmware, etapa reconhecidamente
+sensível e capaz de consumir tempo desproporcional; como mitigação, ela será
+concluída integralmente na fase inicial, antes de qualquer atividade de modelagem, e
+tomada como marco de entrada para as demais fases. O segundo é a divergência entre o
+modelo analítico e a dinâmica efetivamente simulada, mitigada pela etapa de
+identificação de sistemas, que permite corrigir os parâmetros antes do projeto do
+controlador. O terceiro é a ocorrência de transitórios indesejados na comutação entre
+controladores, mitigada pelo tratamento explícito da reinicialização dos estados
+internos e por ensaios específicos de comutação. O quarto é a possibilidade de o
+controlador projetado não superar o PID nativo em todas as métricas; entende-se, no
+entanto, que esse não é um risco ao trabalho, mas um resultado legítimo, desde que a
+comparação seja metodologicamente correta e as causas sejam analisadas à luz da
+teoria. O quinto é a expansão indevida do escopo, mitigada pela delimitação
+apresentada na subseção anterior. O sexto diz respeito à representatividade dos
+modelos de distúrbio: parâmetros de turbulência excessivamente severos podem levar à
+saturação dos atuadores e tornar a comparação entre controladores pouco informativa,
+enquanto parâmetros brandos demais podem mascarar diferenças relevantes; como
+mitigação, os níveis de severidade serão definidos previamente a partir de valores
+tabelados na literatura e verificados quanto à ocorrência de saturação antes da
+execução da bateria definitiva de ensaios.
+
+% ----------------------------------------------------------------------
+%  6. CRONOGRAMA PREVISTO
+% ----------------------------------------------------------------------
+\section{Cronograma Previsto}
+
+O cronograma da Tabela~\ref{tab:cronograma} distribui as atividades ao longo de
+aproximadamente vinte e quatro semanas. As fases se sobrepõem deliberadamente, de
+modo que o estudo teórico de cada etapa ocorra durante a execução da etapa anterior.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Cronograma previsto de execução.}
+\label{tab:cronograma}
+\begin{tabular}{|c|L{6.0cm}|c|L{4.4cm}|}
+\hline
+\textbf{Fase} & \textbf{Atividade principal} & \textbf{Semanas} & \textbf{Entregável}\\
+\hline
+0 & Preparação do ambiente, compilação do firmware e primeiro voo simulado & 1--2 & Ambiente funcional e leitura de registros\\
+\hline
+1 & Modelagem dinâmica não-linear e levantamento de parâmetros & 3--6 & Modelo simbólico documentado\\
+\hline
+2 & Linearização, análise estrutural e discretização & 5--8 & Modelo em espaço de estados validado\\
+\hline
+3 & Caracterização do PID nativo e projeto do controlador & 8--12 & Controlador projetado e simulado\\
+\hline
+4 & Identificação do sistema, refino do modelo e implementação dos modelos de vento e de perturbação & 10--15 & Modelo identificado e cenários de distúrbio validados\\
+\hline
+5 & Projeto da compensação de distúrbio e implementação em C++ no firmware & 13--18 & Controlador operante em SITL\\
+\hline
+6 & Ensaios comparativos sob condição nominal e sob perturbação, métricas e análise & 17--22 & Resultados e gráficos comparativos\\
+\hline
+7 & Redação e fechamento da monografia & 21--24 & Monografia finalizada\\
+\hline
+\end{tabular}
+\end{table}
+
+% ----------------------------------------------------------------------
+%  7. APLICAÇÃO DOS CONHECIMENTOS
+% ----------------------------------------------------------------------
+\section{Aplicação dos Conhecimentos}
+
+O desenvolvimento deste projeto integra conhecimentos fundamentais adquiridos ao
+longo do curso de Engenharia de Controle e Automação, incluindo disciplinas como
+Mecânica Aplicada e Dinâmica de Corpos Rígidos, Cálculo e Álgebra Linear, Modelagem
+e Simulação de Sistemas Dinâmicos, Sistemas de Controle Clássico e Moderno, Controle
+Digital, Identificação de Sistemas, Sistemas Microprocessados e Embarcados, Sistemas
+em Tempo Real e Programação. Esses conhecimentos são essenciais para a derivação do
+modelo dinâmico da aeronave, para o projeto e a discretização da lei de controle,
+para a sua implementação dentro de um laço de execução de tempo real e para a
+interpretação crítica dos resultados experimentais obtidos em simulação.
+
+A articulação entre essas áreas é o que confere unidade ao trabalho. A dinâmica de
+corpo rígido fornece as equações de movimento; a álgebra linear e o cálculo
+sustentam a linearização por matrizes Jacobianas e a análise por autovalores; o
+controle moderno fornece o critério de projeto e a formulação por realimentação de
+estados; o controle digital fornece a discretização e a análise dos efeitos de
+amostragem; a identificação de sistemas fornece o instrumento de validação do modelo;
+e os conhecimentos de sistemas embarcados e de programação sustentam a implementação
+sob restrição de temporização. O resultado é um exercício de engenharia de controle
+em sua forma integral, e não apenas o estudo isolado de uma técnica.
+
+Para embasar o desenvolvimento serão utilizadas as referências clássicas de
+modelagem e controle de quadrirrotores de Bouabdallah~\cite{bouabdallah2007},
+Sabatino~\cite{sabatino2015} e Beard~\cite{beard2008}, que fornecem a formulação por
+Newton-Euler, a linearização em torno do voo pairado e o projeto por realimentação
+de estados. A fundamentação em teoria de controle apoiar-se-á nas obras de Åström e
+Murray~\cite{astrom2008}, base conceitual da biblioteca \texttt{python-control}, e de
+Ogata~\cite{ogata2010} para os aspectos de espaço de estados e de projeto por
+critérios quadráticos, complementadas por Franklin, Powell e
+Workman~\cite{franklin1998} no que se refere à discretização e à implementação
+digital, e por Ljung~\cite{ljung1999} no que se refere à identificação de sistemas. A
+modelagem dos distúrbios atmosféricos apoiar-se-á em Beard e McLain~\cite{beard2012},
+que formulam o modelo de vento aplicado a veículos aéreos não tripulados de pequeno
+porte, e na especificação militar norte-americana~\cite{mil8785c}, origem dos
+espectros de turbulência e dos respectivos parâmetros tabelados; a estratégia de
+compensação ativa de perturbação apoiar-se-á na formulação de controle por rejeição
+ativa de distúrbio de Han~\cite{han2009}.
+A especificação da arquitetura de controle em cascata, da interface de controlador
+customizado e do modo de identificação de sistemas será extraída da documentação
+oficial de desenvolvimento do ArduPilot~\cite{ardupilotdev}, que servirá de
+referência tanto para a implementação embarcada quanto para a metodologia de ensaio
+e análise dos resultados.
+
+% ----------------------------------------------------------------------
+%  8. REFERÊNCIAS
+% ----------------------------------------------------------------------
+\section*{Referências}
+\addcontentsline{toc}{section}{Referências}
+
+\begin{thebibliography}{9}
+\setlength{\itemsep}{0.4em}
+
+\bibitem{bouabdallah2007}
+BOUABDALLAH, Samir. \textbf{Design and control of quadrotors with application to
+autonomous flying}. 2007. Tese (Doutorado) -- École Polytechnique Fédérale de
+Lausanne (EPFL), Lausanne, 2007.
+
+\bibitem{sabatino2015}
+SABATINO, Francesco. \textbf{Quadrotor control: modeling, nonlinear control design,
+and simulation}. 2015. Dissertação (Mestrado em Engenharia Elétrica) -- KTH Royal
+Institute of Technology, Estocolmo, 2015.
+
+\bibitem{beard2008}
+BEARD, Randal W. \textbf{Quadrotor dynamics and control}. Provo: Brigham Young
+University, 2008. (Relatório técnico).
+
+\bibitem{astrom2008}
+ÅSTRÖM, Karl J.; MURRAY, Richard M. \textbf{Feedback systems: an introduction for
+scientists and engineers}. Princeton: Princeton University Press, 2008.
+
+\bibitem{ogata2010}
+OGATA, Katsuhiko. \textbf{Engenharia de controle moderno}. 5. ed. São Paulo:
+Pearson Prentice Hall, 2010.
+
+\bibitem{franklin1998}
+FRANKLIN, Gene F.; POWELL, J. David; WORKMAN, Michael L. \textbf{Digital control of
+dynamic systems}. 3rd ed. Menlo Park: Addison-Wesley, 1998.
+
+\bibitem{ljung1999}
+LJUNG, Lennart. \textbf{System identification: theory for the user}. 2nd ed. Upper
+Saddle River: Prentice Hall, 1999.
+
+\bibitem{beard2012}
+BEARD, Randal W.; McLAIN, Timothy W. \textbf{Small unmanned aircraft: theory and
+practice}. Princeton: Princeton University Press, 2012.
+
+\bibitem{mil8785c}
+UNITED STATES DEPARTMENT OF DEFENSE. \textbf{MIL-F-8785C: military specification --
+flying qualities of piloted airplanes}. Washington, D.C.: Department of Defense,
+1980.
+
+\bibitem{han2009}
+HAN, Jingqing. From PID to active disturbance rejection control. \textbf{IEEE
+Transactions on Industrial Electronics}, v. 56, n. 3, p. 900--906, 2009.
+
+\bibitem{ardupilotdev}
+ARDUPILOT DEVELOPMENT TEAM. \textbf{ArduPilot developer documentation}. Disponível
+em: \url{https://ardupilot.org/dev/}. Acesso em: [data de acesso].
+
+\end{thebibliography}
+
+\end{document}

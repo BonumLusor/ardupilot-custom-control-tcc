@@ -1,0 +1,27 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "🌍 Gazebo",
+      "type": "shell",
+      "command": "${env:HOME}/faculdade/TCC/run-gazebo.sh",
+      "isBackground": true,
+      "presentation": { "group": "sim", "panel": "dedicated", "reveal": "always" },
+      "problemMatcher": []
+    },
+    {
+      "label": "🚁 SITL",
+      "type": "shell",
+      "command": "${env:HOME}/faculdade/TCC/run-sitl.sh",
+      "isBackground": true,
+      "presentation": { "group": "sim", "panel": "dedicated", "reveal": "always" },
+      "problemMatcher": []
+    },
+    {
+      "label": "▶ Simular (Gazebo + SITL)",
+      "dependsOn": ["🌍 Gazebo", "🚁 SITL"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    }
+  ]
+}
