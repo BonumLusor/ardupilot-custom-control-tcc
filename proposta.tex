@@ -483,41 +483,67 @@ tabelados na literatura e verificados quanto à ocorrência de saturação antes
 execução da bateria definitiva de ensaios.
 
 % ----------------------------------------------------------------------
-%  6. CRONOGRAMA PREVISTO
+%  6. CRONOGRAMA
 % ----------------------------------------------------------------------
-\section{Cronograma Previsto}
+\section{Cronograma}
 
-O cronograma da Tabela~\ref{tab:cronograma} distribui as atividades ao longo de
-aproximadamente vinte e quatro semanas. As fases se sobrepõem deliberadamente, de
-modo que o estudo teórico de cada etapa ocorra durante a execução da etapa anterior.
+A etapa de preparação do ambiente --- instalação do sistema, compilação do firmware,
+execução do primeiro voo simulado em SITL e leitura dos registros de voo --- já se
+encontra concluída na data de submissão desta proposta, o que remove do cronograma o
+risco técnico historicamente mais custoso do projeto. As atividades restantes estão
+distribuídas na Tabela~\ref{tab:cronograma}, cobrindo o período de 17 de agosto a 30
+de outubro de 2026, correspondente a onze semanas de execução.
+
+A primeira atividade prevista é a implantação dos modelos de vento e de interferência
+externa sobre a malha de controle nativa. Essa antecipação é deliberada e responde a
+uma necessidade metodológica: é a perturbação que define o objeto de controle deste
+trabalho. Sem ela, o quadrirrotor simulado em condição nominal apresenta desempenho
+já satisfatório sob o PID nativo, e a comparação entre controladores tende a produzir
+diferenças pouco significativas. Estabelecer primeiro o cenário perturbado, e
+caracterizar nele o comportamento do controlador nativo, fixa simultaneamente o
+problema a ser resolvido e a linha de base contra a qual a solução será medida. As
+demais etapas seguem a ordem lógica de modelagem, projeto, implementação e ensaio, e
+se sobrepõem deliberadamente, de modo que o estudo teórico de cada uma ocorra durante
+a execução da anterior. A redação da monografia é tratada como atividade contínua a
+partir da metade do período, e não como etapa final concentrada.
 
 \begin{table}[htbp]
 \centering
 \small
-\caption{Cronograma previsto de execução.}
+\caption{Cronograma de execução previsto.}
 \label{tab:cronograma}
-\begin{tabular}{|c|L{6.0cm}|c|L{4.4cm}|}
+\begin{tabular}{|c|L{5.4cm}|c|L{4.4cm}|}
 \hline
-\textbf{Fase} & \textbf{Atividade principal} & \textbf{Semanas} & \textbf{Entregável}\\
+\textbf{Etapa} & \textbf{Atividade} & \textbf{Período} & \textbf{Entregável}\\
 \hline
-0 & Preparação do ambiente, compilação do firmware e primeiro voo simulado & 1--2 & Ambiente funcional e leitura de registros\\
+0 & Preparação do ambiente e primeiro voo simulado & concluída & Ambiente funcional e leitura de registros\\
 \hline
-1 & Modelagem dinâmica não-linear e levantamento de parâmetros & 3--6 & Modelo simbólico documentado\\
+1 & Implantação dos modelos de vento e de interferência externa; caracterização do PID nativo sob perturbação & 17/08 a 30/08 & Cenários de distúrbio reprodutíveis e linha de base quantificada\\
 \hline
-2 & Linearização, análise estrutural e discretização & 5--8 & Modelo em espaço de estados validado\\
+2 & Modelagem dinâmica não-linear e levantamento de parâmetros & 31/08 a 13/09 & Modelo simbólico documentado\\
 \hline
-3 & Caracterização do PID nativo e projeto do controlador & 8--12 & Controlador projetado e simulado\\
+3 & Linearização, análise estrutural, discretização e validação & 14/09 a 27/09 & Modelo em espaço de estados validado\\
 \hline
-4 & Identificação do sistema, refino do modelo e implementação dos modelos de vento e de perturbação & 10--15 & Modelo identificado e cenários de distúrbio validados\\
+4 & Identificação do sistema e refino do modelo & 21/09 a 04/10 & Modelo identificado e comparado ao analítico\\
 \hline
-5 & Projeto da compensação de distúrbio e implementação em C++ no firmware & 13--18 & Controlador operante em SITL\\
+5 & Projeto do controlador e da compensação de distúrbio & 28/09 a 11/10 & Controlador projetado e simulado em Python\\
 \hline
-6 & Ensaios comparativos sob condição nominal e sob perturbação, métricas e análise & 17--22 & Resultados e gráficos comparativos\\
+6 & Implementação em C++ e integração ao firmware & 05/10 a 18/10 & Controlador operante em SITL\\
 \hline
-7 & Redação e fechamento da monografia & 21--24 & Monografia finalizada\\
+7 & Ensaios comparativos, métricas e análise & 12/10 a 25/10 & Resultados e gráficos comparativos\\
+\hline
+8 & Redação e fechamento da monografia & 05/10 a 30/10 & Monografia finalizada\\
 \hline
 \end{tabular}
 \end{table}
+
+O prazo disponível é reconhecidamente restrito para a totalidade das atividades
+previstas. Caso se verifique atraso ao final da Etapa 5, adota-se como plano de
+contingência a redução do escopo de projeto à variante do controlador com ação
+integral, transferindo-se o observador de estado estendido para a seção de trabalhos
+futuros. Essa redução preserva integralmente a comparação central da proposta ---
+controlador projetado por modelo contra PID nativo, sob perturbação --- e concentra o
+tempo remanescente nas etapas de ensaio e de redação.
 
 % ----------------------------------------------------------------------
 %  7. APLICAÇÃO DOS CONHECIMENTOS
