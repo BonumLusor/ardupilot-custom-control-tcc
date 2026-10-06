@@ -1,0 +1,55 @@
+# Grupo 1 da proposta com os tres eixos ao mesmo tempo: os degraus do
+# rolagem/nominal (10 graus), do arfagem/nominal (10 graus) e do guinada/nominal
+# (30 graus), no mesmo instante. E o ensaio de ACOPLAMENTO entre eixos.
+nome: "Nominal — degrau simultaneo de rolagem, arfagem e guinada"
+descricao: >
+  Ar parado, sem disturbio. Em t=6 s a referencia vai a 10 graus de rolagem,
+  10 graus de arfagem e 30 graus de guinada ao mesmo tempo; em t=11 s volta a
+  nivelado e ao rumo inicial.
+
+  Cada eixo sai com as suas metricas transitorias, que se comparam direto com
+  as dos ensaios de um eixo so: mesma amplitude, mesmo instante, mesma janela.
+  A diferenca e o custo do acoplamento. Rolagem e arfagem iguais inclinam a
+  aeronave ~14 graus sobre a diagonal do X, e girar inclinado mistura os eixos
+  do corpo; os tres eixos ainda disputam a mesma folga dos motores na mistura.
+
+  Medido com o nativo: a guinada repete o guinada/nominal (sobressinal 14%,
+  acomodacao 1,3 s), mas rolagem e arfagem mudam muito — sobressinal de 7% e
+  37%, contra ~2% sozinhas. Quase tudo vem do ALVO, e nao do controlador:
+  girar 30 graus em guinada com a aeronave inclinada faz o alvo modelado,
+  visto em angulos de Euler, passar do ponto e voltar (a arfagem comandada
+  chega a ~13 graus). Para comparar controladores neste ensaio, use o erro de
+  rastreamento: 2,6 e 1,9 graus em rolagem e arfagem, contra ~0,8 e 0,9 nos
+  ensaios de um eixo so.
+
+vento:
+  # injetor ligado com intensidade zero: e a mensagem WND que da a analise o
+  # tempo de perfil
+  WND_MODE: 1
+  WND_SPD: 0
+  WND_DIR: 0
+  WND_DIRZ: 0
+  WND_GA: 0
+  WND_GT0: 0
+  WND_GDUR: 3
+  WND_TSIG: 0
+  WND_TLU: 200
+  WND_SEED: 1
+  WND_T0: 8
+  WND_TQX: 0
+  WND_TQY: 0
+  WND_TQZ: 0
+  WND_TQT0: 0
+  WND_TQDUR: 0.4
+  WND_TQF0: 0.2
+  WND_TQF1: 10.0
+
+voo:
+  altitude_m: 15
+  espera_apos_decolagem_s: 6
+  degrau_roll_deg: 10
+  degrau_pitch_deg: 10
+  degrau_yaw_deg: 30
+  t_degrau_s: 6
+  t_retorno_s: 11
+  duracao_s: 30

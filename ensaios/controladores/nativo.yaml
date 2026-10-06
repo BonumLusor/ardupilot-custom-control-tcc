@@ -1,0 +1,25 @@
+# Linha de base quantitativa: o PID nativo do ArduPilot, sem AC_CustomControl.
+nome: "PID nativo"
+slug: nativo
+descricao: >
+  Cascata padrao do ArduPilot. E a referencia contra a qual todo controlador
+  proposto e medido.
+
+params:
+  CC_TYPE: 0
+
+reboot_apos_params: true
+
+# Ganhos varridos na parametrizacao. Deixe vazio para usar os do frame.
+ganhos: {}
+
+ganhos_de_interesse:
+  - ATC_RAT_RLL_P
+  - ATC_RAT_RLL_I
+  - ATC_RAT_RLL_D
+  - ATC_ANG_RLL_P
+
+msg_pid: PIDR
+
+# Confirmacao lida do proprio log: com CC_TYPE=0 nao ha mensagem CC.
+espera_cc_tipo: 0

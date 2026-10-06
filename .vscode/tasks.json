@@ -22,6 +22,52 @@
       "dependsOn": ["🌍 Gazebo", "🚁 SITL"],
       "dependsOrder": "parallel",
       "problemMatcher": []
+    },
+    {
+      "label": "🌬 Ensaio com vento",
+      "type": "shell",
+      "command": "${env:HOME}/venv-ardupilot/bin/python ensaios/run_ensaio.py --cenario ${input:cenario} --controlador ${input:controlador}",
+      "options": { "cwd": "${env:HOME}/faculdade/TCC" },
+      "presentation": { "panel": "dedicated", "reveal": "always" },
+      "problemMatcher": []
+    },
+    {
+      "label": "🌬 Todos os ensaios (rolagem e guinada)",
+      "type": "shell",
+      "command": "${env:HOME}/venv-ardupilot/bin/python ensaios/run_ensaio.py",
+      "options": { "cwd": "${env:HOME}/faculdade/TCC" },
+      "presentation": { "panel": "dedicated", "reveal": "always" },
+      "problemMatcher": []
+    },
+    {
+      "label": "🌬 SITL puro + vento (manual)",
+      "type": "shell",
+      "command": "${env:HOME}/faculdade/TCC/ensaios/run-sitl-vento.sh",
+      "isBackground": true,
+      "presentation": { "panel": "dedicated", "reveal": "always" },
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "cenario",
+      "type": "pickString",
+      "description": "Cenário (pasta/ensaio), pasta inteira, ou todos",
+      "options": [
+        "todos", "rolagem", "arfagem", "guinada", "rolagem_arfagem_guinada",
+        "rolagem/nominal", "rolagem/torque_pulso", "rolagem/torque_degrau", "rolagem/torque_chirp",
+        "arfagem/nominal", "arfagem/torque_pulso", "arfagem/torque_degrau", "arfagem/torque_chirp",
+        "guinada/nominal", "guinada/torque_pulso", "guinada/torque_degrau", "guinada/torque_chirp",
+        "rolagem_arfagem_guinada/nominal", "rolagem_arfagem_guinada/torque_pulso", "rolagem_arfagem_guinada/torque_degrau"
+      ],
+      "default": "rolagem/nominal"
+    },
+    {
+      "id": "controlador",
+      "type": "pickString",
+      "description": "Controlador",
+      "options": ["todos", "nativo", "cc_pid"],
+      "default": "nativo"
     }
   ]
 }

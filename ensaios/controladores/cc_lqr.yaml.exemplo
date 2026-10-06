@@ -1,0 +1,35 @@
+# MODELO para o terceiro controlador, ainda nao implementado no firmware.
+#
+# Renomeie para cc_lqr.yaml quando o backend existir. Do lado dos ensaios nao ha
+# mais nada a fazer: run_ensaio.py e toda a analise passam a inclui-lo.
+#
+# Do lado do firmware, sao quatro edicoes (todas ja localizadas):
+#   1. CUSTOMCONTROL_MAX_TYPES de 2 para 3, em AC_CustomControl.h:17
+#      (o array _backend_var_info e indexado por get_type() = _controller_type - 1)
+#   2. novo valor no enum CustomControlType, em AC_CustomControl.h:48
+#   3. novo case no switch de AC_CustomControl::init(), no molde do CONT_PID
+#   4. AP_SUBGROUPVARPTR(_backend, "3_", 8, ...) no var_info -> ganhos CC3_*
+nome: "AC_CustomControl — LQR"
+slug: cc_lqr
+
+params:
+  CC_TYPE: 3
+  CC_AXIS_MASK: 7
+  RC6_OPTION: 109      # CUSTOM_CONTROLLER — sem isto o backend nunca assume
+
+reboot_apos_params: true
+
+rc_override:
+  6: 2000
+
+ganhos: {}
+
+ganhos_de_interesse:
+  - CC3_RAT_RLL_P
+  - CC3_RAT_RLL_I
+  - CC3_RAT_RLL_D
+  - CC3_ANG_RLL_P
+
+msg_pid: PIDR
+
+espera_cc_tipo: 3

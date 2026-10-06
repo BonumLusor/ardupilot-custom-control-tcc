@@ -1,0 +1,45 @@
+# Grupo 1 da proposta, eixo de arfagem: "avaliara a resposta ao degrau em
+# rolagem e arfagem". E o rolagem/nominal com o degrau no nariz.
+nome: "Nominal — degrau de arfagem em ar parado"
+descricao: >
+  Ar parado, sem disturbio. Degrau de arfagem de 0 para 10 graus (nariz para
+  cima) em t=6 s e retorno a nivelado em t=11 s. Rolagem fica em zero e o rumo,
+  travado.
+
+  Amplitude e tempos sao os do rolagem/nominal de proposito: no frame X a
+  arfagem tem o mesmo braco (0,247 m por motor) e a mesma inercia
+  (Iyy = Ixx) que a rolagem, entao os dois devem dar os mesmos numeros. Uma
+  diferenca entre eles e assimetria do modelo ou do controlador, e vale
+  investigar antes de seguir.
+
+vento:
+  # injetor ligado com intensidade zero: e a mensagem WND que da a analise o
+  # tempo de perfil
+  WND_MODE: 1
+  WND_SPD: 0
+  WND_DIR: 0
+  WND_DIRZ: 0
+  WND_GA: 0
+  WND_GT0: 0
+  WND_GDUR: 3
+  WND_TSIG: 0
+  WND_TLU: 200
+  WND_SEED: 1
+  WND_T0: 8
+  WND_TQX: 0
+  WND_TQY: 0
+  WND_TQZ: 0
+  WND_TQT0: 0
+  WND_TQDUR: 0.4
+  WND_TQF0: 0.2
+  WND_TQF1: 10.0
+
+voo:
+  altitude_m: 15
+  espera_apos_decolagem_s: 6
+  degrau_pitch_deg: 10
+  t_degrau_s: 6
+  # volta a nivelado depois que o degrau acomoda; sem isso a aeronave seguiria
+  # inclinada ate o pouso, acelerando para tras
+  t_retorno_s: 11
+  duracao_s: 30

@@ -1,0 +1,38 @@
+# O rolagem/torque_degrau no eixo de arfagem: momento constante em y, que nao
+# termina.
+nome: "Torque em degrau em arfagem — 10 rad/s2 sustentado"
+descricao: >
+  Momento constante em arfagem, ligado em t=6 s e mantido ate o fim. Expoe o
+  ERRO EM REGIME sob disturbio permanente, e portanto a suficiencia da acao
+  integral de arfagem — o analogo de um centro de gravidade deslocado para a
+  frente ou para tras.
+
+  Mesma amplitude e duracao do rolagem/torque_degrau, pelo mesmo motivo dos
+  outros ensaios desta pasta: no frame X os dois eixos sao simetricos.
+
+vento:
+  WND_MODE: 33       # 1 (vento medio zero) + 32 (degrau de torque)
+  WND_SPD: 0
+  WND_DIR: 0
+  WND_DIRZ: 0
+  WND_GA: 0
+  WND_GT0: 0
+  WND_GDUR: 3
+  WND_TSIG: 0
+  WND_TLU: 200
+  WND_SEED: 1
+  WND_T0: 8
+  WND_TQX: 0
+  WND_TQY: 10.0      # rad/s2 sustentado
+  WND_TQZ: 0
+  WND_TQT0: 6        # segundos apos o inicio do perfil
+  WND_TQDUR: 0.3     # o degrau ignora a duracao
+  WND_TQF0: 0.2
+  WND_TQF1: 10.0
+
+voo:
+  altitude_m: 15
+  espera_apos_decolagem_s: 6
+  degrau_pitch_deg: 0
+  t_degrau_s: 0
+  duracao_s: 40

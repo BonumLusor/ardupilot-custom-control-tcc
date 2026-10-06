@@ -1,0 +1,47 @@
+# Varredura em frequencia de torque em guinada: a resposta em frequencia de
+# rejeicao do eixo z numa corrida, para margem de ganho e de fase.
+nome: "Chirp de torque em guinada — 0,1 a 5 Hz em 40 s"
+descricao: >
+  Senoide de torque em guinada com frequencia crescendo exponencialmente de
+  0,1 a 5 Hz, com janela de meio cosseno nas pontas (a mesma forma do chirp de
+  rolagem e do modo SYSTEMID nativo).
+
+  A faixa e mais baixa e a varredura mais longa que as do chirp de rolagem,
+  porque a malha de guinada e muito mais lenta: o que interessa esta abaixo de
+  ~2 Hz, e acima de 5 Hz o rumo praticamente nao responde ao torque. Com 40 s,
+  os segmentos de Welch tem 5 s e a resolucao fica em 0,2 Hz.
+
+  A analise grava resposta_freq_yaw.png e as metricas em resposta_freq_yaw
+  (entrada tqz, saida guinada relativa ao rumo inicial).
+
+  Medido com o nativo: coerencia acima de 0,9 de 0,2 a 4,6 Hz, ganho de ~3 graus
+  por rad/s2 em baixa frequencia (o mesmo desvio do torque sustentado) e queda
+  de 3 dB em 1,0 Hz.
+
+vento:
+  WND_MODE: 65       # 1 (vento medio zero) + 64 (chirp de torque)
+  WND_SPD: 0
+  WND_DIR: 0
+  WND_DIRZ: 0
+  WND_GA: 0
+  WND_GT0: 0
+  WND_GDUR: 3
+  WND_TSIG: 0
+  WND_TLU: 200
+  WND_SEED: 1
+  WND_T0: 8
+  WND_TQX: 0
+  WND_TQY: 0
+  WND_TQZ: 1.0       # rad/s2 — modesto, para ficar na faixa linear
+  WND_TQT0: 4        # segundos apos o inicio do perfil
+  WND_TQDUR: 40      # duracao da varredura
+  WND_TQF0: 0.1      # Hz, inicio
+  WND_TQF1: 5.0      # Hz, fim
+
+voo:
+  altitude_m: 15
+  espera_apos_decolagem_s: 6
+  degrau_roll_deg: 0
+  degrau_yaw_deg: 0
+  t_degrau_s: 0
+  duracao_s: 50

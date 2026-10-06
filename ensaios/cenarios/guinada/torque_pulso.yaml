@@ -1,0 +1,49 @@
+# O rolagem/torque_pulso no eixo de guinada: perturbacao impulsiva de torque em
+# z, em ar parado e com a aeronave nivelada.
+nome: "Torque impulsivo em guinada — pulso 3 rad/s2 / 0,3 s"
+descricao: >
+  Pulso retangular de torque em guinada (eixo z do corpo), sem vento. O impulso
+  angular e exatamente amplitude x duracao: 3 x 0,3 = 0,9 rad/s = 51,6 graus/s
+  de velocidade de guinada injetada, conhecida de antemao.
+
+  A amplitude e um quinto da do pulso de rolagem, e de proposito. A guinada de
+  um quadrirrotor nao tem braco de alavanca: o momento vem do torque de reacao
+  das helices, e no modelo do SITL a aceleracao maxima em guinada e da ordem de
+  10 rad/s2 — contra centenas em rolagem (o bloco VEICULO do resumo.txt da a
+  inercia e o coeficiente de reacao). Os 15 rad/s2 do pulso de rolagem passariam
+  dessa autoridade: a mistura saturaria durante o pulso e o rumo giraria
+  dezenas de graus antes de o controlador conseguir frear — um ensaio de
+  saturacao, nao de rejeicao. 3 rad/s2 fica longe disso e ainda tira o rumo do
+  lugar de forma bem visivel.
+
+  Medido com o nativo: 6,6 graus de desvio e recuperacao em 0,94 s, com a saida
+  de guinada em no maximo 0,22. Depois resta uma cauda lenta de ~0,2 grau, que o
+  integrador de guinada, fraco, leva segundos para zerar.
+
+vento:
+  WND_MODE: 9        # 1 (vento medio, de intensidade zero) + 8 (pulso de torque)
+  WND_SPD: 0
+  WND_DIR: 0
+  WND_DIRZ: 0
+  WND_GA: 0
+  WND_GT0: 0
+  WND_GDUR: 3
+  WND_TSIG: 0
+  WND_TLU: 200
+  WND_SEED: 1
+  WND_T0: 8
+  WND_TQX: 0
+  WND_TQY: 0
+  WND_TQZ: 3.0       # rad/s2 — o botao de severidade deste ensaio
+  WND_TQT0: 6        # segundos apos o inicio do perfil
+  WND_TQDUR: 0.3
+  WND_TQF0: 0.2      # so usados pelo chirp (bit 64); aqui ficam nos padroes
+  WND_TQF1: 10.0
+
+voo:
+  altitude_m: 15
+  espera_apos_decolagem_s: 6
+  degrau_roll_deg: 0     # sem degrau: este ensaio mede REJEICAO, nao rastreamento
+  degrau_yaw_deg: 0
+  t_degrau_s: 0
+  duracao_s: 25

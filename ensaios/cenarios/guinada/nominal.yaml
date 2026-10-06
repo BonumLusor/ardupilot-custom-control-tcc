@@ -1,0 +1,58 @@
+# Grupo 1 da proposta, eixo de guinada: o mesmo ensaio do rolagem/nominal, com o
+# degrau no rumo em vez da rolagem. Rolagem e arfagem ficam comandadas em zero.
+nome: "Nominal — degrau de guinada em ar parado"
+descricao: >
+  Ar parado, sem disturbio. Degrau de guinada de 30 graus em t=6 s, somado ao
+  rumo travado no inicio do perfil, e retorno a esse rumo em t=11 s.
+
+  Entrega as mesmas metricas transitorias do nominal de rolagem — subida,
+  sobressinal, acomodacao, erro em regime e erro de rastreamento —, agora para
+  a guinada. A guinada vai nas metricas RELATIVA ao rumo inicial (colunas
+  yaw_rel e yaw_des_rel do series.csv), continua na passagem pelo norte.
+
+  O degrau e maior que o de rolagem porque a guinada nao tem o que limita a
+  inclinacao: girar no proprio eixo nao tira a aeronave do lugar, e 30 graus e
+  uma mudanca de rumo comum. O alvo e modelado por ATC_ACC_Y_MAX (270 deg/s2),
+  e nao por ATC_INPUT_TC — na guinada o modelador usa PILOT_Y_RATE_TC.
+
+  Medido com o nativo: sobressinal de 15%, acomodacao em 1,3 s e erro de
+  rastreamento de ate 13 graus. A aeronave fica bem atras do alvo modelado, entao
+  as metricas medem a realimentacao, e nao o modelador. A saida de guinada chega
+  a 0,43 e os motores se afastam ~350 PWM do pairado: e o ensaio que mais pede
+  da mistura.
+
+  Atencao ao comparar controladores: o backend PID de exemplo nasce com 90% dos
+  ganhos COMPILADOS do ArduPilot, mas o SITL carrega copter.parm, que sobe o
+  nativo para ATC_RAT_YAW_P = 0.3. Em guinada o cc_pid voa com ~54% do P de
+  taxa do nativo; o bloco de ganhos do resumo.txt mostra a razao.
+
+vento:
+  # injetor ligado com intensidade zero, como no nominal: e a mensagem WND que
+  # da a analise o tempo de perfil
+  WND_MODE: 1
+  WND_SPD: 0
+  WND_DIR: 0
+  WND_DIRZ: 0
+  WND_GA: 0
+  WND_GT0: 0
+  WND_GDUR: 3
+  WND_TSIG: 0
+  WND_TLU: 200
+  WND_SEED: 1
+  WND_T0: 8
+  WND_TQX: 0
+  WND_TQY: 0
+  WND_TQZ: 0
+  WND_TQT0: 0
+  WND_TQDUR: 0.4
+  WND_TQF0: 0.2
+  WND_TQF1: 10.0
+
+voo:
+  altitude_m: 15
+  espera_apos_decolagem_s: 6
+  degrau_roll_deg: 0
+  degrau_yaw_deg: 30
+  t_degrau_s: 6
+  t_retorno_s: 11
+  duracao_s: 30

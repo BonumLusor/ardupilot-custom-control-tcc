@@ -127,7 +127,7 @@ No terminal do SITL, depois que os *pre-arm checks* passarem (~30 s):
 
 ```
 mode guided
-arm throttle
+arm throttle   q+
 takeoff 5
 ```
 
@@ -297,9 +297,333 @@ Tudo abaixo se digita no **terminal do SITL**. `Tab` completa comandos e `help` 
 | `LOG_BITMASK` | Escolhe o que vai para o `.BIN`. Planeje isso **antes** dos experimentos. |
 
 > **Atenção com vento:** com `--model JSON` a física é do Gazebo, então os `SIM_WIND_*` do SITL
-> **não** movem o drone — o SITL apenas *recebe* o vento reportado pelo simulador externo. Para
-> experimentos de rejeição de distúrbio no Gazebo, use um plugin de vento no `.sdf` do mundo, ou
-> rode esses ensaios no SITL puro (sem `--model JSON`), onde os `SIM_WIND_*` valem.
+> **não** movem o drone — o `SIM_JSON` zera o vento internamente
+> ([`SIM_JSON.cpp:444`](ardupilot/libraries/SITL/SIM_JSON.cpp#L444)) e o plugin do Gazebo só
+> reporta vento aparente de anemômetro, nunca aplica força. Os ensaios de rejeição de distúrbio
+> rodam em **SITL puro**, e é isso que o diretório [`ensaios/`](ensaios/) automatiza — veja a
+> seção seguinte.
+
+---
+
+## Ensaios de vento e parametrização do controle
+
+O diretório [`ensaios/`](ensaios/) injeta vento reprodutível em SITL puro, registra o vento
+aplicado **dentro do próprio `.BIN`** e produz, por corrida, um painel de figuras, um GIF e os
+números da corrida.
+
+```bash
+source ~/venv-ardupilot/bin/activate
+
+python ensaios/run_ensaio.py                                 # TODOS os ensaios, nos dois controladores
+python ensaios/run_ensaio.py --listar                        # o que existe
+python ensaios/run_ensaio.py --cenario guinada               # uma pasta inteira
+python ensaios/run_ensaio.py --cenario guinada/torque_pulso --controlador nativo
+python ensaios/run_ensaio.py --cenario torque_pulso          # o pulso em todas as pastas
+python ensaios/run_ensaio.py --analisar ensaios/resultados --sem-gif   # reprocessa tudo
+```
+
+Sem argumentos, o `run_ensaio.py` roda os 15 cenários com cada controlador de
+`ensaios/controladores/` — 30 voos, um SITL por vez, ~25 min sem GIF e ~50 min com. O SITL roda
+**sem janela**, com a saída do binário no `sitl.log` de cada ensaio (ver
+[O SITL sem janela](#o-sitl-sem-janela-e-por-que-alguns-voos-falhavam)). Um voo que falha é
+tentado de novo (`--tentativas`, padrão 2), e o lote segue até o fim e termina com um resumo do
+que passou e do que falhou. A pasta de um voo que não terminou ganha o sufixo `_falhou`, com o
+motivo em `falha.txt`; a tentativa seguinte abre outra pasta. `--cenario` e `--controlador`
+restringem o lote; `--analisar` aceita uma pasta de ensaio ou qualquer pasta acima dela.
+
+Cada ensaio deixa em `ensaios/resultados/<pasta>/<ensaio>/<controlador>/<carimbo>/` (por
+exemplo `resultados/guinada/torque_pulso/nativo/2026-10-06_020447/`): o `.BIN`, os dois YAMLs,
+`params.parm`, `metricas.json`, `series.csv`, `resumo.txt`, `painel.png`, `painel.pdf` e
+`ensaio.gif`. Acumulando na raiz de `resultados/`, o `consolidado.csv` ganha **uma linha por
+ensaio** — é essa tabela que se lê para escolher ganho, e ela traz os ganhos em uso e a massa e
+inércia do veículo de cada linha — e o `tabela.tex` sai pronto para `\input{}` na monografia, com
+**uma linha por eixo** (um ensaio dos três eixos vira três).
+
+### Cenários
+
+Os cenários ficam em uma pasta por eixo, e cada pasta tem os mesmos ensaios:
+
+```
+ensaios/cenarios/
+├── rolagem/           nominal (10°)   torque_pulso (15 rad/s²)  torque_degrau (10 rad/s²)  torque_chirp (0,2–10 Hz)
+├── arfagem/           nominal (10°)   torque_pulso (15 rad/s²)  torque_degrau (10 rad/s²)  torque_chirp (0,2–10 Hz)
+├── guinada/           nominal (30°)   torque_pulso (3 rad/s²)   torque_degrau (1 rad/s²)   torque_chirp (0,1–5 Hz)
+└── rolagem_arfagem_guinada/
+                      nominal         torque_pulso              torque_degrau              (os três eixos juntos)
+```
+
+O nome de um cenário é o caminho dele: `guinada/torque_pulso`. É esse nome que o `--cenario`
+aceita, que organiza `resultados/` e que vai na coluna `cenario` do consolidado. Para um ensaio
+novo, basta pôr o YAML na pasta do eixo; ele entra no lote sozinho.
+
+O degrau de um eixo é `voo.degrau_roll_deg` / `voo.degrau_pitch_deg` / `voo.degrau_yaw_deg` no
+YAML (o de guinada é somado ao rumo travado no início do perfil); o torque, `WND_TQX` / `WND_TQY` /
+`WND_TQZ`. As métricas saem **por
+eixo** (`degrau_yaw`, `disturbio_yaw`, `esforco_yaw`, ...), só para os eixos que o ensaio
+exercita, e o painel ganha uma coluna de faixas por eixo. Na guinada, as métricas usam o rumo
+**relativo** ao inicial (`yaw_rel` e `yaw_des_rel` no `series.csv`), desdobrado antes da
+interpolação — sem isso, um degrau que cruza o norte vira um salto de 360° no log.
+
+A arfagem usa as amplitudes da rolagem: no frame X os dois eixos têm o mesmo braço (0,247 m) e a
+mesma inércia (`Ixx = Iyy`), então `arfagem/` e `rolagem/` devem dar os mesmos números, e uma
+diferença entre eles aponta assimetria no modelo ou no controlador. As amplitudes de guinada são
+menores de propósito: a guinada não tem braço de alavanca, o momento vem do torque de reação das
+hélices, e a autoridade em guinada do modelo do SITL é da ordem de 10 rad/s², contra centenas em
+rolagem e arfagem. Não há chirp combinado: com a mesma varredura em vários eixos,
+a resposta de um eixo e o acoplamento vindo dos outros ficam indistinguíveis.
+
+Os ensaios de `rolagem_arfagem_guinada/` usam as amplitudes dos de um eixo só, para cada eixo
+se comparar com o seu par. Rolagem e arfagem iguais somam um momento sobre a diagonal do X que
+passa por `M1` e `M2`: só `M3` e `M4` têm braço em torno dela, e cada um trabalha o dobro do que
+num ensaio de um eixo — é o carregamento mais severo da mistura.
+
+> **Ao comparar `nativo` × `cc_pid` em guinada:** o backend PID de exemplo nasce com 90% dos
+> ganhos *compilados* do ArduPilot ([`AC_CustomControl_PID.cpp:323`](ardupilot/libraries/AC_CustomControl/AC_CustomControl_PID.cpp#L323)),
+> mas o SITL carrega [`copter.parm`](ardupilot/Tools/autotest/default_params/copter.parm), que
+> sobe o nativo para `ATC_RAT_YAW_P = 0.3`. Em rolagem a razão é 0,90; em guinada, **0,54**. O
+> `resumo.txt` de cada ensaio mostra essa razão.
+
+Primeiras medidas (uma corrida de cada, semente fixa):
+
+| ensaio | `nativo` | `cc_pid` |
+|---|---|---|
+| `guinada/nominal`: sobressinal / acomodação / erro de rastreamento máx. | 14,9% / 1,32 s / 13,3° | 15,4% / 2,02 s / 17,9° |
+| `guinada/torque_pulso`: desvio máx. / recuperação | 6,6° / 0,94 s | 8,5° / 1,62 s |
+| `guinada/torque_degrau`: desvio máx. / recuperação | 3,2° / 32 s | — |
+
+A arfagem repete a rolagem, como a simetria do frame X prevê. Com o nativo, o degrau deu
+0,16 s / 2,3% / 0,38 s (rolagem: 0,16 s / 2,2% / 0,38 s), o pulso 2,03° / 1,82 s (1,99° / 1,88 s),
+o torque sustentado 1,47° / 2,36 s (1,47° / 2,38 s), e o chirp, a mesma resposta em frequência.
+Só o erro de rastreamento do degrau ficou fora da variação entre corridas: 0,92°, contra 0,77° e
+0,80° nas duas corridas de rolagem.
+
+Dois achados: o integrador de guinada é **lento** — sob 1 rad/s² constante o rumo leva ~32 s para
+voltar a 10% do desvio, contra 2,4 s na rolagem —, e o acoplamento entre os eixos no SITL é
+**pequeno**: nos ensaios combinados, a rejeição de cada eixo fica a poucos por cento da do ensaio
+de um eixo só (pulso nos três eixos: 2,15° / 1,96° / 6,46°, contra 1,99° / 2,03° / 6,6°). No
+degrau dos três eixos, porém, o próprio alvo de rolagem e arfagem deixa de ser um degrau — girar
+em guinada inclinado o faz passar do ponto em ângulos de Euler, e a arfagem comandada chega a
+~13° —, então ali sobressinal e subida medem o alvo; compare controladores pelo erro de
+rastreamento.
+
+### O `resumo.txt`: veículo e ganhos em uso
+
+Todo `resumo.txt` abre com dois blocos lidos do `params.parm` daquele voo — o que estava valendo
+de fato, e não o que o YAML pretendia:
+
+- **VEÍCULO** — frame e posição/sentido de giro de cada motor, massa e peso, distância entre
+  eixos, braço, inércias, empuxo por motor (pairado e máximo), curva de empuxo, coeficiente do
+  torque de reação, PWM, bateria, taxa do laço e filtros;
+- **CONTROLADOR EM USO** — uma tabela rolagem × arfagem × guinada com os ganhos que voaram em cada
+  eixo (`ATC_*` no nativo, `CC2_*` nos eixos de `CC_AXIS_MASK` quando o `AC_CustomControl` está
+  ativo), a fração da janela em que o backend esteve ativo e os limites do modelador de entrada,
+  que são comuns a todos os controladores.
+
+Para ganhar os blocos nos ensaios já gravados, basta reanalisar (`--analisar ensaios/resultados --sem-gif`): as
+métricas não mudam, só o texto e as colunas novas do consolidado.
+
+Dois detalhes do modelo de multirrotor do SITL, conferidos no código e nos logs, entram no bloco
+como notas e precisam entrar na monografia:
+
+1. **`SIM_FRM_DIAG_SZ` se diz "diagonal motor a motor", mas é o braço.**
+   [`SIM_Motor.cpp:206`](ardupilot/libraries/SITL/SIM_Motor.cpp#L206) põe cada motor a
+   `DIAG_SZ` do **centro**, então o braço efetivo é 0,35 m e a diagonal efetiva, 0,70 m. Confirmado
+   no `rolagem/torque_degrau`: o diferencial medido dos motores devolve ~10,5 rad/s² de contra-torque
+   contra os 10 aplicados com braço = `DIAG_SZ`, e só 5,2 com braço = `DIAG_SZ/2`.
+2. **A inércia é estimada com metade desse raio.** Sem modelo JSON,
+   [`SIM_Frame.cpp:823`](ardupilot/libraries/SITL/SIM_Frame.cpp#L823) usa metade da massa num anel
+   de raio `DIAG_SZ/2`: `Ixx = Iyy = 0,02297` e `Izz = 0,04594 kg·m²`. É incoerente como
+   geometria, mas é a planta que o SITL integra — e é com ela que o modelo do TCC tem de bater.
+
+### O injetor de distúrbios
+
+[`ensaios/lua/vento.lua`](ensaios/lua/vento.lua) roda dentro do SITL, a 50 Hz de passo fixo, e
+registra a verdade do que aplicou na mensagem `WND` do log. Ele injeta **duas famílias de
+distúrbio**, e a distinção é o eixo de todo o resto:
+
+| família | como entra | o que perturba |
+|---|---|---|
+| **Vento** (`SIM_WIND_*`) | força no centro de massa | **posição** — deriva metros; a atitude, centésimos de grau |
+| **Torque** (`SIM_TWIST_*`) | somado direto em `rot_accel`, em rad/s² | **atitude** — é o que exercita a malha que você projeta |
+
+O ruído de Dryden vem de um PRNG determinista semeado por `WND_SEED`, espelhado em
+[`ensaios/analise/dryden_ref.py`](ensaios/analise/dryden_ref.py): as duas implementações batem
+amostra a amostra, e é isso que sustenta a reprodutibilidade dos ensaios estocásticos.
+
+| Parâmetro | Para que serve |
+|---|---|
+| `WND_MODE` | bitmask somável: `1`=vento médio, `2`=rajada, `4`=Dryden, `8`=torque em pulso, `16`=torque em meio cosseno, `32`=torque em degrau, `64`=torque em varredura (chirp) |
+| `WND_SPD`, `WND_DIR`, `WND_DIRZ` | vento médio: módulo (m/s), direção **de onde vem** (°), ângulo vertical (°) |
+| `WND_GA`, `WND_GT0`, `WND_GDUR` | rajada: amplitude (m/s), início (s) e duração (s) |
+| `WND_TSIG`, `WND_TLU` | Dryden: intensidade σ (m/s) e escala longitudinal Lu (m); a lateral é Lu/2 |
+| `WND_TQX`, `WND_TQY`, `WND_TQZ` | torque: amplitude em **rad/s²** por eixo do corpo (rolagem, arfagem, guinada) |
+| `WND_TQT0`, `WND_TQDUR` | torque: início (s) e duração (s); o degrau ignora a duração |
+| `WND_SEED` | semente do PRNG — é o que torna dois ensaios idênticos |
+| `WND_T0` | espera após o armamento; **negativo** = modo de bancada, começa sem armar |
+
+O torque em rad/s² **é** o "termo aditivo de perturbação na equação da dinâmica de rotação" da
+`proposta.tex` — não uma emulação por assimetria de rotor. O impulso angular de um pulso é
+exatamente amplitude × duração, e sai calculado em `metricas.json`.
+
+> **Três armadilhas do vento nativo do SITL**, todas tratadas pelo `run_ensaio.py` e que
+> precisam entrar como ressalva na monografia:
+>
+> 1. `SIM_WIND_T` vem em `0` (lei de raiz quadrada) — a 5 m de altitude chegariam só
+>    `sqrt(5/60) ≈ 29%` do vento comandado. Os ensaios usam `1` (sem limite).
+> 2. `SIM_WIND_TC` vem em **5 s**, e o firmware impõe piso de `0.1 s`
+>    ([`SIMState.cpp:307`](ardupilot/libraries/AP_HAL/SIMState.cpp#L307)). Com o padrão, nenhuma
+>    rajada sobreviveria. Mesmo em `0.1 s` sobra um passa-baixa de ~1,6 Hz em série: a rajada e o
+>    vento médio passam intactos, a turbulência é atenuada acima disso.
+> 3. O SITL ignora vento nos **primeiros 5 s** de simulação, então `WND_T0` reserva essa folga.
+
+### Adicionar um controlador
+
+Os controladores são configuração, não código: cada arquivo em
+[`ensaios/controladores/`](ensaios/controladores/) diz quais parâmetros aplicar e o que esperar
+no log. Para o terceiro controlador (`AC_CustomControl` não padrão), há um modelo pronto em
+`controladores/cc_lqr.yaml.exemplo` — do lado dos ensaios basta renomeá-lo; do lado do firmware
+ele lista as quatro edições necessárias em `AC_CustomControl.{h,cpp}`.
+
+> **`CC_TYPE` sozinho não liga o controlador.** O `AC_CustomControl` só assume quando uma chave
+> auxiliar de RC vai para HIGH ([`RC_Channel_Copter.cpp:671`](ardupilot/ArduCopter/RC_Channel_Copter.cpp#L671),
+> opção `109`). Sem isso o voo sai com o PID nativo enquanto os parâmetros dizem o contrário — em
+> silêncio. Por isso o YAML do `cc_pid` traz `RC6_OPTION: 109` e um bloco `rc_override`, e a
+> análise confere no log, pela mensagem `CC`, se o backend esteve mesmo ativo durante o ensaio.
+
+### Dois achados que mudam o texto da monografia
+
+**1. No SITL, vento horizontal NÃO perturba a malha de atitude — não é "pouco", é zero.** Cada
+rotor calcula a entrada de ar como `MAX(0, -motor_vel.projected(thrust_vector).z)`
+([`SIM_Motor.cpp:81`](ardupilot/libraries/SITL/SIM_Motor.cpp#L81)): só a componente **axial**, ao
+longo do eixo de empuxo. Um vento horizontal projeta quase nada nesse eixo e, sobretudo, é
+**uniforme sobre a aeronave** — os quatro rotores recebem a mesma contribuição. Efeito igual nos
+quatro significa variação de empuxo total e nunca diferencial; sem diferencial não há momento. O
+arrasto de corpo, por sua vez, é aplicado no centro de massa: braço zero, torque zero.
+
+Medido aqui, num mesmo voo, comparando a rajada contra trechos calmos:
+
+| trecho | \|erro\|max | \|p\|max |
+|---|---|---|
+| calmo antes | 0,0312° | 0,206°/s |
+| **rajada de 10 m/s** | **0,0164°** | **0,178°/s** |
+| calmo depois | 0,0140° | 0,167°/s |
+
+A aeronave fica *mais quieta* durante a rajada que antes dela. Já um pulso de torque de
+15 rad/s² por 0,3 s produz **2,80° de desvio** e 1,86 s de recuperação — cem vezes mais.
+
+A `proposta.tex` antecipa isso: o torque parasita de centro de pressão deslocado "havia sido
+deliberadamente desprezado" no modelo nominal. A consequência prática é a divisão de trabalho
+entre os ensaios:
+
+- **vento** → mede deriva de posição, e põe o controlador a operar fora do equilíbrio simétrico;
+- **torque** → mede rejeição de distúrbio da malha de atitude, que é o objeto do TCC;
+- **degrau de atitude** → mede rastreamento, que é como o vento realmente chega à malha de
+  atitude num voo em `LOITER`: o controlador de posição converte o empurrão em comando de atitude.
+
+Na monografia isso precisa ser escrito com precisão. Não é "vento não perturba atitude" — num
+quadrotor real ele perturba, por batimento de pá e centro de pressão deslocado. É "no modelo de
+multirrotor do SITL o vento entra como força no centro de massa, e portanto não produz distúrbio
+de atitude".
+
+**2. Ensaio marcado no relógio de simulação, nunca no de parede — e sempre a leitura mais
+recente.** Com `--speedup 5` o SITL entrega ~4,5x de fato, e sob carga de log chegou a ~1,4x. Um
+perfil temporizado por `time.sleep(duração/speedup)` terminava cedo, o pouso começava no meio do
+ensaio, e os 30° de rolagem que o controlador de posição comanda para frear a deriva entravam no
+log como se fossem resposta ao distúrbio.
+
+Ler o relógio do veículo não bastou: consumindo a **primeira** mensagem da fila, o atraso
+*cresce* ao longo do voo, porque o laço consome `ATTITUDE` um pouco mais devagar do que o veículo
+os produz. Medido: o degrau atrasava 0,50 s e o retorno, 1,82 s — erro de taxa, não deslocamento
+fixo. Esvaziando a fila antes de cada leitura, os desvios caem para 0,12 s e 0,16 s, que é o piso
+imposto pela taxa de comando de 10 Hz. O distúrbio, temporizado pelo relógio do próprio injetor
+Lua, cai em 0,00 s.
+
+### Frame X, o mesmo do Gazebo
+
+Os ensaios rodam com `-f X`, que carrega `copter-X.parm` (`FRAME_TYPE 1`) e a física `--model X`.
+É a mesma configuração de motores do ambiente Gazebo (`gazebo-iris.parm`), então os dois medem o
+mesmo veículo.
+
+Onde cada motor fica, contado do nariz no sentido horário
+([`AP_MotorsMatrix.cpp:592`](ardupilot/libraries/AP_Motors/AP_MotorsMatrix.cpp#L592)):
+
+| saída | posição |
+|---|---|
+| `RCOU.C1` | 45° — dianteiro direito |
+| `RCOU.C2` | −135° — traseiro esquerdo |
+| `RCOU.C3` | −45° — dianteiro esquerdo |
+| `RCOU.C4` | 135° — traseiro direito |
+
+O torque de rolagem sai daí: `m1 − m2 − m3 + m4`; o de arfagem, `m1 − m2 + m3 − m4` (frente
+menos trás). O de guinada sai do sentido de giro — `M1` e `M2` giram no sentido anti-horário
+(CCW), `M3` e `M4` no horário (CW) — e é `(m1 + m2) − (m3 + m4)`: o torque de reação de um rotor
+CCW gira a aeronave no sentido horário, então acelerar o par CCW guina para a direita. O painel e a vista de cima do GIF **derivam**
+essas fórmulas e a posição dos rotores da geometria em `analise/estilo.py`, indexada pelo
+`FRAME_TYPE` que o `params.parm` do ensaio registrou. Chumbar a fórmula combinaria eixos
+diferentes assim que o frame mudasse, e o gráfico mostraria ruído com cara de sinal.
+
+Medido sob torque sustentado de 10 rad/s²: os dois motores da direita sobem (1613,8 e 1614,1) e os
+dois da esquerda descem (1594,8 e 1595,1).
+
+### Relógio monotônico, nunca o de parede
+
+Todo tempo decorrido no `run_ensaio.py` usa `time.monotonic()`. O relógio de parede do WSL
+ressincroniza e pode **andar para trás** no meio de uma corrida — aconteceu aqui, na virada do dia.
+Com `time.time()`, um "tempo decorrido" vira negativo, o campo `uint32` de `time_boot_ms` do
+`SET_ATTITUDE_TARGET` estoura e o ensaio morre em pleno voo com um `struct.error`. Os laços de
+timeout também esperariam a mais. Só o carimbo da pasta de resultado vem de `datetime.now()`, que
+é data de calendário e não intervalo.
+
+### O SITL sem janela, e por que alguns voos falhavam
+
+O `sim_vehicle.py` não roda o binário direto: chama o `run_in_terminal_window.sh` do ArduPilot,
+que abre um xterm sempre que há `DISPLAY`. O `run_ensaio.py` aponta `SITL_RITW_TERMINAL` para
+[`ensaios/sitl_sem_janela.sh`](ensaios/sitl_sem_janela.sh), que roda o binário em segundo plano e
+grava a saída dele no `sitl.log` do ensaio — no xterm ela se perdia junto com a janela. O wrapper
+mantém um processo pai vivo de propósito: o SITL se encerra sozinho quando perde o pai
+([`SITL_State.cpp:95`](ardupilot/libraries/AP_HAL_SITL/SITL_State.cpp#L95)).
+
+Os lotes perdiam ~1 voo em cada 5 a 15, sempre logo depois do reboot que ativa `SCR_ENABLE` e
+`CC_TYPE`, com "o processo do SITL morreu" ou, mais raro, "os parâmetros WND_* nunca apareceram".
+As duas mensagens vêm de um **bug do SITL do ArduPilot**, que o orquestrador disparava:
+
+1. Antes de reiniciar, o `AP_Vehicle::reboot()` chama `hal.serial(0)->flush()` para garantir que o
+   `COMMAND_ACK` saia ([`AP_Vehicle.cpp:983`](ardupilot/libraries/AP_Vehicle/AP_Vehicle.cpp#L983)).
+2. O `UARTDriver::_flush()` do SITL repete `_timer_tick()` até esvaziar o buffer ou passar 1 s de
+   tempo **simulado** ([`UARTDriver.cpp:272`](ardupilot/libraries/AP_HAL_SITL/UARTDriver.cpp#L272))
+   — só que nada nesse laço faz o tempo simulado andar.
+3. Se o cliente TCP já fechou a conexão, o `_timer_tick()` não escreve nada, o buffer nunca esvazia
+   e o laço nunca acaba: o SITL fica a 100% de CPU, sem reiniciar e ignorando SIGTERM.
+
+O orquestrador antigo fechava a conexão logo depois de mandar o pedido de reboot. Conforme quem
+chegava primeiro ao SITL, ele travava no laço acima ou descartava o pedido e seguia sem reiniciar
+(daí os `WND_*` que nunca apareciam). E o travado era dado como "morto" porque a verificação
+procurava `arducopter --model`, e o processo que não reiniciou ainda tinha a linha de comando do
+primeiro boot, `arducopter -w --model ...`.
+
+Evidência: com o reboot antigo e a saída do binário capturada, o travamento apareceu em 3 de 8 e
+2 de 7 ciclos; rodando o SITL dentro do gdb, o backtrace mostrou a thread principal presa em
+`AP_Vehicle::reboot → UARTDriver::_flush → handle_writing_from_writebuffer_to_device`. Com o reboot
+novo, 0 de 40 e 0 de 30 ciclos, e 3 de 3 voos de três eixos. O reboot novo espera o `COMMAND_ACK`,
+lê até o **próprio SITL** fechar a conexão (ele fecha ao se reexecutar) e confere o reboot pela
+saída do `-w` da linha de comando; o binário é achado por uma variável de ambiente própria, e não
+pelo nome; e o encerramento espera o binário sair, com SIGKILL se ele não atender. De quebra, cada
+ensaio ficou ~6 s mais curto.
+
+### O perfil de voo tem três atos
+
+Cada ensaio segue a mesma sequência, e a ordem importa:
+
+| tp | o que acontece | o que mede |
+|---|---|---|
+| `t_degrau_s` | rolagem ou arfagem 0 → 10°, e/ou guinada +30° | **transitório**: subida, sobressinal, acomodação |
+| `t_retorno_s` | volta a nivelado e ao rumo inicial | — |
+| `WND_GT0` / `WND_TQT0` | distúrbio | **rejeição**: desvio máximo, recuperação, RMSE |
+
+O retorno a 0° não é detalhe. Sem ele, o distúrbio incidiria sobre uma aeronave inclinada 10° e
+acelerando de lado a ~4,3 m/s — ponto de operação difícil de defender numa banca, e com deriva
+crescendo até o pouso. Com ele, o distúrbio chega a **−0,01° de rolagem e 0,92 m/s**. Deixar
+`t_retorno_s` de fora do YAML mantém o degrau até o fim, que é o comportamento antigo.
 
 ---
 
@@ -326,3 +650,5 @@ Nessa ordem. Se o Gazebo cair primeiro, o SITL trava esperando o próximo estado
 | Erro de modelo/mundo não encontrado | `GZ_SIM_RESOURCE_PATH` ausente | Rodar pelo `run-gazebo.sh`, não pelo `gz sim` direto |
 | QGroundControl não conecta | NAT do WSL bloqueando UDP | `networkingMode=mirrored` no `.wslconfig`, ou `output add udp:IP_DO_WINDOWS:14550` |
 | `No such file: modules/waf/waf-light`, ou `source not found: 'modules/littlefs/lfs.c'` | Submódulos não inicializados, ou inicializados pela metade | Ver o **passo 0** dos pré-requisitos |
+| Ensaio: "ja ha algo escutando na porta 5760" | Outro SITL aberto (o `run-sitl.sh`, por exemplo) | Feche-o, ou rode o ensaio com `--instancia 1` |
+| Ensaio: pasta `_falhou` | O voo não terminou | O motivo está no `falha.txt`, e a saída do SITL no `sitl.log` ao lado |

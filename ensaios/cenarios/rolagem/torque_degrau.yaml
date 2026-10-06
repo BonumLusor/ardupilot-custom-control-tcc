@@ -1,0 +1,45 @@
+# Perturbacao impulsiva de torque, em ar parado. E ESTE o ensaio que mede
+# rejeicao da malha de atitude — vento nao serve para isso, porque no modelo do
+# SITL ele entra como forca no centro de massa e nao gera momento.
+nome: "Torque em degrau em rolagem — 10 rad/s2 sustentado"
+descricao: >
+  Momento constante em rolagem, ligado em t=14 s e mantido ate o fim do ensaio.
+  E o analogo em atitude do que o vento medio faz em posicao: expoe o ERRO EM
+  REGIME sob disturbio permanente, e portanto se a acao integral do controlador
+  e suficiente. Um controlador sem integrador estabiliza com erro; um com
+  integrador leva o erro a zero, e o que se compara e quanto tempo leva e quanto
+  esforco custa.
+
+vento:
+  WND_MODE: 33       # 1 (vento medio zero) + 32 (degrau de torque)
+  WND_SPD: 0
+  WND_DIR: 0
+  WND_DIRZ: 0
+  WND_GA: 0
+  WND_GT0: 0
+  WND_GDUR: 3
+  WND_TSIG: 0
+  WND_TLU: 200
+  WND_SEED: 1
+  WND_T0: 8
+  # torque so em rolagem, para casar com o resto dos ensaios
+  WND_TQX: 10.0      # rad/s2 sustentado. Em 0,4 o diferencial dos motores dava
+                     # 0,55 PWM — ruido. A aeronave tem ~220 rad/s2 de autoridade,
+                     # entao 10 e ~5% dela: visivel nos motores, longe de saturar.
+  WND_TQY: 0
+  WND_TQZ: 0
+  WND_TQT0: 6       # segundos apos o inicio do perfil; DEPOIS do retorno a 0 graus
+  WND_TQDUR: 0.3
+  WND_TQF0: 0.2      # so usados pelo chirp (bit 64); aqui ficam nos padroes
+  WND_TQF1: 10.0
+
+voo:
+  altitude_m: 15
+  espera_apos_decolagem_s: 6
+  degrau_roll_deg: 0     # sem degrau: este ensaio mede REJEICAO, nao rastreamento.
+                         # A aeronave voa nivelada e parada o tempo todo, e a
+                         # unica coisa que a tira do lugar e o disturbio. O degrau
+                         # vive no cenario rolagem/nominal, que e o ensaio de
+                         # rastreamento (grupo 1 da proposta).
+  t_degrau_s: 0
+  duracao_s: 40

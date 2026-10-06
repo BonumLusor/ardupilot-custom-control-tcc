@@ -1,0 +1,55 @@
+# Grupo 1 da proposta: "em condicao nominal de ar parado, avaliara a resposta ao
+# degrau em rolagem... caracterizando o desempenho transitorio basico".
+#
+# Os "nominal" de cada pasta (rolagem/, arfagem/, guinada/,
+# rolagem_arfagem_guinada/) sao os unicos cenarios com degrau. Os de disturbio
+# voam nivelados, porque neles a pergunta e outra: quanto o controlador rejeita,
+# e nao quao bem ele rastreia.
+nome: "Nominal — degrau de rolagem em ar parado"
+descricao: >
+  Ar parado, sem disturbio nenhum. Degrau de rolagem de 0 para 10 graus em
+  t=6 s, retorno a nivelado em t=11 s.
+
+  Entrega as quatro metricas transitorias que a proposta tabela — tempo de
+  subida, sobressinal, tempo de acomodacao e erro em regime — mais o erro de
+  rastreamento, que e o que de fato distingue um controlador do outro: o alvo
+  que o firmware persegue ja vem suavizado pelo modelador de entrada, entao
+  sobressinal e acomodacao medidos contra ele caracterizam em boa parte o
+  modelador, que e feedforward e igual para todos.
+
+  O trecho antes do degrau serve de linha de base: e ali que se le o piso de
+  ruido da atitude e o PWM de equilibrio dos motores.
+
+vento:
+  # O injetor fica LIGADO com intensidade zero, e nao desligado: com WND_MODE=0
+  # nao ha mensagem WND no log, e sem ela a analise perde o tempo de perfil — a
+  # janela passaria a incluir decolagem e pouso.
+  WND_MODE: 1        # so vento medio...
+  WND_SPD: 0         # ...de intensidade zero
+  WND_DIR: 0
+  WND_DIRZ: 0
+  WND_GA: 0
+  WND_GT0: 0
+  WND_GDUR: 3
+  WND_TSIG: 0
+  WND_TLU: 200
+  WND_SEED: 1
+  WND_T0: 8
+  WND_TQX: 0
+  WND_TQY: 0
+  WND_TQZ: 0
+  WND_TQT0: 0
+  WND_TQDUR: 0.4
+  WND_TQF0: 0.2
+  WND_TQF1: 10.0
+
+voo:
+  altitude_m: 15
+  espera_apos_decolagem_s: 6
+  degrau_roll_deg: 10
+  t_degrau_s: 6
+  # Volta a nivelado depois que o degrau acomoda. Sem isto a aeronave seguiria
+  # inclinada ate o pouso, acelerando de lado — no ensaio anterior deste tipo
+  # foram 43 m de deriva sem que ninguem tivesse pedido.
+  t_retorno_s: 11
+  duracao_s: 30

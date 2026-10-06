@@ -1,0 +1,43 @@
+# Varredura em frequência de torque. É o ensaio que degrau e pulso não fazem:
+# entrega a resposta em frequência de REJEIÇÃO DE DISTÚRBIO inteira numa corrida,
+# e daí saem margem de ganho e margem de fase — que a proposta pede.
+nome: "Chirp de torque em rolagem — 0,2 a 10 Hz em 20 s"
+descricao: >
+  Senoide de torque em rolagem com frequencia crescendo exponencialmente de
+  0,2 a 10 Hz, com janela de meio cosseno nas pontas (mesma forma do Chirp do
+  ArduPilot, para ser comparavel ao modo SYSTEMID nativo).
+
+  O torque entra direto em rot_accel e NAO passa pelo filtro de vento do SITL,
+  cujo piso de 0,1 s cortaria acima de ~1,6 Hz. A varredura sobe ate 10 Hz sem
+  distorcao, que e onde a margem de fase se decide.
+
+  Analise: divida o espectro da resposta (erro de rolagem) pelo espectro da
+  entrada (Tx) para obter a funcao sensibilidade. Ambos estao no series.csv.
+
+vento:
+  WND_MODE: 65       # 1 (vento medio zero) + 64 (chirp de torque)
+  WND_SPD: 0
+  WND_DIR: 0
+  WND_DIRZ: 0
+  WND_GA: 0
+  WND_GT0: 0
+  WND_GDUR: 3
+  WND_TSIG: 0
+  WND_TLU: 200
+  WND_SEED: 1
+  WND_T0: 8
+  WND_TQX: 3.0       # rad/s2 — amplitude modesta: a varredura passa muito tempo
+                     # excitando, e o objetivo e ficar na faixa linear
+  WND_TQY: 0
+  WND_TQZ: 0
+  WND_TQT0: 4        # segundos apos o inicio do perfil
+  WND_TQDUR: 20      # duracao da varredura
+  WND_TQF0: 0.2      # Hz, inicio
+  WND_TQF1: 10.0     # Hz, fim
+
+voo:
+  altitude_m: 15
+  espera_apos_decolagem_s: 6
+  degrau_roll_deg: 0     # nivelado: a varredura e a unica excitacao
+  t_degrau_s: 0
+  duracao_s: 30

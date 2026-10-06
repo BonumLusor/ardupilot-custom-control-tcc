@@ -1,0 +1,35 @@
+# Backend PID de exemplo do AC_CustomControl — o caminho por onde o controlador
+# proprio vai entrar. Os ganhos vivem sob o prefixo CC2_, do
+# AP_SUBGROUPVARPTR(_backend, "2_", ...) em AC_CustomControl.cpp.
+nome: "AC_CustomControl — PID de exemplo"
+slug: cc_pid
+descricao: >
+  Mesma estrutura PID do nativo, porem executada dentro do AC_CustomControl.
+  Serve para validar o caminho de integracao antes de trocar a lei de controle:
+  com os mesmos ganhos, deve reproduzir o nativo.
+
+params:
+  CC_TYPE: 2
+  CC_AXIS_MASK: 7      # rolagem + arfagem + guinada
+  RC6_OPTION: 109      # CUSTOM_CONTROLLER — sem isto o backend nunca assume
+
+reboot_apos_params: true
+
+# O AC_CustomControl so entra em operacao com a chave auxiliar em HIGH
+# (RC_Channel_Copter.cpp:671). CC_TYPE=2 sozinho apenas instancia o backend: o
+# voo sairia com o PID nativo e os parametros diriam o contrario. O run_ensaio.py
+# forca o canal e o campo espera_cc_tipo, abaixo, confere no log se pegou.
+rc_override:
+  6: 2000
+
+ganhos: {}
+
+ganhos_de_interesse:
+  - CC2_RAT_RLL_P
+  - CC2_RAT_RLL_I
+  - CC2_RAT_RLL_D
+  - CC2_ANG_RLL_P
+
+msg_pid: PIDR
+
+espera_cc_tipo: 2

@@ -1,0 +1,46 @@
+# O rolagem/torque_degrau no eixo de guinada: momento constante em z, que nao
+# termina.
+nome: "Torque em degrau em guinada — 1 rad/s2 sustentado"
+descricao: >
+  Momento constante em guinada, ligado em t=6 s e mantido ate o fim. E o
+  analogo de uma helice desbalanceada ou de um motor torto: expoe o ERRO EM
+  REGIME de rumo sob disturbio permanente, e portanto a suficiencia da acao
+  integral de guinada — que no ArduPilot e fraca (ATC_RAT_YAW_I = 0.02, contra
+  0.135 em rolagem). O que se compara e quanto o rumo cede de inicio e quanto
+  tempo o integrador leva para traze-lo de volta.
+
+  1 rad/s2 equivale a ~0,046 N.m (I_zz no resumo.txt) e a cerca de um decimo da
+  autoridade de guinada do modelo do SITL.
+
+  Medido com o nativo: o rumo cede 3,2 graus e o integrador leva ~32 s para
+  traze-lo a 10% disso. Dai os 60 s de ensaio: com os 40 s do
+  rolagem/torque_degrau, a recuperacao mal caberia na janela e o tempo de
+  recuperacao sairia em branco.
+
+vento:
+  WND_MODE: 33       # 1 (vento medio zero) + 32 (degrau de torque)
+  WND_SPD: 0
+  WND_DIR: 0
+  WND_DIRZ: 0
+  WND_GA: 0
+  WND_GT0: 0
+  WND_GDUR: 3
+  WND_TSIG: 0
+  WND_TLU: 200
+  WND_SEED: 1
+  WND_T0: 8
+  WND_TQX: 0
+  WND_TQY: 0
+  WND_TQZ: 1.0       # rad/s2 sustentado
+  WND_TQT0: 6        # segundos apos o inicio do perfil
+  WND_TQDUR: 0.3     # o degrau ignora a duracao
+  WND_TQF0: 0.2
+  WND_TQF1: 10.0
+
+voo:
+  altitude_m: 15
+  espera_apos_decolagem_s: 6
+  degrau_roll_deg: 0
+  degrau_yaw_deg: 0
+  t_degrau_s: 0
+  duracao_s: 60
