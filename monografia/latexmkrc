@@ -1,0 +1,6 @@
+# Compilar com `latexmk` nesta pasta: auxiliares vão para build/, PDF fica aqui.
+$pdf_mode = 1;
+$aux_dir = 'build';
+$out_dir = '.';
+$bibtex_use = 2;
+@default_files = ('tcc.tex');

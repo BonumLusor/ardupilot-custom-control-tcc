@@ -4,3 +4,8 @@ proposta.pdf
 # resultados dos ensaios (logs, figuras, GIFs) — nao versionados
 ensaios/resultados/
 __pycache__/
+
+# monografia: auxiliares do latexmk em build/, PDF na pasta
+monografia/build/
+monografia/tcc.pdf
+monografia/tcc.synctex.gz

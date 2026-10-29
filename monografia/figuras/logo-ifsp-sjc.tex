@@ -1,0 +1,38 @@
+% ======================================================================
+%  Marca horizontal do IFSP Câmpus São José dos Campos, em vetor.
+%
+%  Redesenhada a partir da marca do Câmpus Catanduva usada no modelo
+%  "IFSP CTD template" (Overleaf): mesma grade, cores e proporções, com a
+%  fonte da marca (Open Sans). Unidade: 1 px da marca original (120 ppi).
+%
+%  A capa usa o PDF já gerado (logo-ifsp-sjc.pdf), então a monografia não
+%  depende da Open Sans. Para regerar o PDF é preciso o pacote opensans
+%  (texlive-fonts-extra, ou o opensans.tds.zip do CTAN em ~/texmf):
+%      pdflatex logo-ifsp-sjc.tex
+% ======================================================================
+\documentclass[tikz,border=0pt]{standalone}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{opensans}
+\pdfmapfile{+opensans.map}
+
+\definecolor{ifverde}{RGB}{53,152,48}
+\definecolor{ifvermelho}{RGB}{201,12,15}
+
+\begin{document}
+\begin{tikzpicture}[x=0.2117mm,y=-0.2117mm]
+  % grade do símbolo: módulo de 18 px com passo de 21,6 px
+  \def\s{18}\def\p{21.6}
+  \fill[ifvermelho] (\s/2,\s/2) circle[radius=10];
+  \foreach \c/\r in {1/0,2/0, 0/1,1/1, 0/2,1/2,2/2, 0/3,1/3}
+    \fill[ifverde,rounded corners=1.5] (\c*\p,\r*\p) rectangle ++(\s,\s);
+  % texto: linhas de base alinhadas à base das linhas 2, 3 e 4 da grade
+  \pgfmathsetmacro\xt{2*\p+\s+10}
+  \node[anchor=base west,inner sep=0] at (\xt,1*\p+\s+1)
+    {\fontsize{15.3}{15}\fontseries{b}\opensans INSTITUTO FEDERAL};
+  \node[anchor=base west,inner sep=0] at (\xt,2*\p+\s+1)
+    {\fontsize{11.6}{12}\opensans São Paulo};
+  \node[anchor=base west,inner sep=0] at (\xt,3*\p+\s+1)
+    {\fontsize{11.6}{12}\opensans Câmpus São José dos Campos};
+\end{tikzpicture}
+\end{document}

@@ -5,15 +5,17 @@ descricao: >
   Momento constante em guinada, ligado em t=6 s e mantido ate o fim. E o
   analogo de uma helice desbalanceada ou de um motor torto: expoe o ERRO EM
   REGIME de rumo sob disturbio permanente, e portanto a suficiencia da acao
-  integral de guinada — que no ArduPilot e fraca (ATC_RAT_YAW_I = 0.02, contra
-  0.135 em rolagem). O que se compara e quanto o rumo cede de inicio e quanto
-  tempo o integrador leva para traze-lo de volta.
+  integral de guinada — que no ArduPilot e fraca: o AutoTune fixa I = P/10 na
+  guinada, contra I = P em rolagem. O que se compara e quanto o rumo cede de
+  inicio e quanto tempo o integrador leva para traze-lo de volta; essa volta e
+  uma exponencial de constante ~P/I (10 s com os ganhos do AutoTune).
 
   1 rad/s2 equivale a ~0,046 N.m (I_zz no resumo.txt) e a cerca de um decimo da
   autoridade de guinada do modelo do SITL.
 
-  Medido com o nativo: o rumo cede 3,2 graus e o integrador leva ~32 s para
-  traze-lo a 10% disso. Dai os 60 s de ensaio: com os 40 s do
+  Medido com o nativo (ganhos do AutoTune): o rumo cede 2,5 graus e o
+  integrador leva ~22 s para traze-lo a 10% disso (com os do copter.parm, P/I =
+  15 s: 3,2 graus e ~32 s). Dai os 60 s de ensaio: com os 40 s do
   rolagem/torque_degrau, a recuperacao mal caberia na janela e o tempo de
   recuperacao sairia em branco.
 

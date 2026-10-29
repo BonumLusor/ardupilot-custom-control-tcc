@@ -1,0 +1,223 @@
+% ======================================================================
+%  CAPÍTULO 6 — RESULTADOS E DISCUSSÃO
+%
+%  Lote de 27/10/2026 (ganhos do AutoTune, análise com ANG a 400 Hz). As
+%  tabelas saem de ensaios/tabelas_monografia.py --desde 2026-10-27; os
+%  números do texto, das mesmas pastas de resultado.
+% ======================================================================
+\chapter{Resultados e discussão}
+\label{cap:resultados}
+
+Este capítulo apresenta os resultados do lote de ensaios descrito no
+Capítulo~\ref{cap:metodos}, com os dezesseis cenários e os dois controladores
+da Seção~\ref{sec:controladores}, todos com os ganhos da
+Tabela~\ref{tab:ganhos}. Nesta etapa, os resultados têm duas funções:
+verificar que o caminho de integração pelo \codigo{AC\_CustomControl}
+reproduz o controlador nativo, condição para que a comparação com o
+controlador proposto seja válida, e caracterizar o PID nativo como linha de
+base quantitativa. A comparação com o controlador proposto é tema da
+Seção~\ref{sec:res-proposto}.
+
+Cada cenário foi voado uma vez com cada controlador. A repetição de dois
+ensaios com doze dias de intervalo, com os mesmos ganhos, dá a medida da
+repetibilidade: no torque em degrau de guinada, o desvio máximo, o tempo de
+recuperação e o erro quadrático médio se repetiram com diferença de no
+máximo 0,2\,\%; no degrau de rolagem, o sobressinal e o erro de rastreamento
+se repetiram dentro de 2,5\,\% e 4\,\%, respectivamente. A única fonte de
+variação entre voos identificada na entrada é a duração efetiva do pulso de
+torque, discutida na Seção~\ref{sec:res-torque}.
+
+% ----------------------------------------------------------------------
+\section{Verificação do caminho de integração}
+\label{sec:res-integracao}
+
+Em todos os ensaios com o \textit{backend} de exemplo, a mensagem
+\codigo{CC} do registro mostra que ele assumiu o controle cerca de
+\SI{0.4}{\second} depois do início do perfil e permaneceu ativo até o fim,
+antes, portanto, de qualquer degrau ou perturbação. Com os mesmos ganhos, os
+dois controladores produzem respostas praticamente iguais à perturbação de
+torque (Tabela~\ref{tab:res-torque}): no degrau sustentado, os desvios
+máximos diferem em no máximo 2\,\% e os erros quadráticos médios coincidem;
+no pulso de rolagem e arfagem, os desvios diferem em 1,5\,\%. O modelo da
+Seção~\ref{sec:validacao-tempo} reproduz cada controlador separadamente, com
+a mesma precisão, a partir do código de cada um.
+
+Duas diferenças aparecem, e ambas têm explicação. A primeira é o
+sobressinal do degrau de rolagem e arfagem, maior no \textit{backend}
+(Tabela~\ref{tab:res-degrau}): 27\,\% e 24\,\%, contra 22\,\% e 20\,\% no
+nativo. A causa é estrutural. O controlador de ângulo nativo é o controlador
+de raiz quadrada~\eqref{eq:sqrt-controller}, que, com o ganho de
+\SI{26.7}{\per\second} e o limite de aceleração da rolagem, só é linear para
+erros de até \ang{1.0}; o do \textit{backend} é puramente proporcional. No
+degrau, o erro de ângulo chega a \ang{3.3}, e, nesse erro, o nativo pede uma
+velocidade angular 28\,\% menor que a do proporcional, o que reduz o
+sobressinal. Em guinada, o limite linear é de \ang{10.9}, o erro do degrau
+não passa de \ang{8.1}, e os dois controladores coincidem. A segunda é o
+desvio no pulso de guinada, 6\,\% menor no \textit{backend}. Ela não vem do
+controlador: simulados com a mesma entrada, os dois dão o mesmo desvio, e a
+diferença está no impulso aplicado, 9\,\% menor no voo do \textit{backend}
+(Seção~\ref{sec:res-torque}). Por unidade de impulso, os desvios são de
+6,2 e \SI{6.3}{\degree} por \si{\radian\per\second}.
+
+O caminho de integração está, portanto, verificado: um controlador executado
+dentro do \codigo{AC\_CustomControl} enfrenta a mesma planta, a mesma
+perturbação e a mesma análise que o nativo, e as diferenças medidas entre os
+dois correspondem às diferenças de código. Para a comparação com o controlador
+proposto, fica a lição de que o \textit{backend} não herda o controlador de
+raiz quadrada do nativo: o que o controlador proposto fizer com erros
+grandes é escolha de projeto, e não um detalhe de implementação.
+
+% ----------------------------------------------------------------------
+\section{Resposta ao degrau}
+\label{sec:res-degrau}
+
+\begin{table}[htbp]
+\centering
+\caption{Resposta ao degrau de atitude: \ang{10} em rolagem e arfagem e
+\ang{30} em guinada.}
+\label{tab:res-degrau}
+\small
+\input{tabelas/resultados_degrau}
+
+\fonte{Elaborada pelo autor.}
+\end{table}
+
+A Tabela~\ref{tab:res-degrau} reúne as métricas dos degraus. Em rolagem e
+arfagem, o degrau de \ang{10} sobe em 40 a \SI{48}{\milli\second}, com
+sobressinal de 20\,\% a 27\,\% e acomodação em 0,18 a \SI{0.23}{\second}; a
+aeronave chega a ficar \ang{3.3} atrás do alvo modelado. Os ganhos de ângulo
+do AutoTune são altos --- cerca de seis vezes os do arquivo de parâmetros
+padrão --- e o atuador do SITL não tem dinâmica (Seção~\ref{sec:motor-sitl}),
+o que permite respostas tão rápidas; numa aeronave real, a dinâmica dos
+motores limitaria essa banda. A arfagem repete a rolagem, como prevê a
+simetria do quadro X. Em guinada, o degrau de \ang{30} sobe em
+\SI{0.46}{\second}, com 11\,\% de sobressinal e acomodação em
+\SI{1.5}{\second}, e o erro de rastreamento chega a \ang{8}: o alvo é
+modelado com a aceleração máxima de \SI{115}{\degree\per\second\squared}, e
+a eficácia de controle em guinada é 30 vezes menor que em rolagem.
+
+% ----------------------------------------------------------------------
+\section{Rejeição de perturbações de torque}
+\label{sec:res-torque}
+
+\begin{table}[htbp]
+\centering
+\caption{Rejeição de torque: pulso de \SI{15}{\radian\per\second\squared}
+(rolagem e arfagem) e \SI{3}{\radian\per\second\squared} (guinada) por
+\SI{0.3}{\second}, e degrau de 10 e \SI{1}{\radian\per\second\squared}.}
+\label{tab:res-torque}
+\small
+\input{tabelas/resultados_torque}
+
+\fonte{Elaborada pelo autor.}
+\end{table}
+
+A Tabela~\ref{tab:res-torque} mostra a rejeição de torque. Em rolagem e
+arfagem, o pulso desvia a atitude em 0,90 a \ang{0.94}, e o erro volta a
+10\,\% do pico em 1,2 a \SI{1.3}{\second}; o degrau sustentado de
+\SI{10}{\radian\per\second\squared} desvia \ang{0.6} e é compensado pelo
+integrador em 2,1 a \SI{2.3}{\second}. O esforço de controle é pequeno: o
+pulso pede no máximo 5\,\% da faixa de esforço normalizado, e o degrau,
+3,4\,\%. Em guinada, o quadro muda. Um torque sustentado dez vezes menor,
+\SI{1}{\radian\per\second\squared}, desvia o rumo em \ang{2.56}, quatro vezes
+mais que o de rolagem, e a recuperação leva \SI{22}{\second}, dez vezes mais.
+A Seção~\ref{sec:validacao-tempo} mostrou que essa recuperação é governada
+pelo polo em $-k_I/k_P$, imposto pela razão $k_I = k_P/10$ que o AutoTune
+adota em guinada, e não pela planta. É nesse eixo, com a menor eficácia de
+controle e a ação integral mais lenta, que a rejeição de perturbação do PID
+nativo é mais fraca, e onde um controlador com estimação explícita da
+perturbação tem mais a oferecer.
+
+O pulso de torque exige uma ressalva. O laço do injetor roda a cerca de
+\SI{44}{\hertz}, e não aos \SI{50}{\hertz} pedidos, e a duração efetiva do
+pulso nominal de \SI{0.3}{\second} variou de 300 a \SI{338}{\milli\second}
+entre os voos; o impulso aplicado variou, assim, em até 9\,\%. Em rolagem e
+arfagem, a malha fechada é rápida o bastante para que o pico do desvio ocorra
+durante o próprio pulso, e ele depende pouco da duração: dois voos com
+impulsos 8\,\% diferentes desviaram 0,90 e \ang{0.91}. Em guinada, a resposta
+é lenta, e o desvio acompanha o impulso. Nas comparações em guinada, o desvio
+deve ser normalizado pelo impulso registrado, ou o injetor deve passar a
+temporizar o pulso pelo próprio simulador, que é capaz de aplicar o torque
+por uma duração exata (\codigo{SIM\_TWIST\_TIME}).
+
+\begin{table}[htbp]
+\centering
+\caption{Rejeição de torque com o PID nativo, no ensaio de cada eixo e no
+ensaio simultâneo dos três eixos.}
+\label{tab:res-simultaneo}
+\small
+\input{tabelas/resultados_simultaneo}
+
+\fonte{Elaborada pelo autor.}
+\end{table}
+
+Os ensaios simultâneos nos três eixos (Tabela~\ref{tab:res-simultaneo})
+mostram que o acoplamento entre os eixos é desprezível no SITL. Com rolagem,
+arfagem e guinada perturbadas ao mesmo tempo, e com os motores M3 e M4
+trabalhando o dobro do que trabalham num ensaio de um eixo, cada eixo desvia
+o mesmo que no ensaio isolado, com diferença de no máximo 1,1\,\%, e
+recupera com diferença de no máximo 6\,\%. É o que prevê a matriz de entrada
+diagonal da Seção~\ref{sec:modelo-linear}, e justifica projetar o
+controlador eixo a eixo.
+
+% ----------------------------------------------------------------------
+\section{Sensibilidade à perturbação em frequência}
+\label{sec:res-frequencia}
+
+\begin{table}[htbp]
+\centering
+\caption{Resposta em frequência do torque para o ângulo, nas varreduras de
+torque.}
+\label{tab:res-frequencia}
+\small
+\input{tabelas/resultados_frequencia}
+
+\fonte{Elaborada pelo autor.}
+\nota{\raggedright Ganho em \si{\degree} por
+\si{\radian\per\second\squared}; queda de \SI{3}{\decibel} em relação ao
+ganho máximo, acima da frequência do máximo; coerência mediana na faixa da
+varredura.}
+\end{table}
+
+As varreduras (Tabela~\ref{tab:res-frequencia}) mostram em que frequências a
+malha fechada é mais sensível à perturbação de torque. Em rolagem e arfagem,
+o ganho é máximo em \SI{3.6}{\hertz}, com 0,062 a
+\SI{0.066}{\degree} por \si{\radian\per\second\squared}, e cai
+\SI{3}{\decibel} entre 6,4 e \SI{7.6}{\hertz}; abaixo do máximo, o integrador
+atenua a perturbação lenta, e acima dele, a própria inércia da aeronave. Em
+guinada, o ganho é máximo na menor frequência da varredura,
+\SI{0.2}{\hertz}, com \SI{2.55}{\degree} por
+\si{\radian\per\second\squared} --- quarenta vezes o máximo de rolagem ---, e
+cai \SI{3}{\decibel} em \SI{1.2}{\hertz}. A guinada é sensível justamente às
+perturbações lentas, que o integrador fraco demora a compensar, coerente com
+o degrau sustentado. A coerência mediana é de 0,98 ou mais em todas as
+varreduras, e o modelo linear reproduz essas respostas
+(Seção~\ref{sec:validacao-frequencia}).
+
+% ----------------------------------------------------------------------
+\section{Vento e torque}
+\label{sec:res-vento}
+
+O ensaio de rajada confirma, com medida, a divisão de trabalho entre as duas
+famílias de perturbação (Seção~\ref{sec:injetor}). Sob uma rajada lateral de
+\SI{10}{\metre\per\second}, a aeronave, com a atitude comandada e sem
+controle de posição, chegou a \SI{4.2}{\metre\per\second} e derivou
+\SI{18.6}{\metre}, mas o erro de rolagem não passou de \ang{0.017}, contra
+\ang{0.013} no trecho calmo do mesmo voo antes da rajada, e o de arfagem
+ficou em \ang{0.015}. O pulso de torque de rolagem desvia a atitude 50 vezes
+mais. A guinada é a única exceção visível: o erro de rumo passou de
+\ang{0.03} para \ang{0.30} durante a rajada, ainda vinte vezes menos que no
+pulso de torque de guinada. Os dois controladores dão os mesmos números. No
+modelo de multirrotor do SITL, o vento é, assim, uma perturbação de posição,
+e a malha de atitude só o sente por meio das malhas externas, quando elas
+estão ativas; os ensaios de rejeição de perturbação da malha de atitude
+usam, por isso, torque.
+
+% ----------------------------------------------------------------------
+\section{Comparação com o controlador proposto}
+\label{sec:res-proposto}
+
+\pendente{Comparar o controlador proposto (Capítulo~\ref{cap:projeto}) com o PID nativo nos
+mesmos dezesseis cenários, pelas métricas da Seção~\ref{sec:metricas}, com
+atenção especial à guinada sob torque sustentado e normalizando os pulsos de
+guinada pelo impulso registrado.}

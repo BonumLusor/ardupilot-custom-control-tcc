@@ -1,0 +1,268 @@
+% ======================================================================
+%  REFERÊNCIAS — formatadas pelo abntex2-alf (NBR 6023)
+%
+%  Organização:
+%    1. referências da proposta (modelagem, controle, identificação, vento)
+%    2. referências citadas no código-fonte do ArduPilot
+%       (o comentário acima de cada uma diz onde)
+%    3. referências dos métodos usados nos ensaios
+%    4. software e documentação
+% ======================================================================
+
+% ----------------------------------------------------------------------
+%  1. Referências da proposta
+% ----------------------------------------------------------------------
+
+@phdthesis{bouabdallah2007,
+  author  = {Samir Bouabdallah},
+  title   = {Design and control of quadrotors with application to autonomous flying},
+  school  = {École Polytechnique Fédérale de Lausanne},
+  address = {Lausanne},
+  year    = {2007}
+}
+
+@mastersthesis{sabatino2015,
+  author  = {Francesco Sabatino},
+  title   = {Quadrotor control: modeling, nonlinear control design, and simulation},
+  school  = {KTH Royal Institute of Technology},
+  address = {Estocolmo},
+  year    = {2015}
+}
+
+@techreport{beard2008,
+  author      = {Randal W. Beard},
+  title       = {Quadrotor dynamics and control},
+  institution = {Brigham Young University},
+  address     = {Provo},
+  year        = {2008}
+}
+
+@book{astrom2008,
+  author    = {Karl Johan {\AA}str{\"o}m and Richard M. Murray},
+  title     = {Feedback systems},
+  subtitle  = {an introduction for scientists and engineers},
+  publisher = {Princeton University Press},
+  address   = {Princeton},
+  year      = {2008}
+}
+
+@book{ogata2010,
+  author    = {Katsuhiko Ogata},
+  title     = {Engenharia de controle moderno},
+  edition   = {5},
+  publisher = {Pearson Prentice Hall},
+  address   = {São Paulo},
+  year      = {2010}
+}
+
+@book{franklin1998,
+  author    = {Gene F. Franklin and J. David Powell and Michael L. Workman},
+  title     = {Digital control of dynamic systems},
+  edition   = {3},
+  publisher = {Addison-Wesley},
+  address   = {Menlo Park},
+  year      = {1998}
+}
+
+@book{ljung1999,
+  author    = {Lennart Ljung},
+  title     = {System identification},
+  subtitle  = {theory for the user},
+  edition   = {2},
+  publisher = {Prentice Hall},
+  address   = {Upper Saddle River},
+  year      = {1999}
+}
+
+@book{beard2012,
+  author    = {Randal W. Beard and Timothy W. McLain},
+  title     = {Small unmanned aircraft},
+  subtitle  = {theory and practice},
+  publisher = {Princeton University Press},
+  address   = {Princeton},
+  year      = {2012}
+}
+
+@manual{mil8785c,
+  author       = {{UNITED STATES. Department of Defense}},
+  title        = {{MIL-F-8785C}},
+  subtitle     = {military specification: flying qualities of piloted airplanes},
+  address      = {Washington, D.C.},
+  year         = {1980}
+}
+
+@article{han2009,
+  author  = {Jingqing Han},
+  title   = {From {PID} to active disturbance rejection control},
+  journal = {IEEE Transactions on Industrial Electronics},
+  volume  = {56},
+  number  = {3},
+  pages   = {900--906},
+  year    = {2009}
+}
+
+@article{mahony2012,
+  author  = {Robert Mahony and Vijay Kumar and Peter Corke},
+  title   = {Multirotor aerial vehicles: modeling, estimation, and control of quadrotor},
+  journal = {IEEE Robotics \& Automation Magazine},
+  volume  = {19},
+  number  = {3},
+  pages   = {20--32},
+  year    = {2012}
+}
+
+@article{safonov1977,
+  author  = {Michael G. Safonov and Michael Athans},
+  title   = {Gain and phase margin for multiloop {LQG} regulators},
+  journal = {IEEE Transactions on Automatic Control},
+  volume  = {22},
+  number  = {2},
+  pages   = {173--179},
+  year    = {1977}
+}
+
+% Material_participante/: três apresentações (20 a 22 out. 2025) e os
+% programas em MATLAB do minicurso; base do roteiro do Capítulo 4.
+@misc{fischer2025,
+  author       = {Clécio Fischer},
+  title        = {Introdução à modelagem de drones},
+  subtitle     = {minicurso},
+  howpublished = {Notas de aula em três partes},
+  note         = {Semana Nacional de Ciência e Tecnologia, Instituto Federal de Educação, Ciência e Tecnologia de São Paulo},
+  year         = {2025}
+}
+
+% ----------------------------------------------------------------------
+%  2. Referências citadas no código-fonte do ArduPilot
+% ----------------------------------------------------------------------
+
+% libraries/AP_AHRS/AP_AHRS_DCM.cpp (cabeçalho em ~l. 466 e notas
+% complementares do mesmo projeto em ~l. 46, 790 e 1126). Rascunho de
+% 17/05/2009, distribuído pelo projeto gentlenav; o endereço citado no
+% código (gentlenav.googlecode.com) não existe mais.
+@misc{premerlani2009,
+  author = {William Premerlani and Paul Bizard},
+  title  = {Direction cosine matrix {IMU}},
+  subtitle = {theory},
+  note   = {Rascunho distribuído pelo projeto gentlenav},
+  year   = {2009}
+}
+
+% libraries/AP_NavEKF/Models/*/GenerateEquations.m
+@article{pittelkau2003,
+  author  = {Mark E. Pittelkau},
+  title   = {Rotation vector in attitude estimation},
+  journal = {Journal of Guidance, Control, and Dynamics},
+  volume  = {26},
+  number  = {6},
+  pages   = {855--860},
+  year    = {2003}
+}
+
+% libraries/AP_NavEKF3/AP_NavEKF3_core.cpp (~l. 870), também no EKF2 e no
+% AP_TECS. O código cita o número do artigo AIAA (78-1307R); volume,
+% número e páginas são os da publicação no periódico.
+@article{widnall1980,
+  author  = {W. S. Widnall and P. K. Sinha},
+  title   = {Optimizing the gains of the baro-inertial vertical channel},
+  journal = {Journal of Guidance and Control},
+  volume  = {3},
+  number  = {2},
+  pages   = {172--178},
+  year    = {1980}
+}
+
+% libraries/AP_InertialSensor/AP_InertialSensor_Backend.cpp (~l. 338 e 430).
+% O código traz apenas "Tian et al (2010)", o título e o endereço abaixo
+% (grupo SNAP da UNSW). Não foi possível confirmar os demais autores nem o
+% veículo de publicação; conferir antes da versão final.
+@misc{tian2010,
+  author = {Tian and others},
+  title  = {Three-loop integration of {GPS} and strapdown {INS} with coning and sculling compensation},
+  howpublished = {Sydney: University of New South Wales, School of Surveying and Spatial Information Systems},
+  url    = {http://www.sage.unsw.edu.au/snap/publications/tian_etal2010b.pdf},
+  year   = {2010}
+}
+
+% libraries/AP_Math/tests/test_quaternion.cpp (~l. 46): teste da
+% conversão quatérnio -> matriz de rotação (convenção de Hamilton).
+@article{sommer2018,
+  author  = {Hannes Sommer and Igor Gilitschenski and Michael Bloesch and Stephan Weiss and Roland Siegwart and Juan Nieto},
+  title   = {Why and how to avoid the flipped quaternion multiplication},
+  journal = {Aerospace},
+  volume  = {5},
+  number  = {3},
+  pages   = {72},
+  year    = {2018}
+}
+
+% libraries/SITL/SIM_Aircraft.cpp (~l. 350): ruído gaussiano dos
+% acelerômetros simulados. Também usado pelo injetor ensaios/lua/vento.lua.
+@article{box1958,
+  author  = {G. E. P. Box and Mervin E. Muller},
+  title   = {A note on the generation of random normal deviates},
+  journal = {The Annals of Mathematical Statistics},
+  volume  = {29},
+  number  = {2},
+  pages   = {610--611},
+  year    = {1958}
+}
+
+% ----------------------------------------------------------------------
+%  3. Métodos usados nos ensaios
+% ----------------------------------------------------------------------
+
+% gerador de ruído do injetor de perturbações (ensaios/lua/vento.lua)
+@article{park1988,
+  author  = {Stephen K. Park and Keith W. Miller},
+  title   = {Random number generators: good ones are hard to find},
+  journal = {Communications of the ACM},
+  volume  = {31},
+  number  = {10},
+  pages   = {1192--1201},
+  year    = {1988}
+}
+
+% estimação espectral (ensaios/analise/frequencia.py)
+@article{welch1967,
+  author  = {Peter D. Welch},
+  title   = {The use of fast {F}ourier transform for the estimation of power spectra: a method based on time averaging over short, modified periodograms},
+  journal = {IEEE Transactions on Audio and Electroacoustics},
+  volume  = {15},
+  number  = {2},
+  pages   = {70--73},
+  year    = {1967}
+}
+
+@book{tischler2012,
+  author    = {Mark B. Tischler and Robert K. Remple},
+  title     = {Aircraft and rotorcraft system identification},
+  subtitle  = {engineering methods with flight-test examples},
+  edition   = {2},
+  publisher = {American Institute of Aeronautics and Astronautics},
+  address   = {Reston},
+  year      = {2012}
+}
+
+% ----------------------------------------------------------------------
+%  4. Software e documentação
+% ----------------------------------------------------------------------
+
+@misc{ardupilot2026,
+  author       = {{ARDUPILOT DEVELOPMENT TEAM}},
+  title        = {{ArduPilot}},
+  subtitle     = {código-fonte do piloto automático},
+  howpublished = {Repositório Git},
+  note         = {Versão de desenvolvimento ArduCopter 4.8.0-dev, \textit{commit} ce9c2d01a4, de 12 ago. 2026},
+  url          = {https://github.com/ArduPilot/ardupilot},
+  urlaccessdate = {6 out. 2026},
+  year         = {2026}
+}
+
+@misc{ardupilotdev,
+  author        = {{ARDUPILOT DEVELOPMENT TEAM}},
+  title         = {{ArduPilot} developer documentation},
+  url           = {https://ardupilot.org/dev/},
+  urlaccessdate = {6 out. 2026},
+  year          = {2026}
+}

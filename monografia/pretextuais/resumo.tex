@@ -1,0 +1,33 @@
+% ---------------------------------------------------------------------
+%  RESUMO (NBR 6028: parágrafo único, 150 a 500 palavras, voz ativa,
+%  terceira pessoa). Reescrever ao final, quando houver resultados.
+% ---------------------------------------------------------------------
+\setlength{\absparsep}{18pt}
+\begin{resumo}
+Os quadrirrotores são plantas subatuadas, não lineares, acopladas e
+instáveis em malha aberta, cujo comportamento em voo depende inteiramente de
+uma malha de controle de atitude executada em tempo real. Nos pilotos
+automáticos de código aberto, essa malha é tradicionalmente realizada por
+controladores proporcional-integral-derivativo (PID) em cascata, sintonizados
+de forma empírica ou automática, e não a partir de um modelo dinâmico explícito
+da aeronave. Este trabalho projeta um controlador de atitude por métodos de
+controle moderno, implementa-o no próprio \textit{firmware} ArduPilot por meio
+do \textit{framework} \codigo{AC\_CustomControl} e o compara ao controlador
+PID nativo em simulação \textit{software-in-the-loop} (SITL), na qual o
+\textit{firmware} compilado é executado contra um modelo de dinâmica de voo.
+O modelo da aeronave é obtido pelas equações de Newton-Euler, linearizado em
+torno do voo pairado e confrontado com a resposta em frequência identificada
+no próprio simulador. A lei de controle é projetada pelo regulador linear
+quadrático com ação integral e complementada por um observador de estado
+estendido para a estimação e a compensação de perturbações. Os ensaios
+comparativos compreendem degraus de referência em rolagem, arfagem e guinada,
+isolados e simultâneos, e perturbações reprodutíveis de torque em forma de
+pulso, de degrau sustentado e de varredura em frequência, aplicadas sob
+condições idênticas aos dois controladores e avaliadas por métricas de
+desempenho transitório, de erro de rastreamento, de rejeição de perturbação e
+de esforço de controle.
+\pendente{Resultados principais e conclusão, a escrever ao final dos ensaios.}
+
+\textbf{Palavras-chave}: quadrirrotor. controle de atitude. ArduPilot.
+regulador linear quadrático. simulação \textit{software-in-the-loop}.
+\end{resumo}

@@ -21,10 +21,11 @@ descricao: >
   a 0,43 e os motores se afastam ~350 PWM do pairado: e o ensaio que mais pede
   da mistura.
 
-  Atencao ao comparar controladores: o backend PID de exemplo nasce com 90% dos
-  ganhos COMPILADOS do ArduPilot, mas o SITL carrega copter.parm, que sobe o
-  nativo para ATC_RAT_YAW_P = 0.3. Em guinada o cc_pid voa com ~54% do P de
-  taxa do nativo; o bloco de ganhos do resumo.txt mostra a razao.
+  Os numeros acima sao dos ganhos do copter.parm. Com os do AutoTune
+  (controladores/nativo.yaml) o alvo e mais lento — ATC_ACC_Y_MAX cai para
+  115 deg/s2 — e o ATC_ANG_YAW_P cai de 4,5 para 2,3; rode de novo antes de
+  citar. O nativo e o cc_pid voam com os mesmos ganhos; o bloco de ganhos do
+  resumo.txt confirma.
 
 vento:
   # injetor ligado com intensidade zero, como no nominal: e a mensagem WND que

@@ -7,7 +7,8 @@ GIF e tabelas).
 Mensagens de interesse, com os nomes de campo conferidos contra logs reais deste
 projeto:
 
-    ATT    DesRoll, Roll, DesPitch, Pitch, DesYaw, Yaw
+    ANG    DesRoll, Roll, DesPitch, Pitch, DesYaw, Yaw     atitude na taxa do laco
+    ATT    os mesmos campos, mas sempre a 10 Hz (reserva, quando nao ha ANG)
     RATE   RDes, R, ROut, PDes, P, POut, YDes, Y, YOut
     PIDR   Tar, Act, Err, P, I, D, FF          (idem PIDP, PIDY)
     XKF1   PN, PE, PD, VN, VE, VD              posicao/velocidade em NED
@@ -27,7 +28,7 @@ from pymavlink import DFReader
 from .eixos import CAMPOS_PID, COLUNAS, EIXOS
 
 # Mensagens lidas por padrao. WND so existe em ensaios com o injetor ativo.
-TIPOS_PADRAO = ("ATT", "RATE", "PIDR", "PIDP", "PIDY", "XKF1", "POS",
+TIPOS_PADRAO = ("ANG", "ATT", "RATE", "PIDR", "PIDP", "PIDY", "XKF1", "POS",
                 "RCOU", "CC", "WND", "MODE")
 
 
@@ -146,7 +147,7 @@ def janela_perfil(dados, folga=2.0, duracao_s=None):
     return 0.0, 0.0
 
 
-def serie_unificada(dados, taxa_hz=50.0, msg_pid="PIDR", janela=None,
+def serie_unificada(dados, taxa_hz=400.0, msg_pid="PIDR", janela=None,
                     duracao_s=None):
     """Reamostra tudo numa grade unica e devolve (grade, {coluna: array}).
 
@@ -157,6 +158,10 @@ def serie_unificada(dados, taxa_hz=50.0, msg_pid="PIDR", janela=None,
     Os nomes das colunas de cada eixo estao em ``eixos.COLUNAS``. Na guinada,
     ``yaw``/``yaw_des`` sao o rumo absoluto em [0, 360) e ``yaw_rel``/
     ``yaw_des_rel`` sao os mesmos angulos relativos ao rumo do inicio do perfil.
+
+    A grade padrao e de 400 Hz, a taxa do laco de controle. Com os ganhos do
+    AutoTune, um degrau de rolagem sobe em 60 ms; numa grade de 50 Hz, o pico do
+    sobressinal cabe entre duas amostras.
     """
     if janela is None:
         janela = janela_perfil(dados, duracao_s=duracao_s)
@@ -180,13 +185,18 @@ def serie_unificada(dados, taxa_hz=50.0, msg_pid="PIDR", janela=None,
             y = np.degrees(np.unwrap(np.radians(y)))
         col[nome] = _interp(grade, tab["t"], y) * escala
 
-    # atitude (graus)
-    pegar("ATT", "DesRoll", "roll_des")
-    pegar("ATT", "Roll", "roll")
-    pegar("ATT", "DesPitch", "pitch_des")
-    pegar("ATT", "Pitch", "pitch")
-    pegar("ATT", "DesYaw", "yaw_des", angular=True)
-    pegar("ATT", "Yaw", "yaw", angular=True)
+    # atitude (graus). No ArduCopter 4.8 a ATT e escrita SEMPRE a 10 Hz
+    # (Copter::ten_hz_logging_loop); com o bit ATTITUDE_FAST do LOG_BITMASK, a
+    # atitude alvo e a medida na taxa do laco vao na ANG (Write_ANG), com os
+    # mesmos campos. Interpolar a ATT de 10 Hz reduzia um transitorio de 0,1 s a
+    # uma ou duas amostras.
+    fonte_att = "ANG" if "Roll" in dados.get("ANG", {}) else "ATT"
+    pegar(fonte_att, "DesRoll", "roll_des")
+    pegar(fonte_att, "Roll", "roll")
+    pegar(fonte_att, "DesPitch", "pitch_des")
+    pegar(fonte_att, "Pitch", "pitch")
+    pegar(fonte_att, "DesYaw", "yaw_des", angular=True)
+    pegar(fonte_att, "Yaw", "yaw", angular=True)
 
     # Por eixo: taxas no corpo (graus/s), saida do controlador de taxa
     # (normalizada) e os termos do PID de taxa. Os de rolagem mantem os nomes de

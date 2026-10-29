@@ -1,0 +1,20 @@
+% Gerada por ensaios/tabelas_monografia.py — nao editar a mao.
+\begin{tabular}{lllrrrr}
+\toprule
+Eixo & Torque & Controlador & Desvio máx. (\si{\degree}) & Recuperação (\si{\second}) & RMSE (\si{\degree}) & $u_{\max}$ \\
+\midrule
+Rolagem & pulso & nativo & 0,90 & 1,32 & 0,229 & 0,051 \\
+Rolagem & pulso & \codigo{cc\_pid} & 0,91 & 1,21 & 0,224 & 0,051 \\
+Arfagem & pulso & nativo & 0,93 & 1,25 & 0,233 & 0,050 \\
+Arfagem & pulso & \codigo{cc\_pid} & 0,94 & 1,25 & 0,233 & 0,050 \\
+Guinada & pulso & nativo & 6,06 & 0,35 & 1,678 & 0,254 \\
+Guinada & pulso & \codigo{cc\_pid} & 5,70 & 0,35 & 1,563 & 0,242 \\
+\addlinespace
+Rolagem & degrau & nativo & 0,60 & 2,25 & 0,070 & 0,034 \\
+Rolagem & degrau & \codigo{cc\_pid} & 0,61 & 2,09 & 0,070 & 0,034 \\
+Arfagem & degrau & nativo & 0,61 & 2,15 & 0,073 & 0,033 \\
+Arfagem & degrau & \codigo{cc\_pid} & 0,62 & 2,22 & 0,073 & 0,033 \\
+Guinada & degrau & nativo & 2,56 & 22,18 & 0,847 & 0,093 \\
+Guinada & degrau & \codigo{cc\_pid} & 2,56 & 22,09 & 0,847 & 0,093 \\
+\bottomrule
+\end{tabular}

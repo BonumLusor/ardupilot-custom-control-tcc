@@ -320,10 +320,20 @@ python ensaios/run_ensaio.py --cenario guinada               # uma pasta inteira
 python ensaios/run_ensaio.py --cenario guinada/torque_pulso --controlador nativo
 python ensaios/run_ensaio.py --cenario torque_pulso          # o pulso em todas as pastas
 python ensaios/run_ensaio.py --analisar ensaios/resultados --sem-gif   # reprocessa tudo
+
+python ensaios/tabelas_monografia.py --desde 2026-10-27  # tabelas do Cap. 6 (monografia/tabelas/)
+python modelagem/validacao.py --desde 2026-10-27 \
+    --tabela monografia/tabelas/validacao.tex --figuras monografia/figuras   # validação do Cap. 4
 ```
 
-Sem argumentos, o `run_ensaio.py` roda os 15 cenários com cada controlador de
-`ensaios/controladores/` — 30 voos, um SITL por vez, ~25 min sem GIF e ~50 min com. O SITL roda
+O `tabelas_monografia.py` pega o ensaio mais recente de cada cenário × controlador (a partir de
+`--desde`) e escreve as tabelas de resultados no formato da monografia. O `validacao.py` simula a
+malha fechada com o modelo linear do Cap. 4 e o controlador que voou, alimentada pelo torque
+registrado em cada voo, calcula as métricas com o mesmo código da análise e, nas varreduras,
+identifica `a` e `b` da planta no domínio da frequência.
+
+Sem argumentos, o `run_ensaio.py` roda os 16 cenários com cada controlador de
+`ensaios/controladores/` — 32 voos, um SITL por vez, ~27 min sem GIF e ~53 min com. O SITL roda
 **sem janela**, com a saída do binário no `sitl.log` de cada ensaio (ver
 [O SITL sem janela](#o-sitl-sem-janela-e-por-que-alguns-voos-falhavam)). Um voo que falha é
 tentado de novo (`--tentativas`, padrão 2), e o lote segue até o fim e termina com um resumo do
@@ -339,6 +349,29 @@ ensaio** — é essa tabela que se lê para escolher ganho, e ela traz os ganhos
 inércia do veículo de cada linha — e o `tabela.tex` sai pronto para `\input{}` na monografia, com
 **uma linha por eixo** (um ensaio dos três eixos vira três).
 
+### Os ganhos do PID: AutoTune do ArduPilot
+
+Os ganhos do `nativo` (e, com prefixo `CC2_`, do `cc_pid`) vêm do AutoTune do ArduPilot rodado
+no mesmo SITL dos ensaios, e não do `copter.parm`, que não foi sintonizado para este veículo:
+
+```bash
+python ensaios/autotune.py                 # rolagem, arfagem e guinada (AUTOTUNE_AXES 7)
+python ensaios/autotune.py --eixos 4       # só guinada
+```
+
+O voo segue o roteiro do autotest do ArduPilot: decola em GUIDED, passa para LOITER com os
+manches no centro, entra em AUTOTUNE e espera o `AutoTune: Success` (~8 min simulados, ~1 min
+de parede). Depois **pousa sem sair do AUTOTUNE**, porque só o desarme dentro do modo grava os
+ganhos (`AC_AutoTune::disarmed`). Como o SITL dos ensaios sobe com `-w`, o que vale é a pasta
+`ensaios/resultados/autotune/<carimbo>/`: o `ganhos.yaml` traz os ganhos de antes e de depois e
+os blocos prontos para o `ganhos:` dos dois YAMLs de controlador. O `run_ensaio.py` aplica o
+`ganhos:` depois do reboot, porque os `CC2_*` só existem com o backend já instanciado.
+
+O AutoTune grava também o `ATC_ACC_*_MAX`, que limita o alvo modelado. Esse valor vai igual para
+os dois controladores, porque quem modela o alvo é sempre o `AC_AttitudeControl` nativo. Na
+guinada ele fixa `I = P/10` (`AUTOTUNE_YAW_PI_RATIO_FINAL`), então a recuperação de um torque
+sustentado continua lenta, com constante de tempo ~`P/I` = 10 s.
+
 ### Cenários
 
 Os cenários ficam em uma pasta por eixo, e cada pasta tem os mesmos ensaios:
@@ -348,9 +381,13 @@ ensaios/cenarios/
 ├── rolagem/           nominal (10°)   torque_pulso (15 rad/s²)  torque_degrau (10 rad/s²)  torque_chirp (0,2–10 Hz)
 ├── arfagem/           nominal (10°)   torque_pulso (15 rad/s²)  torque_degrau (10 rad/s²)  torque_chirp (0,2–10 Hz)
 ├── guinada/           nominal (30°)   torque_pulso (3 rad/s²)   torque_degrau (1 rad/s²)   torque_chirp (0,1–5 Hz)
-└── rolagem_arfagem_guinada/
-                      nominal         torque_pulso              torque_degrau              (os três eixos juntos)
+├── rolagem_arfagem_guinada/
+│                     nominal         torque_pulso              torque_degrau              (os três eixos juntos)
+└── vento/             rajada (10 m/s, meio cosseno de 3 s, de lado)
 ```
+
+O `vento/rajada` é o ensaio que sustenta a divisão entre as famílias do injetor: no SITL a rajada
+move a aeronave, mas quase não perturba a atitude (ver [Dois achados](#dois-achados-que-mudam-o-texto-da-monografia)).
 
 O nome de um cenário é o caminho dele: `guinada/torque_pulso`. É esse nome que o `--cenario`
 aceita, que organiza `resultados/` e que vai na coluna `cenario` do consolidado. Para um ensaio
@@ -377,13 +414,15 @@ se comparar com o seu par. Rolagem e arfagem iguais somam um momento sobre a dia
 passa por `M1` e `M2`: só `M3` e `M4` têm braço em torno dela, e cada um trabalha o dobro do que
 num ensaio de um eixo — é o carregamento mais severo da mistura.
 
-> **Ao comparar `nativo` × `cc_pid` em guinada:** o backend PID de exemplo nasce com 90% dos
-> ganhos *compilados* do ArduPilot ([`AC_CustomControl_PID.cpp:323`](ardupilot/libraries/AC_CustomControl/AC_CustomControl_PID.cpp#L323)),
-> mas o SITL carrega [`copter.parm`](ardupilot/Tools/autotest/default_params/copter.parm), que
-> sobe o nativo para `ATC_RAT_YAW_P = 0.3`. Em rolagem a razão é 0,90; em guinada, **0,54**. O
-> `resumo.txt` de cada ensaio mostra essa razão.
+> **Ao comparar `nativo` × `cc_pid`:** as medidas abaixo são de antes do AutoTune, quando o
+> backend PID de exemplo voava com 90% dos ganhos *compilados* do ArduPilot
+> ([`AC_CustomControl_PID.cpp:323`](ardupilot/libraries/AC_CustomControl/AC_CustomControl_PID.cpp#L323))
+> e o nativo com o [`copter.parm`](ardupilot/Tools/autotest/default_params/copter.parm)
+> (`ATC_RAT_YAW_P = 0.3`): em guinada o cc_pid tinha **54%** do P de taxa do nativo. Agora os dois
+> voam com os ganhos do AutoTune (ver [Os ganhos do PID](#os-ganhos-do-pid-autotune-do-ardupilot)),
+> e no `guinada/torque_degrau` saem iguais: 2,55° / 22,2 s e 2,55° / 22,1 s.
 
-Primeiras medidas (uma corrida de cada, semente fixa):
+Primeiras medidas (uma corrida de cada, semente fixa, ganhos do `copter.parm`):
 
 | ensaio | `nativo` | `cc_pid` |
 |---|---|---|
@@ -573,6 +612,18 @@ Com `time.time()`, um "tempo decorrido" vira negativo, o campo `uint32` de `time
 `SET_ATTITUDE_TARGET` estoura e o ensaio morre em pleno voo com um `struct.error`. Os laços de
 timeout também esperariam a mais. Só o carimbo da pasta de resultado vem de `datetime.now()`, que
 é data de calendário e não intervalo.
+
+### A atitude vem da `ANG`, não da `ATT`
+
+No ArduCopter 4.8 a mensagem `ATT` é gravada **sempre a 10 Hz**
+([`Copter.cpp`](ardupilot/ArduCopter/Copter.cpp), `ten_hz_logging_loop`). Com o bit
+`ATTITUDE_FAST` do `LOG_BITMASK`, a atitude alvo e a medida na taxa do laço vão na `ANG`
+(`AC_AttitudeControl::Write_ANG`), com os mesmos campos. A análise lê a `ANG` e monta a grade
+do `series.csv` a 400 Hz. Antes disso ela interpolava a `ATT` de 10 Hz, e um degrau de rolagem,
+que com os ganhos do AutoTune sobe em ~45 ms, cabia em uma ou duas amostras: o sobressinal do
+mesmo degrau saía entre 4% e 22% conforme a posição das amostras, e o desvio do pulso, até 13%
+menor. Todas as pastas de resultado foram reanalisadas em 27/10/2026; as medidas citadas mais
+acima neste README, de antes disso, ainda são as da `ATT`.
 
 ### O SITL sem janela, e por que alguns voos falhavam
 

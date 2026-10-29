@@ -1104,9 +1104,15 @@ def voar(cen, ctl, pasta, speedup, instancia):
         # reinicio, entao vao juntos: cada reboot e uma chance de o SITL nao voltar
         # a escutar, e o ensaio ja tem pontos de falha suficientes.
         params_ctl = dict(ctl.get("params") or {})
-        params_ctl.update(ctl.get("ganhos") or {})
         aplicar_params(m, {**PARAMS_BASE, **params_ctl}, "de base e do controlador")
         m = reiniciar(m, instancia, sitl=sitl)
+
+        # Os ganhos vao DEPOIS do reboot: os CC2_* do backend so existem quando
+        # o firmware sobe com CC_TYPE=2 e instancia o AC_CustomControl_PID. Ganho
+        # nao precisa de reinicio — o controlador le o valor a cada passo.
+        ganhos = ctl.get("ganhos") or {}
+        if ganhos:
+            aplicar_params(m, ganhos, "de ganhos do controlador")
 
         # Os WND_* so existem DEPOIS do reboot, e so quando o vento.lua ja rodou e
         # registrou a tabela dinamica — o que leva alguns segundos.
@@ -1234,8 +1240,10 @@ def pastas_de_resultado(caminhos):
     """Pastas de ensaio (as que tem .BIN) nos caminhos dados ou abaixo deles.
 
     Aceitar a pasta de cima — resultados/, ou resultados/guinada/ — e o que
-    torna o --analisar pratico com os resultados organizados em pastas.
+    torna o --analisar pratico com os resultados organizados em pastas. Os voos
+    de resultados/autotune/ (autotune.py) ficam de fora: nao sao ensaios.
     """
+    autotune = (RESULTADOS / "autotune").resolve()
     achadas = []
     for c in caminhos:
         c = Path(c)
@@ -1244,7 +1252,9 @@ def pastas_de_resultado(caminhos):
         candidatas = [c] if any(c.glob("*.BIN")) else sorted(
             {b.parent for b in c.rglob("*.BIN")})
         for p in candidatas:
-            if not p.name.endswith("_falhou") and p not in achadas:
+            if p.name.endswith("_falhou") or autotune in p.resolve().parents:
+                continue
+            if p not in achadas:
                 achadas.append(p)
     return achadas
 

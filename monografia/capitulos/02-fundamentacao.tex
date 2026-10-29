@@ -1,0 +1,852 @@
+% ======================================================================
+%  CAPÍTULO 2 — FUNDAMENTAÇÃO TEÓRICA
+%
+%  Os valores numéricos do ArduPilot e do SITL citados aqui foram
+%  conferidos no código-fonte (commit ce9c2d01a4) e nos params.parm
+%  gravados pelos ensaios em ensaios/resultados/.
+% ======================================================================
+\chapter{Fundamentação teórica}
+\label{cap:fundamentacao}
+
+Este capítulo reúne a base teórica sobre a qual o trabalho se apoia. A
+Seção~\ref{sec:atitude} define os referenciais e as representações de atitude;
+as Seções~\ref{sec:modelo} e~\ref{sec:linearizacao} derivam o modelo dinâmico
+do quadrirrotor e sua aproximação linear em torno do voo pairado. A
+Seção~\ref{sec:ardupilot} descreve como o ArduPilot estima a atitude e a
+controla, e onde o controlador proposto se insere nessa cadeia. As
+Seções~\ref{sec:tecnicas} a~\ref{sec:identificacao} tratam das técnicas de
+controle, dos modelos de perturbação e da identificação no domínio da
+frequência, e a Seção~\ref{sec:sitl} descreve o simulador em que os ensaios
+são executados.
+
+% ----------------------------------------------------------------------
+\section{Referenciais e representação da atitude}
+\label{sec:atitude}
+
+Adotam-se dois referenciais, ambos dextrógiros e consistentes com a convenção
+do ArduPilot. O referencial inercial local $\{\mathcal{N}\}$ é o NED
+(\textit{North-East-Down}), com origem fixa na superfície e eixos apontando
+para o norte, para o leste e para baixo; a hipótese de Terra plana e sem
+rotação é adequada às distâncias e às durações envolvidas~\cite{beard2012}. O
+referencial do corpo $\{\mathcal{B}\}$ é o FRD (\textit{Forward-Right-Down}),
+com origem no centro de massa e eixos $x_b$ para a frente, $y_b$ para a
+direita e $z_b$ para baixo (Figura~\ref{fig:quadx}).
+
+\subsection{Ângulos de Euler}
+
+A orientação de $\{\mathcal{B}\}$ em relação a $\{\mathcal{N}\}$ pode ser
+descrita pelos ângulos de Euler na sequência $Z$-$Y$-$X$: guinada $\psi$ em
+torno de $z$, arfagem $\theta$ em torno do $y$ intermediário e rolagem $\phi$
+em torno de $x_b$. A matriz de rotação que leva vetores do corpo para o
+referencial inercial é~\cite{beard2008,sabatino2015}
+\begin{equation}
+\matriz{R} = \matriz{R}_z(\psi)\,\matriz{R}_y(\theta)\,\matriz{R}_x(\phi) =
+\begin{bmatrix}
+c_\theta c_\psi & s_\phi s_\theta c_\psi - c_\phi s_\psi & c_\phi s_\theta c_\psi + s_\phi s_\psi \\
+c_\theta s_\psi & s_\phi s_\theta s_\psi + c_\phi c_\psi & c_\phi s_\theta s_\psi - s_\phi c_\psi \\
+-s_\theta       & s_\phi c_\theta                         & c_\phi c_\theta
+\end{bmatrix},
+\label{eq:rotacao}
+\end{equation}
+em que $c_\alpha = \cos\alpha$ e $s_\alpha = \sin\alpha$. A velocidade
+angular do corpo, $\vetor{\omega} = [p\ q\ r]^{\mathsf{T}}$, é a grandeza
+medida pelos giroscópios e não coincide com as derivadas dos ângulos de Euler.
+A relação entre ambas é
+\begin{equation}
+\begin{bmatrix} \dot\phi \\ \dot\theta \\ \dot\psi \end{bmatrix} =
+\begin{bmatrix}
+1 & s_\phi t_\theta & c_\phi t_\theta \\
+0 & c_\phi          & -s_\phi \\
+0 & s_\phi/c_\theta & c_\phi/c_\theta
+\end{bmatrix}
+\vetor{\omega},
+\qquad t_\theta = \tan\theta,
+\label{eq:cinematica-euler}
+\end{equation}
+singular em $\theta = \pm\pi/2$. Os ângulos de Euler são a representação mais
+intuitiva para especificar referências e apresentar resultados, e é nela que
+as métricas deste trabalho são calculadas. Não são, contudo, a representação
+usada internamente pelo firmware.
+
+\subsection{Quatérnios, matriz de cossenos diretores e vetor de rotação}
+
+O ArduPilot representa a atitude por quatérnios unitários
+$\vetor{q} = [q_0\ q_1\ q_2\ q_3]^{\mathsf{T}} =
+[\cos(\alpha/2)\ \ \vetor{e}^{\mathsf{T}}\sin(\alpha/2)]^{\mathsf{T}}$, que
+descrevem uma rotação de ângulo $\alpha$ em torno do eixo unitário
+$\vetor{e}$, sem singularidades. A biblioteca matemática do firmware segue a
+convenção de Hamilton para o produto de quatérnios, e seus testes unitários
+conferem a conversão de quatérnio para matriz de rotação contra o exemplo
+publicado por \citeonline{sommer2018}, que discutem as inconsistências
+causadas pela convenção alternativa. Nessa convenção, a cinemática de atitude
+é
+\begin{equation}
+\dot{\vetor{q}} = \frac{1}{2}\,\vetor{q} \otimes
+\begin{bmatrix} 0 \\ \vetor{\omega} \end{bmatrix},
+\label{eq:cinematica-quaternio}
+\end{equation}
+com $\otimes$ o produto de Hamilton e $\vetor{q}$ a rotação do corpo para o
+referencial inercial.
+
+Duas outras representações aparecem no código do ArduPilot e na literatura
+que ele referencia. A primeira é a própria matriz $\matriz{R}$, ou matriz de
+cossenos diretores (DCM), integrada diretamente por
+$\dot{\matriz{R}} = \matriz{R}\,[\vetor{\omega}]_\times$ e periodicamente
+re-ortogonalizada: é a base do estimador \codigo{AP\_AHRS\_DCM}, derivado do
+trabalho de \citeonline{premerlani2009}. A segunda é o vetor de rotação
+$\delta\vetor{\theta} = \alpha\,\vetor{e}$, uma parametrização mínima, de três
+componentes, adequada a representar \emph{erros} pequenos de atitude; é a
+formulação de erro adotada nas derivações simbólicas de filtros de Kalman que
+acompanham o código, conforme \citeonline{pittelkau2003}.
+
+A distinção entre a representação interna e a de apresentação tem
+consequência prática. O firmware modela a referência de atitude como uma
+rotação suave em quatérnio; quando os três eixos são comandados ao mesmo
+tempo, os ângulos de Euler dessa referência deixam de evoluir de forma
+independente, e a referência expressa em rolagem e arfagem pode ultrapassar
+transitoriamente o valor final comandado, sem que o controlador tenha
+participação nisso. Por esse motivo, nos ensaios com os três eixos
+simultâneos, a comparação entre controladores se faz pelo erro de
+rastreamento em relação à referência efetivamente modelada, e não apenas pelo
+sobressinal em relação ao degrau nominal.
+
+% ----------------------------------------------------------------------
+\section{Modelo dinâmico do quadrirrotor}
+\label{sec:modelo}
+
+\subsection{Princípio de funcionamento e configuração X}
+
+O quadrirrotor possui quatro rotores de passo fixo, montados nas extremidades
+de braços de comprimento $\ell$ e girando aos pares em sentidos opostos, de
+modo que os torques de reação se cancelem em equilíbrio. Na configuração X,
+adotada neste trabalho, os braços formam ângulos de \ang{45} com o eixo
+longitudinal. A Figura~\ref{fig:quadx} mostra a numeração e o sentido de
+rotação dos motores segundo a convenção do ArduPilot.
+
+\begin{figure}[htbp]
+\centering
+\caption{Quadrirrotor em configuração X, visto de cima, com a numeração e o
+sentido de rotação dos motores adotados pelo ArduPilot.}
+\label{fig:quadx}
+\begin{tikzpicture}[
+    font=\small,
+    seta/.style={-{Stealth[length=2.2mm]}},
+    giro/.style={-{Stealth[length=2mm]}, thick},
+    cota/.style={{Stealth[length=1.6mm]}-{Stealth[length=1.6mm]}},
+]
+    % braços
+    \draw[line width=2.2pt, gray!70] (-2,-2) -- (2,2);
+    \draw[line width=2.2pt, gray!70] (-2,2) -- (2,-2);
+    \fill[gray!40] (0,0) circle (0.42);
+    % rotores: posição na página (x = direita = y_b, y = cima = x_b)
+    \foreach \x/\y/\n/\s in {2/2/1/CCW, -2/-2/2/CCW, -2/2/3/CW, 2/-2/4/CW} {
+        \fill[white] (\x,\y) circle (0.72);
+        \draw[thick] (\x,\y) circle (0.72);
+        \node at (\x,\y+0.1) {\textbf{M\n}};
+        \node[font=\scriptsize] at (\x,\y-0.3) {\s};
+    }
+    % sentido de giro visto de cima (anti-horário = CCW)
+    \foreach \x/\y in {2/2, -2/-2}
+        \draw[giro, blue!70!black] ($(\x,\y)+(-30:0.95)$)
+            arc[start angle=-30, end angle=210, radius=0.95];
+    \foreach \x/\y in {-2/2, 2/-2}
+        \draw[giro, red!70!black] ($(\x,\y)+(210:0.95)$)
+            arc[start angle=210, end angle=-30, radius=0.95];
+    % eixos do corpo; z_b entra na página
+    \draw[seta, very thick] (0,0.42) -- (0,1.45) node[above] {$x_b$ (frente)};
+    \draw[seta, very thick] (0.42,0) -- (1.45,0) node[right] {$y_b$};
+    \draw[thick, fill=white] (0,0) circle (0.13);
+    \draw[thick] (-0.09,-0.09) -- (0.09,0.09) (-0.09,0.09) -- (0.09,-0.09);
+    \node[left] at (-0.45,0) {$z_b$};
+    % braço e alavanca
+    \node[above left=-2pt, font=\footnotesize] at (1.0,1.0) {$\ell$};
+    \draw[densely dotted] (0,-0.45) -- (0,-3.15);
+    \draw[densely dotted] (2,-2.72) -- (2,-3.15);
+    \draw[cota] (0,-3.0) -- (2,-3.0) node[midway, below] {$\ell_{xy}$};
+\end{tikzpicture}
+\fonte{Elaborada pelo autor.}
+\end{figure}
+
+A rolagem é produzida pela diferença de empuxo entre os lados direito e
+esquerdo, e a arfagem, pela diferença entre a frente e a traseira. A guinada
+não tem atuador próprio: resulta do desequilíbrio entre os torques de reação
+dos pares que giram em sentidos opostos. Como esse torque de reação é muito
+menor que o momento que o mesmo empuxo produz com o braço, a autoridade de
+controle em guinada é muito inferior à de rolagem e arfagem --- característica
+quantificada na Seção~\ref{sec:sitl} para a aeronave simulada.
+
+\subsection{Hipóteses de modelagem}
+
+O modelo é derivado sob as hipóteses usuais da
+literatura~\cite{bouabdallah2007,beard2008,sabatino2015}:
+\begin{alineas}
+    \item a aeronave é um corpo rígido de massa constante, simétrico em relação
+          aos planos $x_b z_b$ e $y_b z_b$, de modo que o tensor de inércia é
+          diagonal, $\matriz{J} = \operatorname{diag}(J_{xx}, J_{yy}, J_{zz})$;
+    \item o centro de massa coincide com a origem de $\{\mathcal{B}\}$ e está
+          no plano dos rotores;
+    \item o empuxo e o torque de reação de cada rotor são proporcionais ao
+          quadrado da sua velocidade de rotação $\Omega_i$;
+    \item a dinâmica dos motores e dos controladores eletrônicos de
+          velocidade, o arrasto do corpo, o \textit{blade flapping} e o efeito
+          solo são desprezados no modelo nominal e tratados como fontes
+          conhecidas de discrepância.
+\end{alineas}
+
+\subsection{Equações de Newton-Euler}
+
+A dinâmica de translação, escrita no referencial inercial, é
+\begin{equation}
+\dot{\vetor{p}} = \vetor{v}, \qquad
+m\,\dot{\vetor{v}} = m g\,\vetor{e}_3 - T\,\matriz{R}\,\vetor{e}_3 + \vetor{f}_d,
+\label{eq:translacao}
+\end{equation}
+em que $\vetor{p}$ e $\vetor{v}$ são a posição e a velocidade do centro de
+massa, $\vetor{e}_3 = [0\ 0\ 1]^{\mathsf{T}}$, $T$ é o empuxo total, que atua
+ao longo de $-z_b$, e $\vetor{f}_d$ reúne as forças de perturbação, entre elas
+a força aerodinâmica devida ao vento. A dinâmica de rotação, escrita no
+referencial do corpo, é dada pela equação de Euler~\cite{beard2008}:
+\begin{equation}
+\matriz{J}\,\dot{\vetor{\omega}} =
+-\vetor{\omega}\times\matriz{J}\,\vetor{\omega} + \vetor{\tau} + \vetor{\tau}_d,
+\label{eq:rotacao-euler}
+\end{equation}
+em que $\vetor{\tau} = [\tau_x\ \tau_y\ \tau_z]^{\mathsf{T}}$ é o torque
+produzido pelos rotores e $\vetor{\tau}_d$ é um torque de perturbação aditivo.
+É por $\vetor{\tau}_d$ que entram, neste trabalho, os efeitos de momento não
+modelados --- assimetrias, rajadas que atingem os rotores de forma desigual,
+perda de eficiência de um rotor --- e as perturbações de torque usadas nos
+ensaios (Seção~\ref{sec:perturbacoes}).
+
+O conjunto formado por \eqref{eq:translacao}, \eqref{eq:rotacao-euler} e pela
+cinemática \eqref{eq:cinematica-euler} ou \eqref{eq:cinematica-quaternio}
+define um sistema de doze estados,
+$\vetor{x} = [\vetor{p}^{\mathsf{T}}\ \vetor{v}^{\mathsf{T}}\
+\phi\ \theta\ \psi\ \vetor{\omega}^{\mathsf{T}}]^{\mathsf{T}}$, com quatro
+entradas, $\vetor{u} = [T\ \tau_x\ \tau_y\ \tau_z]^{\mathsf{T}}$. A
+subatuação fica evidente: as acelerações horizontais não podem ser comandadas
+diretamente, apenas por meio da inclinação do vetor de empuxo, o que impõe a
+estrutura em cascata em que a atitude é a malha interna.
+
+\subsection{Modelo dos rotores e matriz de alocação}
+
+Cada rotor $i$ produz um empuxo $T_i = k_T\,\Omega_i^2$ ao longo de $-z_b$ e
+um torque de reação $Q_i = k_Q\,\Omega_i^2 = \kappa\,T_i$ em torno de $z_b$,
+com $\kappa = k_Q/k_T$. O torque de reação tem sentido oposto ao da rotação do
+rotor: um rotor que gira no sentido anti-horário visto de cima (CCW) produz
+sobre o corpo um torque no sentido horário, isto é, positivo em torno de
+$z_b$. Com o motor $i$ na posição $(x_i, y_i)$ do plano dos rotores, o torque
+do empuxo é $(x_i, y_i, 0)\times(0, 0, -T_i) = (-y_i T_i,\ x_i T_i,\ 0)$. Na
+configuração X, $|x_i| = |y_i| = \ell_{xy} = \ell/\sqrt{2}$, e a numeração da
+Figura~\ref{fig:quadx} leva à matriz de alocação
+\begin{equation}
+\begin{bmatrix} T \\ \tau_x \\ \tau_y \\ \tau_z \end{bmatrix} =
+\underbrace{\begin{bmatrix}
+1          & 1          & 1          & 1 \\
+-\ell_{xy} & \ell_{xy}  & \ell_{xy}  & -\ell_{xy} \\
+\ell_{xy}  & -\ell_{xy} & \ell_{xy}  & -\ell_{xy} \\
+\kappa     & \kappa     & -\kappa    & -\kappa
+\end{bmatrix}}_{\matriz{M}}
+\begin{bmatrix} T_1 \\ T_2 \\ T_3 \\ T_4 \end{bmatrix}.
+\label{eq:alocacao}
+\end{equation}
+A matriz $\matriz{M}$ é invertível, e $\matriz{M}^{-1}$ fornece os empuxos
+individuais que realizam um par empuxo--torque desejado, desde que nenhum
+deles saia da faixa disponível. A comparação entre a segunda e a quarta linhas
+explica a fraca autoridade em guinada: um mesmo padrão de diferença de empuxo
+produz torques na razão $\ell_{xy}/\kappa$ entre rolagem e guinada, razão que,
+na aeronave simulada, é da ordem de 15 (Seção~\ref{sec:forcas-momentos}).
+
+% ----------------------------------------------------------------------
+\section{Linearização em torno do voo pairado}
+\label{sec:linearizacao}
+
+O ponto de equilíbrio de interesse é o voo pairado: $\vetor{v} = \vetor{0}$,
+$\phi = \theta = 0$, $\psi = \psi_0$, $\vetor{\omega} = \vetor{0}$, com
+$T = mg$ e $\vetor{\tau} = \vetor{0}$. Tomando, sem perda de generalidade,
+$\psi_0 = 0$ e desprezando produtos de pequenas variações, obtém-se de
+\eqref{eq:rotacao}--\eqref{eq:rotacao-euler}
+\begin{equation}
+\delta\ddot{x} = -g\,\delta\theta, \quad
+\delta\ddot{y} = g\,\delta\phi, \quad
+\delta\ddot{z} = -\frac{\delta T}{m}, \quad
+\ddot\phi = \frac{\tau_x}{J_{xx}}, \quad
+\ddot\theta = \frac{\tau_y}{J_{yy}}, \quad
+\ddot\psi = \frac{\tau_z}{J_{zz}}.
+\label{eq:linear}
+\end{equation}
+O termo giroscópico $\vetor{\omega}\times\matriz{J}\vetor{\omega}$ e o
+acoplamento da cinemática \eqref{eq:cinematica-euler} são de segunda ordem e
+desaparecem; o sistema se decompõe em subsistemas de altitude, de atitude e de
+posição horizontal, este último alimentado pela atitude. Essa estrutura
+fundamenta tanto a arquitetura em cascata do firmware quanto o projeto do
+controlador por eixo.
+
+Cada eixo de atitude é, em primeira aproximação, um duplo integrador. Para a
+rolagem, com estado $\vetor{x}_\phi = [\phi\ \ p]^{\mathsf{T}}$,
+\begin{equation}
+\dot{\vetor{x}}_\phi =
+\underbrace{\begin{bmatrix} 0 & 1 \\ 0 & 0 \end{bmatrix}}_{\matriz{A}}
+\vetor{x}_\phi +
+\underbrace{\begin{bmatrix} 0 \\ 1/J_{xx} \end{bmatrix}}_{\matriz{B}}
+(\tau_x + \tau_{d,x}),
+\qquad
+\frac{\Phi(s)}{\tau_x(s)} = \frac{1}{J_{xx}\,s^2},
+\label{eq:duplo-integrador}
+\end{equation}
+e analogamente para arfagem e guinada. O par $(\matriz{A}, \matriz{B})$ é
+controlável, pois $[\matriz{B}\ \ \matriz{A}\matriz{B}]$ tem posto 2, e o par
+$(\matriz{A}, \matriz{C})$ é observável já com $\matriz{C} = [1\ \ 0]$; na
+prática, os dois estados são disponíveis, o ângulo pelo estimador e a
+velocidade angular pelo giroscópio. Os dois autovalores na origem tornam o
+sistema não assintoticamente estável: um torque de perturbação constante faz
+o ângulo divergir quadraticamente no tempo, o que torna a ação integral, ou
+uma estimativa da perturbação, indispensável para erro nulo em regime.
+
+Como o controlador é executado a cada $T_s$ segundos e o torque comandado é
+mantido constante entre execuções, o modelo de projeto é a discretização por
+segurador de ordem zero (ZOH)~\cite{franklin1998}:
+\begin{equation}
+\vetor{x}_{\phi,k+1} =
+\begin{bmatrix} 1 & T_s \\ 0 & 1 \end{bmatrix} \vetor{x}_{\phi,k} +
+\begin{bmatrix} T_s^2/(2J_{xx}) \\ T_s/J_{xx} \end{bmatrix} \tau_{x,k},
+\label{eq:discreto}
+\end{equation}
+com $T_s = \SI{2.5}{\milli\second}$ para a taxa de \SI{400}{\hertz} usada
+neste trabalho. O duplo integrador é o modelo \emph{nominal}; a planta efetiva
+vista pelo controlador inclui ainda a dinâmica dos motores, o filtro passa-baixas
+dos giroscópios, os atrasos de amostragem e a saturação da alocação, que
+acrescentam atraso de fase e limitam a banda passante alcançável. É essa
+diferença que a identificação da Seção~\ref{sec:identificacao} quantifica.
+
+% ----------------------------------------------------------------------
+\section{Estimação e controle de atitude no ArduPilot}
+\label{sec:ardupilot}
+
+\subsection{Laço de execução}
+
+No ArduCopter, a malha de atitude é executada no laço rápido do escalonador,
+na taxa definida pelo parâmetro \codigo{SCHED\_LOOP\_RATE}, de
+\SI{400}{\hertz} neste trabalho. A cada ciclo, na ordem definida em
+\codigo{ArduCopter/Copter.cpp}~\cite{ardupilot2026}, o firmware lê os sensores
+inerciais, executa o controlador de velocidade angular, executa o controlador
+customizado, quando habilitado, envia os comandos aos motores e só então
+atualiza o estimador de atitude e o modo de voo, cujo controlador de ângulo
+produz o alvo de velocidade angular consumido no ciclo seguinte. A ordem
+minimiza a latência entre a amostra do giroscópio e o comando dos motores. A
+Figura~\ref{fig:cascata} resume a cadeia.
+
+\begin{figure}[htbp]
+\centering
+\caption{Cadeia de controle de atitude do ArduCopter e ponto de inserção do
+\codigo{AC\_CustomControl}. O modelador de referência fornece também a
+velocidade angular de alimentação direta $\vetor{\omega}_{ff}$, e o
+controlador customizado recebe as mesmas referências e estimativas que o
+nativo.}
+\label{fig:cascata}
+\begin{tikzpicture}[
+    font=\scriptsize,
+    bloco/.style={draw, rectangle, align=center, minimum height=1.15cm,
+                  text width=1.75cm, inner sep=2pt},
+    seta/.style={-{Stealth[length=1.8mm]}},
+    node distance=0.8cm,
+]
+    \node[bloco] (ref) {Modo de voo\\(referência)};
+    \node[bloco, right=of ref] (mod) {Modelador de referência};
+    \node[bloco, right=of mod] (ang) {Controlador de ângulo};
+    \node[bloco, right=of ang] (taxa) {PID de velocidade angular};
+    \node[bloco, right=of taxa] (mix) {Alocação de empuxo};
+    \node[bloco, right=of mix] (planta) {Motores e aeronave};
+    \node[bloco, below=0.9cm of taxa] (est) {Estimação\\(INS e EKF3)};
+    \node[bloco, dashed, text width=3.3cm, minimum height=0.8cm]
+        (cc) at ($(ang)!0.5!(taxa) + (0,1.55)$)
+        {\codigo{AC\_CustomControl}\\(opcional, por eixo)};
+
+    \draw[seta] (ref) -- (mod);
+    \draw[seta] (mod) -- node[above] {$\vetor{q}^*$} (ang);
+    \draw[seta] (ang) -- node[above] {$\vetor{\omega}^*$} (taxa);
+    \draw[seta] (taxa) -- node[above] {$\vetor{u}$} (mix);
+    \draw[seta] (mix) -- node[above] {PWM} (planta);
+    \draw[seta] (planta.south) |- (est.east);
+    \draw[seta] (est.west) -| node[pos=0.8, left] {$\hat{\vetor{q}}$} (ang.south);
+    \draw[seta] (est.north) -- node[right] {$\vetor{\omega}$} (taxa.south);
+    \draw[seta, dashed] (mod.north) |- (cc.west);
+    \draw[seta, dashed] (cc.east) -| node[pos=0.75, right] {$\vetor{u}_{cc}$} (mix.north);
+\end{tikzpicture}
+\fonte{Elaborada pelo autor com base em \citeonline{ardupilot2026}.}
+\end{figure}
+
+\subsection{Estimação de atitude}
+
+Os sensores inerciais são integrados em incrementos de ângulo e de
+velocidade. Como rotações finitas não comutam, a simples soma dos incrementos
+do giroscópio acumula erro quando a aeronave oscila em mais de um eixo ao
+mesmo tempo (efeito de \textit{coning}); o firmware aplica a correção de
+\textit{coning} descrita por \citeonline{tian2010} antes de entregar os
+incrementos ao estimador.
+
+O estimador padrão é o EKF3, um filtro de Kalman estendido que funde os
+sensores inerciais com GPS, barômetro e magnetômetro e estende o vetor de
+estados com as polarizações dos sensores inerciais, o campo magnético e o
+vento~\cite{ardupilotdev}. A altura e a velocidade vertical entregues aos
+controladores passam ainda por um filtro complementar de terceira ordem
+baseado em \citeonline{widnall1980}, que combina a aceleração vertical com a
+saída do filtro. Como alternativa de contingência, o firmware mantém o
+estimador \codigo{AP\_AHRS\_DCM}, um filtro complementar sobre a matriz de
+cossenos diretores~\cite{premerlani2009}. Em todos os casos, a malha de
+atitude recebe a atitude estimada $\hat{\vetor{q}}$ e a velocidade angular
+$\vetor{\omega}$ medida pelo giroscópio após um filtro passa-baixas
+(\SI{20}{\hertz} neste trabalho, parâmetro \codigo{INS\_GYRO\_FILTER}).
+
+\subsection{Modelador de referência}
+
+A referência que chega do modo de voo --- do piloto, no modo estabilizado, ou
+das malhas externas, nos modos automáticos --- não é aplicada diretamente ao
+controlador de ângulo. Ela passa por um modelador que gera uma atitude alvo
+$\vetor{q}^*$ cinematicamente consistente, com aceleração angular limitada
+pelos parâmetros \codigo{ATC\_ACC\_R\_MAX}, \codigo{ATC\_ACC\_P\_MAX} e
+\codigo{ATC\_ACC\_Y\_MAX} e suavizada por uma constante de tempo
+(\codigo{ATC\_INPUT\_TC} em rolagem e arfagem e \codigo{PILOT\_Y\_RATE\_TC}
+em guinada). O modelador produz também a velocidade angular correspondente à
+trajetória do alvo, $\vetor{\omega}_{ff}$, que é somada à saída do
+controlador de ângulo como alimentação direta quando
+\codigo{ATC\_RATE\_FF\_ENAB} está habilitado~\cite{ardupilot2026}. Um degrau
+comandado ao firmware, portanto, não chega ao controlador como degrau, e sim
+como uma transição de aceleração limitada; os ensaios deste trabalho medem a
+resposta a essa referência modelada, que é a mesma para os dois
+controladores.
+
+\subsection{Controlador de ângulo}
+
+O erro de atitude é calculado em quatérnio e decomposto em duas rotações
+sucessivas: a que alinha o vetor de empuxo estimado ao alvo, que define os
+erros de rolagem e arfagem, e a rotação residual em torno do eixo do empuxo,
+que define o erro de guinada. A decomposição permite priorizar o vetor de
+empuxo: quando o erro de inclinação supera \ang{30}, a correção de guinada é
+atenuada, e o erro de guinada é limitado ao valor que saturaria a saída em
+regime~\cite{ardupilot2026}.
+
+Cada componente $e$ do erro é convertida em velocidade angular alvo por um
+controlador proporcional com limite de aceleração, chamado no código de
+controlador de raiz quadrada:
+\begin{equation}
+\omega^*(e) =
+\begin{cases}
+k\,e, & |e| \le e_{\mathrm{lin}}, \\[2pt]
+\operatorname{sgn}(e)\sqrt{2\,a_{\max}\left(|e| - e_{\mathrm{lin}}/2\right)},
+   & |e| > e_{\mathrm{lin}},
+\end{cases}
+\qquad e_{\mathrm{lin}} = \frac{a_{\max}}{k^2},
+\label{eq:sqrt-controller}
+\end{equation}
+em que $k$ é o ganho \codigo{ATC\_ANG\_*\_P} e $a_{\max}$ é a aceleração
+angular admitida no eixo. Para erros pequenos, a lei é linear; para erros
+grandes, a velocidade angular cresce com a raiz do erro, o que garante que a
+aeronave consiga desacelerar até o alvo sem exceder $a_{\max}$. As duas
+expressões e suas derivadas coincidem em $|e| = e_{\mathrm{lin}}$. O resultado
+é limitado às velocidades angulares máximas configuradas e somado à
+alimentação direta $\vetor{\omega}_{ff}$, expressa no corpo, formando o alvo
+$\vetor{\omega}^*$ do controlador de velocidade angular.
+
+\subsection{Controlador de velocidade angular}
+
+Cada eixo tem um controlador PID (\codigo{AC\_PID}) sobre o erro de
+velocidade angular, cuja saída é um esforço normalizado em $[-1, 1]$, fração
+do torque máximo disponível no eixo:
+\begin{equation}
+u = k_P\,e_f + \int_0^t k_I\,e_f\,\mathrm{d}t' + k_D\,\frac{\mathrm{d}e_f}{\mathrm{d}t}
+    + k_{FF}\,\omega^*_f,
+\qquad e_f = F_E\{\omega^*_f - \omega\},\quad \omega^*_f = F_T\{\omega^*\},
+\label{eq:pid-taxa}
+\end{equation}
+em que $F_T$ e $F_E$ são filtros passa-baixas de primeira ordem sobre o alvo e
+sobre o erro (\codigo{FLTT} e \codigo{FLTE}), e o termo derivativo tem o seu
+próprio filtro (\codigo{FLTD}). O integrador é limitado a \codigo{IMAX} e,
+quando a biblioteca de motores sinaliza saturação no eixo, só pode diminuir
+em módulo, como proteção contra \textit{windup}~\cite{astrom2008}. A Tabela~\ref{tab:ganhos}
+reúne os ganhos usados neste trabalho.
+
+\begin{table}[htbp]
+\centering
+\caption{Ganhos do controlador de atitude nativo nos ensaios deste trabalho.}
+\label{tab:ganhos}
+\begin{tabular}{lccc}
+\toprule
+Parâmetro & Rolagem & Arfagem & Guinada \\
+\midrule
+Ganho de ângulo $k$ (\si{\per\second})      & 26,7     & 25,4     & 2,29 \\
+$k_P$ de velocidade angular                 & 0,0862   & 0,0862   & 0,608 \\
+$k_I$ de velocidade angular                 & 0,0862   & 0,0862   & 0,0608 \\
+$k_D$ de velocidade angular                 & 0,000375 & 0,000375 & 0 \\
+Limite do integrador (\codigo{IMAX})        & 0,5      & 0,5      & 0,5 \\
+Filtro do alvo, \codigo{FLTT} (\si{\hertz}) & 20       & 20       & 20 \\
+Filtro do erro, \codigo{FLTE} (\si{\hertz}) & ---      & ---      & 1 \\
+Filtro do derivativo, \codigo{FLTD} (\si{\hertz}) & 20 & 20       & 20 \\
+Aceleração máxima (\si{\degree\per\second\squared}) & 5857 & 5703 & 115 \\
+\bottomrule
+\end{tabular}
+
+
+\fonte{\citeonline{ardupilot2026}; parâmetros gravados nos ensaios.}
+\nota{\raggedright Ganhos, filtro do erro de guinada e acelerações máximas
+obtidos pelo AutoTune do ArduPilot na própria aeronave simulada
+(Seção~\ref{sec:autotune}); filtros do alvo e do derivativo e limite do
+integrador, que o AutoTune não ajusta, nos padrões compilados. ``---'' indica
+filtro desabilitado.}
+\end{table}
+
+\subsection{Alocação de empuxo}
+
+Os esforços normalizados de rolagem, arfagem e guinada e o comando de empuxo
+coletivo são combinados pela biblioteca \codigo{AP\_MotorsMatrix}, que
+implementa uma versão normalizada de $\matriz{M}^{-1}$ em
+\eqref{eq:alocacao}: cada motor recebe o empuxo coletivo somado aos esforços
+ponderados por fatores de rolagem, arfagem e guinada próprios da sua posição e
+do seu sentido de rotação. Quando a soma excede a faixa disponível, a
+alocação dá prioridade à rolagem e à arfagem sobre a guinada, preservando
+apenas uma folga mínima para a guinada (\codigo{MOT\_YAW\_HEADROOM}), e
+sinaliza a saturação ao controlador. Por fim, o empuxo desejado $t \in [0,1]$
+de cada motor é convertido em comando $c$ pela inversa da curva de empuxo
+$t = (1-e)\,c + e\,c^2$:
+\begin{equation}
+c = \frac{-(1-e) + \sqrt{(1-e)^2 + 4\,e\,t}}{2\,e},
+\label{eq:linearizacao-empuxo}
+\end{equation}
+com $e$ dado por \codigo{MOT\_THST\_EXPO}, de modo que o esforço do controlador
+seja aproximadamente linear em empuxo; o comando é então mapeado na faixa útil
+do motor e convertido em largura de pulso.
+
+\subsection{O \textit{framework} \texorpdfstring{\codigo{AC\_CustomControl}}{AC\_CustomControl}}
+\label{sec:customcontrol}
+
+O \codigo{AC\_CustomControl} é a biblioteca do ArduPilot destinada a
+hospedar controladores de atitude alternativos sem alterar o restante do
+firmware~\cite{ardupilot2026}. Sua função de atualização é chamada no laço
+rápido logo depois do controlador de velocidade angular nativo e antes da
+saída para os motores (Figura~\ref{fig:cascata}); ela recebe a mesma atitude
+alvo, a mesma alimentação direta e as mesmas estimativas usadas pelo
+controlador nativo e devolve os esforços de rolagem, arfagem e guinada,
+que sobrescrevem os do nativo antes da alocação. A latência adicional é,
+portanto, nula.
+
+O \textit{framework} separa uma interface comum (\textit{frontend}) das
+implementações (\textit{backends}). O parâmetro \codigo{CC\_TYPE} escolhe o
+\textit{backend} --- 1 para um modelo vazio e 2 para um PID de exemplo, com
+parâmetros próprios de prefixo \codigo{CC2\_} --- e \codigo{CC\_AXIS\_MASK}
+escolhe, por máscara de bits, em quais eixos a saída do controlador
+customizado substitui a do nativo. A ativação em voo é feita por uma chave do
+rádio configurada com a função 109. Na volta ao controlador nativo, o
+\textit{framework} reinicializa os filtros e os integradores do nativo a
+partir do estado atual da aeronave, para uma transição sem degrau. O
+\textit{backend} de exemplo é, ele próprio, uma segunda instância da
+estrutura nativa de ângulo e velocidade angular, com ganhos padrão iguais a
+90\,\% dos padrões compilados do nativo; por isso serve como verificação do
+procedimento de ensaio, e não como controlador alternativo. O controlador
+proposto neste trabalho é implementado como um novo \textit{backend}.
+
+% ----------------------------------------------------------------------
+\section{Técnicas de controle}
+\label{sec:tecnicas}
+
+\subsection{Controle PID em tempo discreto}
+
+O controlador PID combina uma ação proporcional ao erro, uma ação integral,
+que elimina o erro em regime diante de perturbações constantes, e uma ação
+derivativa, que antecipa a tendência do erro~\cite{astrom2008,ogata2010}. Na
+implementação digital, três cuidados são essenciais: a derivada deve ser
+filtrada, porque a diferenciação amplifica o ruído de medição; o integrador
+deve ser protegido contra \textit{windup} quando o atuador satura; e a
+discretização deve preservar o comportamento contínuo na faixa de frequências
+de interesse, o que exige taxa de amostragem bem acima da banda passante da
+malha~\cite{franklin1998}. A Equação~\eqref{eq:pid-taxa} mostra como o
+ArduPilot trata esses três pontos, e acrescenta um termo de alimentação
+direta que reduz a carga sobre a realimentação no rastreamento.
+
+\subsection{Realimentação de estados e regulador linear quadrático}
+
+Na realimentação de estados, a lei de controle $\vetor{u} = -\matriz{K}\vetor{x}$
+aloca os autovalores de malha fechada $\matriz{A} - \matriz{B}\matriz{K}$
+sempre que o par $(\matriz{A}, \matriz{B})$ é controlável~\cite{ogata2010}.
+No regulador linear quadrático (LQR), em vez de especificar os autovalores, o
+projetista especifica o compromisso entre desvio dos estados e esforço de
+controle por meio do custo
+\begin{equation}
+\mathcal{J} = \sum_{k=0}^{\infty}
+\left(\vetor{x}_k^{\mathsf{T}}\matriz{Q}\,\vetor{x}_k
+    + \vetor{u}_k^{\mathsf{T}}\matriz{R}_u\,\vetor{u}_k\right),
+\qquad \matriz{Q} \succeq 0,\ \matriz{R}_u \succ 0,
+\label{eq:custo-lqr}
+\end{equation}
+cujo mínimo, para o sistema discreto
+$\vetor{x}_{k+1} = \matriz{A}_d\vetor{x}_k + \matriz{B}_d\vetor{u}_k$, é
+atingido pelo ganho~\cite{franklin1998}
+\begin{equation}
+\matriz{K} = \left(\matriz{R}_u + \matriz{B}_d^{\mathsf{T}}\matriz{P}\matriz{B}_d\right)^{-1}
+             \matriz{B}_d^{\mathsf{T}}\matriz{P}\matriz{A}_d,
+\label{eq:ganho-lqr}
+\end{equation}
+em que $\matriz{P}$ é a solução definida positiva da equação algébrica de
+Riccati discreta
+\begin{equation}
+\matriz{P} = \matriz{A}_d^{\mathsf{T}}\matriz{P}\matriz{A}_d
+ - \matriz{A}_d^{\mathsf{T}}\matriz{P}\matriz{B}_d
+   \left(\matriz{R}_u + \matriz{B}_d^{\mathsf{T}}\matriz{P}\matriz{B}_d\right)^{-1}
+   \matriz{B}_d^{\mathsf{T}}\matriz{P}\matriz{A}_d + \matriz{Q}.
+\label{eq:riccati}
+\end{equation}
+Uma escolha inicial usual para as ponderações é normalizar cada estado e cada
+entrada pelo seu valor máximo admissível, refinando-as a seguir pela resposta
+de malha fechada. Com realimentação de todos os estados, o LQR de tempo
+contínuo tem margens de estabilidade garantidas em cada canal de entrada:
+tolera aumento ilimitado ou redução de até 50\,\% do ganho e tem margem de
+fase de ao menos \ang{60}~\cite{safonov1977}. Na versão discreta, com
+estimador e com os atrasos da planta real, essas garantias deixam de valer, e
+as margens devem ser verificadas.
+
+A realimentação de estados pura não anula o erro em regime diante de uma
+perturbação constante, que é o caso de $\vetor{\tau}_d$ em degrau. A solução
+clássica é aumentar o vetor de estados com a integral do erro de
+rastreamento, $x_{I,k+1} = x_{I,k} + T_s\,(r_k - y_k)$, e projetar o LQR sobre
+o sistema aumentado, o que preserva a formulação de projeto ao custo de um
+estado a mais por eixo e da necessidade de proteção contra \textit{windup}.
+
+\subsection{Observador de estado estendido}
+
+Uma alternativa à ação integral é estimar a perturbação e cancelá-la. No
+controle por rejeição ativa de perturbações (ADRC), proposto por
+\citeonline{han2009}, todo o efeito que separa a planta de um modelo nominal
+simples --- perturbações externas, erros de modelo e acoplamentos --- é
+agrupado em uma \emph{perturbação total} $f$, tratada como estado adicional e
+estimada por um observador de estado estendido (ESO). Para um eixo de atitude
+com a velocidade angular medida, a dinâmica se escreve
+$\dot p = b_0\,u + f$, com $b_0$ a estimativa do ganho de controle, e um ESO
+linear de segunda ordem é
+\begin{equation}
+\dot{\hat p} = \hat f + b_0\,u + l_1\,(p - \hat p), \qquad
+\dot{\hat f} = l_2\,(p - \hat p),
+\label{eq:eso}
+\end{equation}
+com $l_1$ e $l_2$ escolhidos para alocar os polos do observador. A lei de
+controle $u = (u_0 - \hat f)/b_0$ reduz o eixo, dentro da banda do observador,
+ao duplo integrador nominal, sobre o qual $u_0$ é projetado. O compromisso
+central está na banda do observador: quanto maior, mais rápida a estimativa da
+perturbação e maior a sensibilidade ao ruído do giroscópio.
+
+% ----------------------------------------------------------------------
+\section{Modelos de perturbação}
+\label{sec:perturbacoes}
+
+\subsection{Vento médio, rajada e turbulência}
+
+O vento que atua sobre a aeronave é usualmente decomposto em três
+parcelas~\cite{beard2012}. O \emph{vento médio} é um vetor constante no
+referencial inercial; exige do controlador ação integral ou compensação
+explícita. A \emph{rajada} discreta é modelada pelo perfil de meio ciclo de
+cosseno~\cite{mil8785c},
+\begin{equation}
+v_g(t) = \frac{A_g}{2}\left[1 - \cos\left(\frac{2\pi\,(t - t_0)}{T_g}\right)\right],
+\qquad t_0 \le t \le t_0 + T_g,
+\label{eq:rajada}
+\end{equation}
+de amplitude $A_g$ e duração $T_g$ conhecidas. A \emph{turbulência} é um
+processo estocástico obtido pela filtragem de ruído branco por funções de
+conformação espectral. No modelo de Dryden, as densidades espectrais das
+componentes longitudinal e lateral, em função da frequência espacial
+$\Omega$, são~\cite{mil8785c}
+\begin{equation}
+\Phi_u(\Omega) = \sigma_u^2\,\frac{2L_u}{\pi}\,\frac{1}{1 + (L_u\Omega)^2},
+\qquad
+\Phi_v(\Omega) = \sigma_v^2\,\frac{L_v}{\pi}\,
+\frac{1 + 3(L_v\Omega)^2}{\left[1 + (L_v\Omega)^2\right]^2},
+\label{eq:dryden}
+\end{equation}
+em que $\sigma$ é a intensidade e $L$ a escala de comprimento da turbulência,
+tabeladas em função da altitude e da severidade. Para uma aeronave à
+velocidade $V$, a frequência temporal é $\omega = \Omega V$. A componente
+longitudinal é um processo de Gauss-Markov de primeira ordem, de constante de
+tempo $L_u/V$, que admite discretização exata:
+\begin{equation}
+u_{k+1} = \mathrm{e}^{-V\Delta t/L_u}\,u_k
+        + \sigma_u\sqrt{1 - \mathrm{e}^{-2V\Delta t/L_u}}\;w_k,
+\qquad w_k \sim \mathcal{N}(0,1),
+\label{eq:dryden-discreto}
+\end{equation}
+que preserva a variância $\sigma_u^2$ para qualquer passo $\Delta t$. A
+componente lateral exige um filtro de segunda ordem, discretizado por um
+método aproximado.
+
+Para que os ensaios sejam reprodutíveis, o ruído branco $w_k$ deve ser gerado
+de forma determinística a partir de uma semente. Neste trabalho, ele é
+obtido de um gerador congruencial linear multiplicativo,
+$x_{k+1} = 16807\,x_k \bmod (2^{31}-1)$, o padrão mínimo de
+\citeonline{park1988}, cujas amostras uniformes são convertidas em amostras
+gaussianas pela transformação de \citeonline{box1958}. A mesma transformação,
+na forma polar, é a que o SITL usa para gerar o ruído dos acelerômetros
+simulados.
+
+\subsection{Perturbações de torque}
+
+Um vento uniforme aplicado ao centro de massa produz força, mas não momento:
+afeta a posição e, apenas indiretamente, a atitude. Em uma aeronave real, o
+vento também gera momentos --- pelo afastamento entre o centro de pressão e o
+centro de massa, pelo \textit{blade flapping} e pela incidência desigual nos
+rotores --- e são esses momentos que exercitam a malha de atitude. Para
+avaliar a malha de atitude de forma direta e controlada, empregam-se
+perturbações aditivas de torque, isto é, o termo $\vetor{\tau}_d$ de
+\eqref{eq:rotacao-euler}, em três formas: o \emph{pulso retangular}, cujo
+impulso angular é conhecido de antemão e que mede a recuperação após um
+deslocamento; o \emph{degrau sustentado}, que expõe o erro em regime e a
+suficiência da ação integral; e a \emph{varredura em frequência}, que
+caracteriza a sensibilidade da malha fechada à perturbação ao longo de uma
+faixa de frequências.
+
+% ----------------------------------------------------------------------
+\section{Identificação de sistemas no domínio da frequência}
+\label{sec:identificacao}
+
+A identificação no domínio da frequência estima a resposta em frequência de
+um sistema a partir de registros de entrada e saída obtidos sob uma excitação
+de banda larga~\cite{ljung1999,tischler2012}. A excitação mais usada em
+aeronaves é a varredura senoidal de frequência crescente (\textit{chirp}). O
+modo \textit{System Identification} do ArduCopter (modo 25) gera uma
+varredura exponencial, implementada em
+\codigo{AP\_Math/chirp.cpp}~\cite{ardupilot2026}, cuja frequência instantânea
+é
+\begin{equation}
+\omega(t) = \omega_{\min}\,\exp\!\left(B\,\frac{t - t_c}{T_r - t_c}\right),
+\qquad B = \ln\frac{\omega_{\max}}{\omega_{\min}},
+\label{eq:chirp}
+\end{equation}
+precedida por um intervalo de duração $t_c$ em frequência constante
+$\omega_{\min}$ e modulada por janelas de cosseno no início e no fim do
+registro de duração $T_r$, de modo que a excitação comece e termine suave.
+A varredura exponencial dedica o mesmo tempo a cada década, o que favorece as
+baixas frequências.
+
+A resposta em frequência é estimada pela razão entre a densidade espectral
+cruzada da entrada $u$ com a saída $y$ e a densidade espectral da entrada,
+\begin{equation}
+\hat H(f) = \frac{\hat G_{uy}(f)}{\hat G_{uu}(f)},
+\qquad
+\hat\gamma^2_{uy}(f) = \frac{|\hat G_{uy}(f)|^2}{\hat G_{uu}(f)\,\hat G_{yy}(f)},
+\label{eq:frf}
+\end{equation}
+com as densidades estimadas pelo método de \citeonline{welch1967}, que divide
+o registro em segmentos sobrepostos, aplica uma janela a cada um e faz a
+média dos periodogramas, trocando resolução em frequência por menor
+variância. A coerência $\hat\gamma^2_{uy} \in [0, 1]$ mede a fração da saída
+linearmente explicada pela entrada: valores baixos indicam ruído,
+não linearidade ou excitação insuficiente naquela frequência, e
+\citeonline{tischler2012} recomendam usar apenas os pontos de coerência
+elevada (da ordem de 0,6 ou mais) no ajuste de modelos paramétricos. O ajuste
+de uma função de transferência a $\hat H(f)$ por mínimos quadrados fornece o
+modelo identificado, comparado ao modelo analítico
+\eqref{eq:duplo-integrador}~\cite{ljung1999}.
+
+% ----------------------------------------------------------------------
+\section{Simulação \textit{software-in-the-loop}}
+\label{sec:sitl}
+
+No SITL do ArduPilot, o próprio código do firmware é compilado para o
+computador de desenvolvimento, com uma camada de abstração de
+\textit{hardware} (HAL) que substitui os sensores e os atuadores por um modelo
+físico do veículo~\cite{ardupilotdev}. O código de estimação e de controle é
+o mesmo que roda na controladora de voo; o que muda é a origem das medidas e
+o destino dos comandos de PWM. O relógio é simulado e avança junto com o
+modelo físico, de modo que os resultados não dependem da carga do computador,
+e a comunicação com o veículo usa o protocolo MAVLink, como em um voo real.
+
+\subsection{Modelo de multirrotor}
+
+O modelo físico de multirrotor do SITL, implementado em
+\codigo{SIM\_Frame.cpp} e \codigo{SIM\_Motor.cpp}, na pasta
+\codigo{libraries/SITL} do firmware, calcula, a cada passo, o empuxo e o
+torque de cada motor a partir do seu comando $c \in [0, 1]$:
+\begin{equation}
+T_i = T_{\max}\left[(1-e)\,c_i + e\,c_i^2\right], \qquad
+Q_i = 0{,}05\,D\,T_i\,c_i,
+\label{eq:motor-sitl}
+\end{equation}
+em que $e$ é o expoente da curva de empuxo e $D$ é o parâmetro de tamanho do
+quadro; a variação dos comandos é limitada em taxa. O torque de reação cresce,
+portanto, com o comando, e a razão $\kappa = Q_i/T_i$ de
+\eqref{eq:alocacao} vale $0{,}05\,D\,c$. Quando o tensor de inércia não é
+informado, o simulador o estima supondo metade da massa distribuída em um anel
+de raio $D/2$:
+$J_{xx} = J_{yy} = m\,(D/2)^2/4$ e $J_{zz} = m\,(D/2)^2/2$.
+
+A dinâmica de rotação é integrada no referencial do corpo como
+\begin{equation}
+\dot{\vetor{\omega}} = \matriz{J}^{-1}\left(\vetor{\tau} + \vetor{\tau}_{md}\right)
+                     - a_r\,\vetor{\omega} + \vetor{a}_{\mathrm{tw}},
+\label{eq:rotacao-sitl}
+\end{equation}
+em que $\vetor{\tau}_{md}$ é o torque do arrasto de momento dos rotores ---
+cada rotor, ao se deslocar com a rotação do corpo, sofre uma força contrária à
+sua velocidade ---, $a_r$ é um amortecimento rotacional linear explícito, de
+constante de tempo da ordem de \SI{17}{\second}, e
+$\vetor{a}_{\mathrm{tw}}$ é uma aceleração angular aditiva, ajustável pelos
+parâmetros \codigo{SIM\_TWIST\_*}, que realiza exatamente o termo
+$\matriz{J}^{-1}\vetor{\tau}_d$ de \eqref{eq:rotacao-euler}. É o arrasto de
+momento que domina o amortecimento: com ele, a constante de tempo da
+velocidade angular cai para cerca de \SI{0.5}{\second}
+(Seção~\ref{sec:movimento}), ainda lenta perto da banda do controle. O termo
+giroscópico $\vetor{\omega}\times\matriz{J}\vetor{\omega}$ \emph{não} é
+modelado. Para uma aeronave com $J_{xx} = J_{yy}$, ele só afetaria rolagem e
+arfagem, por meio do produto de duas velocidades angulares, e é desprezível
+perto do pairado; a consequência é que a planta simulada está mais próxima do
+modelo linear \eqref{eq:duplo-integrador} do que uma aeronave real estaria. O
+vento (\codigo{SIM\_WIND\_*}) entra no modelo pela velocidade relativa do ar,
+como força de arrasto no centro de massa, sem braço e, portanto, sem momento:
+move a aeronave, mas praticamente não perturba a atitude. Essa é a razão pela
+qual os ensaios de rejeição de perturbação na malha de atitude usam
+perturbações de torque.
+
+\subsection{Aeronave simulada}
+
+Os ensaios usam o modelo de quadrirrotor X padrão do SITL, cujos parâmetros
+estão na Tabela~\ref{tab:aeronave}. Com eles, a alavanca de rolagem e arfagem
+é $\ell_{xy} = \SI{0.247}{\metre}$, enquanto a razão entre torque de reação e
+empuxo no pairado é $\kappa = \SI{0.0096}{\metre}$. Como o torque de reação
+cresce com o comando, a razão que vale para \emph{variações} de empuxo é
+maior, cerca de \SI{0.0165}{\metre} (Seção~\ref{sec:motor-sitl}); ainda
+assim, um mesmo padrão de diferença de empuxo produz um torque de guinada
+cerca de 15 vezes menor que o de rolagem e, como $J_{zz} = 2J_{xx}$, uma
+aceleração angular cerca de 30 vezes menor. A assimetria reaparece nas
+acelerações máximas que o AutoTune registrou para o modelador de referência:
+\SI{115}{\degree\per\second\squared} em guinada, contra cerca de
+\SI{5800}{\degree\per\second\squared} em rolagem e arfagem
+(Tabela~\ref{tab:ganhos}). A razão, de 50, não coincide com a de autoridade,
+porque o AutoTune grava a aceleração atingida nos seus ensaios de ângulo, que
+depende também dos ganhos, e não a máxima disponível.
+
+\begin{table}[htbp]
+\centering
+\caption{Parâmetros do quadrirrotor X simulado.}
+\label{tab:aeronave}
+\begin{tabular}{lll}
+\toprule
+Grandeza & Valor & Origem \\
+\midrule
+Massa $m$                                   & \SI{3.0}{\kilogram} & \codigo{SIM\_FRM\_MASS} \\
+Braço $\ell$ (centro ao motor)              & \SI{0.35}{\metre}   & \codigo{SIM\_FRM\_DIAG\_SZ}\textsuperscript{(a)} \\
+Alavanca de rolagem e arfagem $\ell_{xy}$   & \SI{0.247}{\metre}  & $\ell/\sqrt{2}$ \\
+Inércia $J_{xx} = J_{yy}$                   & \SI{0.02297}{\kilogram\metre\squared} & estimada pelo SITL \\
+Inércia $J_{zz}$                            & \SI{0.04594}{\kilogram\metre\squared} & estimada pelo SITL \\
+Empuxo máximo por motor $T_{\max}$          & \SI{18.86}{\newton} & calculado pelo SITL \\
+Empuxo por motor no pairado                 & \SI{7.35}{\newton}, com $c = 0{,}551$ & $mg/4$ \\
+Razão empuxo/peso                           & 2,56 & --- \\
+Expoente da curva de empuxo $e$             & 0,65 & \codigo{SIM\_FRM\_EXPO} \\
+Razão $\kappa$ no pairado                   & \SI{0.0096}{\metre} & $0{,}05\,D\,c$ \\
+Taxa do modelo físico                       & \SI{1200}{\hertz} & \codigo{SIM\_RATE\_HZ} \\
+Taxa do laço de controle                    & \SI{400}{\hertz} & \codigo{SCHED\_LOOP\_RATE} \\
+\bottomrule
+\end{tabular}
+
+
+\fonte{Parâmetros gravados nos ensaios e código-fonte do SITL
+\cite{ardupilot2026}.}
+\nota{\raggedright (a) Apesar do nome (``diagonal''), o SITL posiciona cada motor a essa
+distância do \emph{centro}; a distância entre motores opostos é, por isso,
+\SI{0.70}{\metre}.}
+\end{table}

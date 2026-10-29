@@ -1,0 +1,60 @@
+% ---------------------------------------------------------------------
+%  LISTA DE SÍMBOLOS (na ordem em que aparecem no texto)
+% ---------------------------------------------------------------------
+\begin{simbolos}
+    \item[$\{\mathcal{N}\}$, $\{\mathcal{B}\}$] Referencial inercial local (NED)
+        e referencial do corpo (FRD)
+    \item[$\phi, \theta, \psi$] Ângulos de rolagem, arfagem e guinada
+        (sequência $Z$-$Y$-$X$)
+    \item[$\matriz{R}$] Matriz de rotação do corpo para o referencial inercial
+    \item[$\vetor{q}$] Quatérnio unitário de atitude
+    \item[$\vetor{\omega} = {[p\ q\ r]}^{\mathsf{T}}$] Velocidade angular do
+        corpo, expressa em $\{\mathcal{B}\}$
+    \item[$\vetor{p}, \vetor{v}$] Posição e velocidade do centro de massa em
+        $\{\mathcal{N}\}$
+    \item[$m$] Massa da aeronave
+    \item[$\matriz{J}$] Tensor de inércia em torno do centro de massa
+    \item[$J_{xx}, J_{yy}, J_{zz}$] Momentos principais de inércia
+    \item[$g$] Aceleração da gravidade
+    \item[$T_i$, $T$] Empuxo do rotor $i$ e empuxo total
+    \item[$Q_i$] Torque de reação aerodinâmica do rotor $i$
+    \item[$\Omega_i$] Velocidade de rotação do rotor $i$
+    \item[$k_T, k_Q$] Coeficientes de empuxo e de torque de reação
+    \item[$\kappa$] Razão $Q_i/T_i$ entre torque de reação e empuxo
+    \item[$\ell$, $\ell_{xy}$] Braço (centro ao motor) e alavanca efetiva em
+        rolagem e arfagem
+    \item[$\vetor{\tau}$] Torque de controle no corpo
+    \item[$\vetor{\tau}_d$] Torque de perturbação no corpo
+    \item[$\vetor{f}_d$] Força de perturbação sobre o centro de massa
+    \item[$\matriz{A}, \matriz{B}, \matriz{C}$] Matrizes da representação em
+        espaço de estados
+    \item[$\matriz{K}$] Ganho de realimentação de estados
+    \item[$\matriz{Q}, \matriz{R}_u$] Matrizes de ponderação do LQR
+    \item[$T_s$] Período de amostragem da malha de controle
+    \item[$k_P, k_I, k_D, k_{FF}$] Ganhos proporcional, integral, derivativo
+        e de alimentação direta
+    \item[$\sigma_u, \sigma_v$] Intensidades da turbulência (desvio-padrão)
+    \item[$L_u, L_v$] Escalas de comprimento da turbulência
+    \item[$G_{uu}, G_{uy}$] Densidades espectrais auto e cruzada
+    \item[$\gamma^2_{uy}$] Coerência entre entrada e saída
+    \item[$\vetor{u} = {[u_x\ u_y\ u_z]}^{\mathsf{T}}$] Esforços normalizados
+        de rolagem, arfagem e guinada
+    \item[$t_c$, $t_i$, $t_h$] Empuxo coletivo comandado, fração de empuxo
+        do motor $i$ e coletivo de pairado
+    \item[$I_i$, $V_{m,i}$] Corrente e tensão do motor $i$
+    \item[$L_m, R_m$] Indutância e resistência do motor
+    \item[$K_e, K_\tau$] Constantes de força contraeletromotriz e de torque
+        do motor
+    \item[$J_m, B_m$] Inércia e atrito viscoso do conjunto motor--hélice
+    \item[$\tau_m$] Constante de tempo do conjunto motor--hélice
+    \item[$c_i$] Comando do motor $i$ no SITL
+    \item[$f_{x,i}, f_{y,i}, f_{z,i}$] Fatores de alocação do motor $i$
+    \item[$k_t$] Empuxo por unidade de fração de empuxo
+    \item[$\kappa'$] Razão incremental entre torque de reação e empuxo
+    \item[$k_{md}$] Coeficiente de arrasto de momento de um rotor
+    \item[$a$, $a_{md}$, $a_r$] Amortecimento do modelo de atitude, total,
+        por arrasto de momento e explícito do SITL
+    \item[$b_x, b_y, b_z$] Eficácia de controle de cada eixo
+    \item[$\vetor{d}$] Perturbação em aceleração angular,
+        $\matriz{J}^{-1}\vetor{\tau}_d$
+\end{simbolos}

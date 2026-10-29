@@ -1,0 +1,37 @@
+nome: "Rajada lateral — 10 m/s em meio cosseno, 3 s"
+descricao: >
+  Rajada de meio ciclo de cosseno de 10 m/s, vinda do leste (de lado, com o rumo
+  travado perto do norte), com a aeronave nivelada e sem torque.
+  E o ensaio que sustenta a divisao de trabalho entre as duas familias do
+  injetor: no modelo de multirrotor do SITL o vento entra como forca no centro
+  de massa, sem braco, entao a rajada move a aeronave e quase nao perturba a
+  atitude. Compare o desvio de rolagem daqui com o do rolagem/torque_pulso
+  (15 rad/s2 por 0,3 s): o pulso tira a atitude graus do lugar; a rajada,
+  centesimos. A metrica que responde a este ensaio e a deriva (deriva_max_m,
+  vel_horiz_max_ms), que o analisador so calcula quando ha vento.
+  A janela de analise vai do inicio da rajada a quatro vezes a sua duracao.
+vento:
+  WND_MODE: 3        # 1 (vento medio, de intensidade zero) + 2 (rajada)
+  WND_SPD: 0
+  WND_DIR: 90        # de onde vem: leste
+  WND_DIRZ: 0
+  WND_GA: 10.0       # m/s — amplitude da rajada
+  WND_GT0: 6         # segundos apos o inicio do perfil
+  WND_GDUR: 3        # duracao do meio cosseno
+  WND_TSIG: 0
+  WND_TLU: 200
+  WND_SEED: 1
+  WND_T0: 8
+  WND_TQX: 0
+  WND_TQY: 0
+  WND_TQZ: 0
+  WND_TQT0: 0
+  WND_TQDUR: 0.4
+  WND_TQF0: 0.2
+  WND_TQF1: 10.0
+voo:
+  altitude_m: 15
+  espera_apos_decolagem_s: 6
+  degrau_roll_deg: 0     # nivelado: a rajada e a unica excitacao
+  t_degrau_s: 0
+  duracao_s: 25

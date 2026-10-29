@@ -1,0 +1,489 @@
+% ======================================================================
+%  CAPÍTULO 3 — MATERIAIS E MÉTODOS
+%
+%  Descreve o que está implementado em ensaios/: o ambiente (SITL puro), o
+%  injetor de perturbações (lua/vento.lua), os controladores e o AutoTune
+%  (controladores/, autotune.py), os cenários (cenarios/<eixo>/), as métricas
+%  (analise/metricas.py, analise/frequencia.py) e a automação
+%  (run_ensaio.py). Os números de procedimento vêm do código e do README.
+% ======================================================================
+\chapter{Materiais e métodos}
+\label{cap:metodos}
+
+Este capítulo descreve o ambiente em que os controladores são ensaiados e o
+procedimento que transforma um ensaio em números comparáveis. O princípio que
+orienta todas as escolhas é o de que dois controladores só podem ser
+comparados se enfrentarem exatamente as mesmas condições: a mesma aeronave, a
+mesma perturbação, no mesmo instante, com o mesmo estado inicial, e medidos
+pelas mesmas métricas, calculadas na mesma janela. Por isso o procedimento é
+inteiramente automatizado, e cada ensaio deixa registrado tudo o que é
+necessário para auditá-lo depois.
+
+% ----------------------------------------------------------------------
+\section{Ambiente de simulação}
+\label{sec:ambiente}
+
+Os ensaios usam o firmware ArduCopter na versão de desenvolvimento 4.8,
+fixado no \textit{commit} \codigo{ce9c2d01a4} do repositório
+oficial~\cite{ardupilot2026}, executado em SITL com o modelo de multirrotor
+nativo do simulador (Seção~\ref{sec:sitl}), na configuração X
+(\codigo{FRAME\_CLASS} = 1, \codigo{FRAME\_TYPE} = 1). O modelo físico é
+integrado a \SI{1200}{\hertz} e o laço de controle roda a \SI{400}{\hertz}
+(Tabela~\ref{tab:aeronave}); o giroscópio simulado não tem ruído. A
+Tabela~\ref{tab:ferramentas} lista as ferramentas, todas de código aberto.
+
+\begin{table}[htbp]
+\centering
+\caption{Ferramentas utilizadas.}
+\label{tab:ferramentas}
+\begin{tabular}{ll}
+\toprule
+Ferramenta & Uso \\
+\midrule
+ArduCopter 4.8-dev (\codigo{ce9c2d01a4}) & firmware e simulador SITL \\
+Lua (motor de \textit{scripts} do ArduPilot) & injetor de perturbações \\
+Python 3.12 e pymavlink & orquestração e leitura dos registros \\
+NumPy, SciPy e Matplotlib & métricas, análise espectral e figuras \\
+MAVProxy & operação manual e depuração \\
+Gazebo Harmonic & visualização e simulação alternativa \\
+Git & versionamento de código, cenários e resultados \\
+\bottomrule
+\end{tabular}
+
+\fonte{Elaborada pelo autor.}
+\end{table}
+
+O ambiente também foi preparado para rodar com a física e a visualização do
+Gazebo, conectado ao firmware pela interface JSON do SITL. Os ensaios de
+perturbação, porém, rodam no SITL puro, por uma razão objetiva: com o modelo
+JSON, o simulador zera internamente o vento que lhe é comandado, e nenhum
+parâmetro de vento teria efeito físico~\cite{ardupilot2026}.
+
+Cada ensaio começa com o SITL recém-iniciado e com a memória de parâmetros
+apagada, de modo que nenhum estado sobrevive de um ensaio para outro. Sobre
+os parâmetros padrão do quadrirrotor X, o procedimento aplica um conjunto
+comum a todos os ensaios: habilita o motor de \textit{scripts}, configura o
+modelo de vento do simulador (Seção~\ref{sec:injetor}), escolhe as mensagens
+gravadas no registro e reduz a constante de tempo do modelador de referência
+(\codigo{ATC\_INPUT\_TC}) de \SI{0.10}{\second} para \SI{0.02}{\second}. Esta
+última escolha merece justificativa. O modelador transforma o degrau comandado
+em uma transição suave antes que a realimentação o veja
+(Seção~\ref{sec:ardupilot}), e ele é idêntico para os dois
+controladores. Com a constante padrão, a aeronave segue o alvo modelado com
+erro de pico de cerca de \ang{0.5}, e as métricas do degrau passam a
+caracterizar o modelador; encurtando-a, o comando chega mais perto de um
+degrau, e a malha fechada tem de trabalhar.
+
+O simulador é executado com fator de aceleração 5 em relação ao tempo real.
+Esse fator não interfere nos resultados: o relógio do firmware é o relógio
+simulado, que avança junto com o modelo físico, e toda a temporização do
+ensaio é feita nesse relógio (Seção~\ref{sec:automacao}).
+
+% ----------------------------------------------------------------------
+\section{Injetor de perturbações}
+\label{sec:injetor}
+
+As perturbações são geradas por um \textit{script} em Lua
+(\codigo{ensaios/lua/vento.lua}) executado pelo próprio firmware simulado, a
+\SI{50}{\hertz} com passo fixo. A cada passo, ele calcula o perfil de
+perturbação e o escreve nos parâmetros de simulação do SITL, e grava no
+registro de voo, na mensagem \codigo{WND}, o que foi efetivamente aplicado:
+o vetor de vento, o torque em cada eixo, o tempo do perfil e o modo ativo.
+Com isso, a perturbação e a resposta do controlador ficam no mesmo arquivo e
+na mesma base de tempo, e a análise nunca depende de reconstruir a entrada a
+partir do que se pretendia aplicar.
+
+O injetor trabalha com duas famílias de perturbação, que entram no modelo
+físico por caminhos diferentes (Tabela~\ref{tab:familias}). O vento é escrito
+nos parâmetros \codigo{SIM\_WIND\_*} e, no modelo de multirrotor do SITL,
+age como força aplicada ao centro de massa: desloca a aeronave, mas não
+produz momento (Seção~\ref{sec:sitl}). O torque é escrito nos parâmetros
+\codigo{SIM\_TWIST\_*}, que o simulador soma diretamente à aceleração
+angular do corpo; é exatamente o termo
+$\vetor{d} = \matriz{J}^{-1}\vetor{\tau}_d$ das
+Equações~\eqref{eq:rotacao-euler} e~\eqref{eq:modelo-taxa}, expresso em
+\si{\radian\per\second\squared}, e não uma emulação por assimetria dos
+rotores. Por isso os ensaios de rejeição de perturbação da malha de atitude
+usam torque, e o vento fica reservado à deriva de posição.
+
+\begin{table}[htbp]
+\centering
+\caption{Famílias de perturbação do injetor.}
+\label{tab:familias}
+\begin{tabular}{lll}
+\toprule
+Família & Entrada no SITL & Efeito \\
+\midrule
+Vento    & \codigo{SIM\_WIND\_*}, força no centro de massa      & posição \\
+Torque   & \codigo{SIM\_TWIST\_*}, somado à aceleração angular   & atitude \\
+\bottomrule
+\end{tabular}
+
+\fonte{Elaborada pelo autor.}
+\end{table}
+
+As formas disponíveis são selecionadas por um campo de bits
+(\codigo{WND\_MODE}) e podem ser combinadas
+(Tabela~\ref{tab:modos-injetor}). Em vento, o injetor gera o vento médio, a
+rajada de meio ciclo de cosseno~\eqref{eq:rajada} e a turbulência de Dryden,
+com a componente longitudinal pela discretização exata~\eqref{eq:dryden-discreto}
+e a lateral pelo filtro de segunda ordem discretizado pela transformação de
+Tustin; as duas normalizações foram conferidas numericamente, e ambas
+entregam o desvio-padrão especificado. Em torque, cada eixo tem amplitude
+própria, em \si{\radian\per\second\squared} (\codigo{WND\_TQX},
+\codigo{WND\_TQY} e \codigo{WND\_TQZ}), e as quatro formas da
+Seção~\ref{sec:perturbacoes}: o pulso retangular, cujo impulso angular é a
+amplitude multiplicada pela duração; o meio cosseno, com metade desse
+impulso; o degrau sustentado; e a varredura em frequência, com a progressão
+exponencial e as janelas de cosseno do \textit{chirp} do
+ArduPilot~\eqref{eq:chirp}, para que os ensaios sejam comparáveis aos do modo
+de identificação nativo.
+
+\begin{table}[htbp]
+\centering
+\caption{Formas de perturbação do injetor, selecionadas pelos bits de
+\codigo{WND\_MODE}.}
+\label{tab:modos-injetor}
+\begin{tabular}{rll}
+\toprule
+Bit & Forma & Parâmetros \\
+\midrule
+1  & vento médio                     & módulo e direção \\
+2  & rajada de meio ciclo de cosseno & amplitude, início e duração \\
+4  & turbulência de Dryden           & intensidade $\sigma$ e escala $L_u$ \\
+8  & torque em pulso retangular      & amplitude por eixo, início e duração \\
+16 & torque em meio cosseno          & amplitude por eixo, início e duração \\
+32 & torque em degrau sustentado     & amplitude por eixo e início \\
+64 & torque em varredura de frequência & amplitude por eixo, faixa e duração \\
+\bottomrule
+\end{tabular}
+
+\fonte{Elaborada pelo autor.}
+\end{table}
+
+O ruído da turbulência vem do gerador congruencial de \citeonline{park1988},
+semeado pelo parâmetro \codigo{WND\_SEED}, com a transformação de
+\citeonline{box1958}. O gerador foi escrito no próprio \textit{script}, em vez
+de usar a função aleatória da linguagem, para que a mesma sequência pudesse
+ser reproduzida fora do firmware: uma implementação de referência em Python
+(\codigo{ensaios/analise/dryden\_ref.py}) regenera o perfil a partir da
+semente e coincide com o registrado no voo amostra a amostra. É essa
+coincidência que sustenta a reprodutibilidade dos ensaios estocásticos.
+
+Três características do modelo de vento do SITL obrigaram a ajustar os seus
+parâmetros, e o procedimento os fixa em todos os ensaios. Primeiro, o perfil
+vertical de vento padrão (\codigo{SIM\_WIND\_T} = 0) reduz o vento perto do
+solo segundo uma lei de raiz quadrada, e a \SI{5}{\metre} de altura chegariam
+apenas 29\,\% do vento comandado; os ensaios usam o perfil sem redução.
+Segundo, o vento passa por um filtro passa-baixas de primeira ordem cuja
+constante de tempo (\codigo{SIM\_WIND\_TC}) vale \SI{5}{\second} por padrão,
+o que apagaria qualquer rajada; os ensaios usam o piso imposto pelo firmware,
+\SI{0.1}{\second}, e mesmo assim o vento fica atenuado acima de cerca de
+\SI{1.6}{\hertz}. O torque não passa por esse filtro, e a varredura de torque
+pode chegar a \SI{10}{\hertz} sem distorção. Terceiro, o SITL ignora o vento
+nos primeiros \SI{5}{\second} de simulação, folga que o injetor reserva. A
+turbulência nativa do simulador fica desligada, e a única turbulência é a do
+injetor.
+
+O laço do \textit{script} não entrega exatamente os \SI{50}{\hertz} pedidos:
+medido, ele roda a cerca de \SI{44}{\hertz}. O perfil não perde amostras por
+isso --- a cada ciclo, o injetor avança o gerador tantos passos quantos forem
+necessários para alcançar o relógio, e a sequência gerada é sempre a mesma
+---, mas os instantes em que cada valor passa a valer variam de um voo para
+outro em até um passo. O efeito mais visível é na duração efetiva do pulso de
+torque, que variou de 300 a \SI{338}{\milli\second} para o pulso nominal de
+\SI{0.3}{\second}. A mensagem \codigo{WND} registra o valor e o instante de
+cada escrita, e é a partir dela que se reconstrói o torque efetivamente
+aplicado (Seções~\ref{sec:validacao-tempo} e~\ref{sec:res-torque}).
+
+O perfil de perturbação é disparado no início da janela de ensaio, e não no
+armamento. Com o vento ligado durante a decolagem, a aeronave se inclinaria
+para se manter na posição, e essa inclinação apareceria no registro como se
+fosse uma resposta ao comando. Os instantes do perfil são contados a partir
+desse disparo, pelo relógio do próprio injetor, e caem, portanto, sempre no
+mesmo ponto do ensaio.
+
+% ----------------------------------------------------------------------
+\section{Controladores comparados}
+\label{sec:controladores}
+
+Cada controlador é descrito por um arquivo de configuração que lista os
+parâmetros a aplicar e o que se espera encontrar no registro (pasta
+\codigo{ensaios/controladores/}). Nesta etapa do trabalho, são dois. O
+\emph{PID nativo} é a cascata padrão do ArduPilot
+(Seção~\ref{sec:ardupilot}), com o \codigo{AC\_CustomControl}
+desligado (\codigo{CC\_TYPE} = 0); é a linha de base contra a qual todo
+controlador proposto é medido. O \emph{PID do} \codigo{AC\_CustomControl} é o
+\textit{backend} de exemplo do \textit{framework}
+(Seção~\ref{sec:customcontrol}), habilitado nos três eixos
+(\codigo{CC\_TYPE} = 2, \codigo{CC\_AXIS\_MASK} = 7). Ele reproduz a
+estrutura do nativo e recebe os mesmos ganhos, com o prefixo \codigo{CC2\_};
+só os filtros do alvo e do derivativo (\SI{18}{\hertz}, contra \SI{20}{\hertz})
+e o limite do integrador (0,45, contra 0,5), que ficam nos padrões do
+\textit{backend}, diferem. O seu papel é verificar o caminho de integração:
+com os mesmos ganhos, ele deve reproduzir o nativo, e qualquer diferença
+apontaria um problema no procedimento, e não na lei de controle. O
+controlador proposto entrará pelo mesmo caminho, como um novo
+\textit{backend}.
+
+A habilitação do \textit{backend} tem uma armadilha. O parâmetro
+\codigo{CC\_TYPE} apenas instancia o \textit{backend}; ele só assume o
+controle quando uma chave auxiliar do rádio, configurada com a função 109,
+está em nível alto~\cite{ardupilot2026}. Sem a chave, o voo sai com o PID
+nativo enquanto os parâmetros indicam o contrário, sem nenhum aviso. Por isso
+a configuração do controlador customizado associa a função 109 ao canal 6 e o
+mantém em nível alto por \textit{override} de rádio durante todo o voo, e a
+análise confere, pela mensagem \codigo{CC} do registro, se o
+\textit{backend} esteve de fato ativo durante a janela do ensaio.
+
+\subsection{Ganhos da linha de base}
+\label{sec:autotune}
+
+Os ganhos do arquivo de parâmetros padrão do SITL não foram sintonizados para
+a aeronave simulada, e uma linha de base mal ajustada tornaria qualquer
+comparação favorável ao controlador proposto. Os ganhos do PID nativo vêm,
+por isso, do AutoTune do próprio ArduPilot, executado no mesmo SITL e na
+mesma aeronave dos ensaios (\codigo{ensaios/autotune.py}). O voo segue o
+roteiro dos testes automáticos do ArduPilot: decolagem no modo guiado,
+passagem ao modo de manutenção de posição com os comandos centrados e entrada
+no modo AutoTune, nos três eixos (\codigo{AUTOTUNE\_AXES} = 7), com a
+agressividade padrão (\codigo{AUTOTUNE\_AGGR} = 0,075). A sintonia levou
+\SI{476}{\second} de tempo simulado. Ao fim, a aeronave pousa sem sair do
+modo, porque o firmware só grava os ganhos sintonizados quando o desarme
+ocorre dentro dele.
+
+O AutoTune ajusta os ganhos de velocidade angular e de ângulo e registra, para
+o modelador de referência, a aceleração angular atingida nos seus ensaios. Em
+rolagem e arfagem, o ganho derivativo chegou ao limite inferior do
+procedimento, e o proporcional caiu de 0,135 para 0,086, coerente com a
+grande eficácia de controle desses eixos (Seção~\ref{sec:modelo-linear}). Em
+guinada, o procedimento fixa $k_I = k_P/10$, contra $k_I = k_P$ em rolagem e
+arfagem, o que tem consequência direta na rejeição de torques sustentados
+(Seção~\ref{sec:validacao-identificacao}). Os valores obtidos estão na
+Tabela~\ref{tab:ganhos} e são aplicados aos dois controladores, inclusive as
+acelerações máximas, que pertencem ao modelador de referência do
+\codigo{AC\_AttitudeControl} nativo, comum a ambos.
+
+% ----------------------------------------------------------------------
+\section{Cenários de ensaio}
+\label{sec:cenarios}
+
+\subsection{Perfil de voo}
+\label{sec:perfil-voo}
+
+Todos os ensaios seguem o mesmo perfil. A aeronave decola no modo guiado até
+\SI{15}{\metre} de altura e aguarda \SI{6}{\second}. A partir daí, durante
+toda a janela do ensaio, o procedimento comanda a atitude diretamente, por
+mensagens MAVLink de atitude alvo enviadas a cerca de \SI{10}{\hertz}, com o
+rumo travado no valor do início da janela e o comando de empuxo na posição
+neutra, que no modo guiado corresponde a velocidade vertical nula. Comandar a
+atitude o tempo todo, em vez de deixar a aeronave em manutenção de posição, é
+o que isola a malha de atitude: em manutenção de posição, o controlador de
+posição reagiria à perturbação, e a medida deixaria de ser da malha em
+estudo. Ao fim da janela, a aeronave pousa.
+
+Dentro da janela, o perfil admite três etapas: um degrau de atitude, o
+retorno ao nível e a perturbação. Nos cenários nominais, o degrau ocorre em
+$t = \SI{6}{\second}$ do perfil e o retorno em $t = \SI{11}{\second}$; nos
+cenários de torque, a aeronave permanece nivelada, e a perturbação começa em
+$t = \SI{6}{\second}$ (\SI{4}{\second} na varredura). O retorno ao nível
+antes de qualquer perturbação não é detalhe: mantendo a inclinação, a
+perturbação incidiria sobre uma aeronave inclinada e acelerando lateralmente,
+ponto de operação diferente do equilíbrio em torno do qual o controlador é
+projetado. Com o retorno, a perturbação encontra a aeronave a
+\ang{-0.01} de rolagem.
+
+\subsection{Conjunto de cenários}
+\label{sec:conjunto-cenarios}
+
+Os cenários são organizados em uma pasta por eixo exercitado --- rolagem,
+arfagem, guinada e os três eixos ao mesmo tempo ---, todas com os mesmos
+ensaios: o nominal, com degrau de atitude, e os de torque em pulso, em degrau
+sustentado e em varredura. O nome de um cenário é o seu caminho, como
+\codigo{guinada/torque\_pulso}, e é por ele que os resultados são
+organizados. A Tabela~\ref{tab:cenarios} resume esses quinze cenários. Um
+décimo sexto, \codigo{vento/rajada}, aplica uma rajada lateral de
+\SI{10}{\metre\per\second} em meio ciclo de cosseno de \SI{3}{\second},
+com a aeronave nivelada e sem torque; ele mede a deriva de posição e verifica
+que, no SITL, o vento praticamente não perturba a atitude.
+
+\begin{table}[htbp]
+\centering
+\caption{Cenários de ensaio.}
+\label{tab:cenarios}
+\small
+\begin{tabular}{llll}
+\toprule
+Ensaio & Rolagem e arfagem & Guinada & Duração \\
+\midrule
+Nominal                & degrau de \ang{10}             & degrau de \ang{30}            & \SI{30}{\second} \\
+Torque em pulso        & \SI{15}{\radian\per\second\squared}, \SI{0.3}{\second} & \SI{3}{\radian\per\second\squared}, \SI{0.3}{\second} & \SI{25}{\second} \\
+Torque em degrau       & \SI{10}{\radian\per\second\squared} & \SI{1}{\radian\per\second\squared} & 40 / \SI{60}{\second} \\
+Varredura de torque    & \SI{3}{\radian\per\second\squared}, 0,2--\SI{10}{\hertz} em \SI{20}{\second} & \SI{1}{\radian\per\second\squared}, 0,1--\SI{5}{\hertz} em \SI{40}{\second} & 30 / \SI{50}{\second} \\
+\bottomrule
+\end{tabular}
+
+\fonte{Elaborada pelo autor, a partir de \codigo{ensaios/cenarios/}.}
+\nota{\raggedright Os ensaios dos três eixos usam as amplitudes dos ensaios
+de um eixo só, nos três eixos ao mesmo tempo, e não incluem a varredura. Na
+coluna de duração, o primeiro valor é o de rolagem e arfagem e o segundo, o
+de guinada; o degrau sustentado nos três eixos dura \SI{60}{\second}.}
+\end{table}
+
+As amplitudes de guinada são menores de propósito. A guinada não tem braço de
+alavanca: o momento vem do torque de reação dos rotores, e a eficácia de
+controle em guinada é cerca de 30 vezes menor que em rolagem
+(Seção~\ref{sec:modelo-linear}). O pulso de \SI{15}{\radian\per\second\squared}
+da rolagem saturaria a alocação em guinada, e o ensaio mediria saturação, e
+não rejeição. O degrau sustentado de guinada dura \SI{60}{\second} porque a
+recuperação, comandada pelo integrador fraco de guinada, leva cerca de
+\SI{20}{\second}; em \SI{40}{\second}, ela mal caberia na janela.
+
+A arfagem repete as amplitudes da rolagem. Na configuração X, os dois eixos
+têm a mesma alavanca e a mesma inércia, e os dois conjuntos de ensaios devem
+produzir os mesmos números; uma diferença entre eles indicaria assimetria no
+modelo ou no controlador. Os ensaios simultâneos nos três eixos medem o
+acoplamento: rolagem e arfagem iguais somam um momento em torno da diagonal
+do X que passa pelos motores M1 e M2, e só os motores M3 e M4 têm braço em
+torno dela, cada um trabalhando o dobro do que trabalharia num ensaio de um
+eixo só. É o carregamento mais severo da alocação entre os ensaios. Não há
+varredura simultânea: com a mesma varredura em vários eixos, a resposta de um
+eixo e o acoplamento vindo dos outros seriam indistinguíveis.
+
+% ----------------------------------------------------------------------
+\section{Métricas de comparação}
+\label{sec:metricas}
+
+As métricas são calculadas a partir do registro de voo de cada ensaio. A
+análise lê a atitude alvo e a medida (mensagem \codigo{ANG}), as
+velocidades angulares e os esforços enviados à alocação (\codigo{RATE}), os
+termos dos controladores de velocidade angular (\codigo{PIDR},
+\codigo{PIDP} e \codigo{PIDY}), a perturbação aplicada (\codigo{WND}) e o
+estado do \codigo{AC\_CustomControl} (\codigo{CC}), e interpola tudo em uma
+grade comum de \SI{400}{\hertz}, a taxa do laço de controle. A escolha da
+mensagem de atitude não é indiferente. Na versão do firmware usada, a
+mensagem tradicional de atitude, \codigo{ATT}, é gravada sempre a
+\SI{10}{\hertz}; a atitude na taxa do laço vai em \codigo{ANG}, com os
+mesmos campos~\cite{ardupilot2026}. Como um degrau de rolagem sobe em cerca
+de \SI{50}{\milli\second}, a \SI{10}{\hertz} o transitório inteiro cabe em
+uma ou duas amostras: numa primeira análise, feita com \codigo{ATT}, o
+sobressinal do mesmo degrau saiu entre 4\,\% e 22\,\%, conforme a posição
+das amostras, e o desvio máximo no pulso de torque saiu até 13\,\% menor. O erro de atitude de cada eixo é
+$e = \theta^* - \theta$, a diferença entre o alvo e a medida; em guinada, o
+rumo é tomado em relação ao rumo inicial e desdobrado antes da interpolação,
+para que um degrau que cruze o norte não apareça como um salto de
+\ang{360}. As métricas são calculadas por eixo, apenas nos eixos que o
+ensaio exercita, e cada uma é registrada junto com a janela de tempo em que
+foi calculada.
+
+\paragraph{Resposta ao degrau.} Na janela que vai do degrau até
+\SI{8}{\second} depois dele, terminando antes de qualquer perturbação, a
+resposta normalizada fornece o tempo de subida, de 10\,\% a 90\,\%, o
+sobressinal, o tempo de acomodação na faixa de 2\,\% e o erro em regime,
+tomado como a média do último quinto da janela. Essas métricas, porém, são
+medidas contra o alvo modelado, que já chega ao controlador suavizado pelo
+modelador de referência, idêntico para os dois controladores; dois
+controladores bem diferentes podem produzir números parecidos. Por isso a
+análise calcula também o \emph{erro de rastreamento}, o máximo e o valor
+eficaz de $e(t)$ na mesma janela, que mede o quanto a aeronave fica para trás
+do alvo e é trabalho exclusivo da realimentação.
+
+\paragraph{Rejeição de perturbação.} A janela começa no início da
+perturbação e termina \SI{4}{\second} depois dela no pulso --- ou oito vezes
+a sua duração, se maior --- e no fim do ensaio no degrau sustentado; é a
+mesma para todos os eixos, para que a rolagem de um ensaio simultâneo seja
+comparável à do ensaio de rolagem. Nela, calculam-se o desvio máximo,
+$\max|e|$; o tempo de recuperação, contado do pico até o instante a partir do
+qual o erro permanece abaixo de 10\,\% do pico --- a exigência de
+permanência evita creditar recuperação a uma passagem por zero no meio de
+uma oscilação ---; e o erro quadrático médio,
+\begin{equation}
+\mathrm{RMSE} = \sqrt{\frac{1}{N}\sum_{k=1}^{N} e_k^2}.
+\label{eq:rmse}
+\end{equation}
+
+\paragraph{Esforço de controle.} Com $u$ o esforço normalizado que chega à
+alocação no eixo --- o do controlador que estiver ativo ---, calculam-se, na
+janela da perturbação,
+\begin{equation}
+E_1 = \int |u|\,\mathrm{d}t, \qquad
+E_2 = \int u^2\,\mathrm{d}t, \qquad
+u_{\max} = \max|u|,
+\label{eq:esforco}
+\end{equation}
+porque dois controladores com a mesma rejeição e esforços diferentes não são
+equivalentes.
+
+\paragraph{Resposta em frequência.} Nas varreduras, a resposta em frequência
+da perturbação para a atitude é estimada pela Equação~\eqref{eq:frf}, com o
+torque registrado como entrada e o ângulo do eixo como saída, pelo método de
+\citeonline{welch1967}, com cerca de oito segmentos por registro. Só entram
+nas métricas os pontos com coerência de pelo menos 0,8, mais exigente que o
+mínimo recomendado por \citeonline{tischler2012}; deles saem a faixa de
+frequências confiável, o ganho máximo e a frequência de queda de
+\SI{3}{\decibel}. A grandeza estimada é a \emph{sensibilidade à perturbação
+em malha fechada}, que inclui o controlador, e não a planta; a identificação
+da planta é tratada no Capítulo~\ref{cap:modelagem}.
+
+% ----------------------------------------------------------------------
+\section{Automação e reprodutibilidade}
+\label{sec:automacao}
+
+Um programa em Python (\codigo{ensaios/run\_ensaio.py}) executa o
+procedimento completo de um ensaio --- um cenário com um controlador --- e,
+sem argumentos, todos os cenários com todos os controladores, um SITL por
+vez: inicia o simulador, aplica os parâmetros comuns e os do controlador,
+reinicia o firmware uma única vez, voa o perfil, pousa, encerra o simulador e
+analisa o registro. Cada ensaio deixa uma pasta própria, organizada como os
+cenários (\codigo{resultados/<eixo>/<ensaio>/<controlador>/<data>/}), com o
+registro de voo, os arquivos de configuração do cenário e do controlador, a
+lista completa de parâmetros efetivamente em vigor, as métricas, as séries
+temporais, um resumo em texto e um painel de figuras. Uma tabela consolidada
+recebe uma linha por ensaio, com as métricas, os ganhos que voaram em cada
+eixo e a massa e as inércias da aeronave. Um voo que falha é repetido, e a
+pasta do voo malsucedido é marcada com o motivo da falha.
+
+Três problemas encontrados durante o desenvolvimento afetavam diretamente a
+validade dos resultados, e o procedimento os trata explicitamente.
+
+\paragraph{Temporização.} Com fator de aceleração 5, o SITL entrega cerca de
+4,5 vezes o tempo real, e sob carga de registro chegou a 1,4 vez. Um perfil
+temporizado pelo relógio do computador terminava antes da hora, e o pouso
+começava no meio do ensaio. O perfil passou a ser marcado no relógio
+simulado, lido das mensagens do próprio veículo; mesmo assim, lendo a
+mensagem mais antiga da fila de recepção, o atraso crescia ao longo do voo,
+porque o procedimento consumia as mensagens um pouco mais devagar do que o
+veículo as produzia --- o degrau chegava com \SI{0.50}{\second} de atraso e o
+retorno, com \SI{1.82}{\second}. Esvaziando a fila antes de cada leitura, os
+atrasos caíram para \SI{0.12}{\second} e \SI{0.16}{\second}, o piso imposto
+pela taxa de comando de \SI{10}{\hertz}. A perturbação, temporizada pelo
+relógio do injetor, que roda dentro do firmware, não tem atraso. Os
+intervalos de tempo do lado do computador usam um relógio monotônico: o
+relógio de parede do sistema chegou a voltar no tempo durante uma corrida,
+ao se ressincronizar.
+
+\paragraph{Reinicialização do firmware.} Cerca de um voo em cada cinco a
+quinze falhava logo depois da reinicialização que ativa o motor de
+\textit{scripts} e o \codigo{AC\_CustomControl}. A causa é um defeito do
+SITL: antes de reiniciar, o firmware esvazia a porta serial para garantir que
+a confirmação do comando seja enviada, e a rotina que faz isso no SITL repete
+até esvaziar o \textit{buffer} ou até passar um segundo de tempo
+\emph{simulado}~\cite{ardupilot2026}. Nada nesse laço faz o tempo simulado
+avançar, e, se o cliente já fechou a conexão, o \textit{buffer} nunca se
+esvazia: o simulador fica preso, a 100\,\% de processamento, sem reiniciar. O
+procedimento antigo fechava a conexão logo depois de pedir a reinicialização.
+O novo espera a confirmação, lê até que o próprio simulador feche a conexão e
+confere que ele de fato reiniciou. Antes da correção, o travamento apareceu
+em 3 de 8 e em 2 de 7 ciclos de reinicialização; depois dela, em nenhum de 40
+e de 30 ciclos.
+
+\paragraph{Registro.} As mensagens gravadas foram escolhidas de modo a
+conter tudo o que a análise lê e nada além disso. As mensagens de IMU em alta
+taxa, que a análise não usa, levariam o registro de algumas dezenas de
+megabytes para mais de um gigabyte por ensaio.
+
+O lote completo, com os dezesseis cenários e os dois controladores, tem
+trinta e dois voos e leva cerca de meia hora. O código, os cenários e as
+configurações são versionados; os resultados ficam fora do controle de
+versão, mas cada pasta de resultado guarda o necessário para refazer e
+reanalisar o ensaio.

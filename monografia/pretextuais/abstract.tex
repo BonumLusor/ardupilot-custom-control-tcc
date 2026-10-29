@@ -1,0 +1,34 @@
+% ---------------------------------------------------------------------
+%  ABSTRACT — tradução do resumo; manter os dois sincronizados.
+% ---------------------------------------------------------------------
+\begin{resumo}[Abstract]
+\begin{otherlanguage*}{english}
+Quadrotors are underactuated, nonlinear, coupled and open-loop unstable
+plants whose in-flight behaviour depends entirely on an attitude control
+loop running in real time. In open-source autopilots this loop is
+traditionally implemented by cascaded proportional-integral-derivative (PID)
+controllers, tuned empirically or automatically rather than from an explicit
+dynamic model of the vehicle. This work designs an attitude controller with
+modern control methods, implements it inside the ArduPilot firmware through
+the \codigo{AC\_CustomControl} framework and compares it with the native PID
+controller in software-in-the-loop (SITL) simulation, in which the compiled
+firmware runs against a flight dynamics model. The vehicle model is derived
+from the Newton-Euler equations, linearised around hover and checked against
+the frequency response identified in the simulator itself. The control law
+is designed as a linear quadratic regulator with integral action and is
+complemented by an extended state observer for disturbance estimation and
+compensation. The comparative tests comprise reference steps in roll, pitch
+and yaw, isolated and simultaneous, and reproducible torque disturbances
+shaped as pulses, sustained steps and frequency sweeps, applied under
+identical conditions to both controllers and evaluated through transient
+performance, tracking error, disturbance rejection and control effort
+metrics.
+\pendente{Main results and conclusion, to be written after the tests.}
+
+\vspace{\onelineskip}
+
+\noindent
+\textbf{Keywords}: quadrotor. attitude control. ArduPilot. linear quadratic
+regulator. software-in-the-loop simulation.
+\end{otherlanguage*}
+\end{resumo}

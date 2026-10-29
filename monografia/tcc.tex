@@ -1,0 +1,232 @@
+% ======================================================================
+%  MONOGRAFIA DE TCC
+%  Engenharia de Controle e Automação - IFSP / Câmpus São José dos Campos
+%  Aluno: Gustavo Henrique Ferraioli
+%
+%  Classe abnTeX2 (normas ABNT), no leiaute do modelo "IFSP CTD template"
+%  do Overleaf (capa com a marca do câmpus, ficha, folha de aprovação,
+%  links em azul, listagens de código). Compilar a partir desta pasta com
+%      latexmk
+%  (o latexmkrc manda os auxiliares para build/; o PDF fica nesta pasta).
+%
+%  Requer o abnTeX2. Nesta máquina ele foi instalado só para o usuário, em
+%  ~/texmf (a partir do abntex2.tds.zip do CTAN). Alternativas: o pacote
+%  texlive-publishers do Ubuntu, ou o Overleaf, que já o traz.
+%
+%  Trechos ainda por escrever estão marcados com \pendente{...}, que
+%  aparece em vermelho no PDF. Para achá-los: grep -rn pendente .
+% ======================================================================
+\documentclass[
+    12pt,
+    oneside,            % impressão em um lado só (versão digital)
+    a4paper,
+    chapter=TITLE,      % títulos de capítulo em maiúsculas
+    english,            % idioma adicional (abstract)
+    brazil              % idioma principal (último da lista)
+]{abntex2}
+
+% ---------- Pacotes ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{indentfirst}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage[output-decimal-marker={,}]{siunitx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,shapes.geometric,fit}
+\usepackage{listings}
+\usepackage{lastpage}           % total de páginas na ficha catalográfica
+\usepackage{pdfpages}           % ficha e folha de aprovação definitivas
+\usepackage[alf]{abntex2cite}   % citações autor-data (NBR 10520)
+
+% ---------- Cores (as do modelo) ----------
+\definecolor{azullink}{RGB}{41,5,195}
+\definecolor{fundocodigo}{RGB}{255,255,250}
+
+% ---------- Listagens de código ----------
+\renewcommand{\lstlistingname}{Código}
+\renewcommand{\lstlistlistingname}{Lista de códigos}
+\lstset{
+    language=C++,
+    basicstyle=\ttfamily\footnotesize,
+    columns=fullflexible,
+    keepspaces=true,
+    backgroundcolor=\color{fundocodigo},
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny,
+    numbersep=4pt,
+    keywordstyle=\color{azullink},
+    stringstyle=\color{azullink},
+    commentstyle=\color{black!55},
+    showstringspaces=false,
+    breaklines=true,
+    captionpos=t,
+    tabsize=4,
+    extendedchars=true,
+    literate={á}{{\'a}}1 {à}{{\`a}}1 {ã}{{\~a}}1 {â}{{\^a}}1
+             {é}{{\'e}}1 {ê}{{\^e}}1 {í}{{\'i}}1 {ó}{{\'o}}1
+             {õ}{{\~o}}1 {ô}{{\^o}}1 {ú}{{\'u}}1 {ç}{{\c{c}}}1
+             {Á}{{\'A}}1 {É}{{\'E}}1 {Ç}{{\c{C}}}1
+}
+
+% ---------- Macros do texto ----------
+\newcommand{\pendente}[1]{\textcolor{red}{[#1]}}
+\newcommand{\codigo}[1]{\texttt{#1}}            % nomes de arquivo, parâmetro, função
+\newcommand{\vetor}[1]{\bm{#1}}
+\newcommand{\matriz}[1]{\mathbf{#1}}
+\newcommand{\ardupilot}{ArduPilot}
+
+% Texto da folha de aprovação (campo que o abnTeX2 não tem)
+\newcommand{\imprimirtextoaprovacao}{}
+\newcommand{\textoaprovacao}[1]{\renewcommand{\imprimirtextoaprovacao}{#1}}
+
+% ---------- Dados do trabalho ----------
+\titulo{Projeto e implementação embarcada de um controlador de atitude
+para quadrirrotor no \textit{firmware} ArduPilot, validado em simulação
+\textit{software-in-the-loop}}
+\autor{Gustavo Henrique Ferraioli}
+\local{São José dos Campos}
+\data{2026}
+\orientador{Prof. Clécio Fischer}
+% \coorientador{Prof. ...}   % a definir
+\instituicao{%
+    Instituto Federal de Educação, Ciência e Tecnologia de São Paulo -- IFSP
+    \par
+    Câmpus São José dos Campos
+    \par
+    Engenharia de Controle e Automação}
+\tipotrabalho{Trabalho de Conclusão de Curso (Graduação)}
+\preambulo{Trabalho de Conclusão de Curso apresentado ao curso de
+Engenharia de Controle e Automação do Instituto Federal de Educação,
+Ciência e Tecnologia de São Paulo, Câmpus São José dos Campos, como
+requisito parcial para a obtenção do título de Bacharel em Engenharia de
+Controle e Automação.}
+\textoaprovacao{Este trabalho foi julgado adequado para a obtenção do título
+de Bacharel em Engenharia de Controle e Automação, pelo Instituto Federal de
+Educação, Ciência e Tecnologia de São Paulo, e aprovado na sua forma final
+pela comissão avaliadora abaixo indicada.}
+
+% ---------- Capa (modelo IFSP CTD) ----------
+% Marca do câmpus e instituição no topo; título e autor no meio; local e
+% ano embaixo. A marca é vetorial: ver figuras/logo-ifsp-sjc.tex.
+\renewcommand{\imprimircapa}{%
+  \begin{capa}%
+    \center
+    \includegraphics{figuras/logo-ifsp-sjc}\par
+    \vspace*{1.2cm}
+    {\ABNTEXchapterfont\bfseries\small
+     INSTITUTO FEDERAL DE EDUCAÇÃO, CIÊNCIA E TECNOLOGIA DE SÃO PAULO\par
+     CÂMPUS SÃO JOSÉ DOS CAMPOS\par
+     ENGENHARIA DE CONTROLE E AUTOMAÇÃO\par}
+    \vspace{\stretch{1.6}}
+    {\ABNTEXchapterfont\bfseries\LARGE\imprimirtitulo\par}
+    \vspace*{0.6cm}
+    {\ABNTEXchapterfont\large\MakeUppercase{\imprimirautor}\par}
+    \vspace{\stretch{1}}
+    {\ABNTEXchapterfont\large\imprimirlocal\par
+     \imprimirdata\par}
+    \vspace*{1cm}
+  \end{capa}%
+}
+
+% ---------- PDF ----------
+\makeatletter
+\hypersetup{
+    pdftitle={\@title},
+    pdfauthor={\@author},
+    pdfsubject={\imprimirpreambulo},
+    pdfkeywords={quadrirrotor}{controle de atitude}{ArduPilot}{SITL},
+    colorlinks=true,
+    linkcolor=azullink,
+    citecolor=azullink,
+    filecolor=magenta,
+    urlcolor=azullink,
+    bookmarksdepth=4
+}
+\makeatother
+
+% ---------- Espaçamentos (NBR 14724) ----------
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0.2cm}
+
+% ======================================================================
+\begin{document}
+\selectlanguage{brazil}
+\frenchspacing
+
+% ----------------------------------------------------------------------
+%  ELEMENTOS PRÉ-TEXTUAIS
+% ----------------------------------------------------------------------
+\pretextual
+
+\imprimircapa
+\imprimirfolhaderosto{}         % o {} é necessário: a macro do abnTeX2
+                                % engole o próximo token como argumento
+\input{pretextuais/ficha}      % provisória, até a biblioteca emitir
+\input{pretextuais/aprovacao}   % trocar pela assinada após a defesa
+% \input{pretextuais/dedicatoria}   % opcional
+\input{pretextuais/agradecimentos}
+% \input{pretextuais/epigrafe}      % opcional
+
+\input{pretextuais/resumo}
+\input{pretextuais/abstract}
+
+\pdfbookmark[0]{\listfigurename}{lof}
+\listoffigures*
+\cleardoublepage
+
+\pdfbookmark[0]{\listtablename}{lot}
+\listoftables*
+\cleardoublepage
+
+% Lista de códigos: ativar quando entrar o primeiro lstlisting.
+% \pdfbookmark[0]{\lstlistlistingname}{lol}
+% \begin{KeepFromToc}
+% \lstlistoflistings
+% \end{KeepFromToc}
+% \cleardoublepage
+
+\input{pretextuais/siglas}
+\input{pretextuais/simbolos}
+
+\pdfbookmark[0]{\contentsname}{toc}
+\tableofcontents*
+\cleardoublepage
+
+% ----------------------------------------------------------------------
+%  ELEMENTOS TEXTUAIS
+% ----------------------------------------------------------------------
+\textual
+
+\input{capitulos/01-introducao}
+\input{capitulos/02-fundamentacao}
+% Próximos capítulos (ver Seção "Organização do trabalho").
+\input{capitulos/03-materiais-e-metodos}
+\input{capitulos/04-modelagem-e-identificacao}
+\input{capitulos/05-projeto-e-implementacao}
+\input{capitulos/06-resultados}
+% \input{capitulos/07-conclusoes}
+
+% ----------------------------------------------------------------------
+%  ELEMENTOS PÓS-TEXTUAIS
+% ----------------------------------------------------------------------
+\postextual
+
+\bibliography{referencias}
+
+% Apêndices (material do próprio autor) e anexos (material de terceiros),
+% quando houver:
+% \begin{apendicesenv}
+% \input{apendices/A-...}
+% \end{apendicesenv}
+% \begin{anexosenv}
+% \input{anexos/A-...}
+% \end{anexosenv}
+
+\end{document}

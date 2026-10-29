@@ -1,0 +1,15 @@
+% Gerada por ensaios/tabelas_monografia.py — nao editar a mao.
+\begin{tabular}{llrrrrr}
+\toprule
+Eixo & Controlador & Subida & Sobressinal & Acomodação & \multicolumn{2}{c}{Erro de rastreamento} \\
+\cmidrule(lr){6-7}
+ & & (\si{\second}) & (\%) & (\si{\second}) & máx. (\si{\degree}) & eficaz (\si{\degree}) \\
+\midrule
+Rolagem & nativo & 0,045 & 22,1 & 0,18 & 3,25 & 0,36 \\
+Rolagem & \codigo{cc\_pid} & 0,040 & 27,1 & 0,23 & 3,31 & 0,39 \\
+Arfagem & nativo & 0,048 & 19,8 & 0,18 & 3,18 & 0,35 \\
+Arfagem & \codigo{cc\_pid} & 0,045 & 23,8 & 0,18 & 3,25 & 0,37 \\
+Guinada & nativo & 0,465 & 10,8 & 1,54 & 7,88 & 2,20 \\
+Guinada & \codigo{cc\_pid} & 0,463 & 10,9 & 1,53 & 8,05 & 1,77 \\
+\bottomrule
+\end{tabular}
