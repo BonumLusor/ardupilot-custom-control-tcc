@@ -55,8 +55,13 @@ RESULTADOS = RAIZ / "resultados"
 # Os cenarios ficam em uma pasta por eixo exercitado, e os ensaios de cada pasta
 # tem os mesmos nomes. A ordem aqui e a de execucao e de listagem; pastas e
 # ensaios novos entram depois, em ordem alfabetica.
-ORDEM_GRUPOS = ("rolagem", "arfagem", "guinada", "rolagem_arfagem_guinada")
-ORDEM_ENSAIOS = ("nominal", "torque_pulso", "torque_degrau", "torque_chirp")
+ORDEM_GRUPOS = ("rolagem", "arfagem", "guinada", "rolagem_arfagem_guinada",
+                "ruido/rnd10", "ruido/rnd20", "ruido/rnd40", "ruido/rnd80", "vento",
+                "grande/30graus", "grande/45graus", "saturacao/guinada",
+                "erro_modelo/empuxo_fraco", "erro_modelo/braco_longo",
+                "erro_modelo/braco_curto", "falha_motor")
+ORDEM_ENSAIOS = ("nominal", "combinado", "torque_pulso", "torque_degrau", "torque_chirp",
+                 "torque_estocastico", "leve", "severa")
 
 sys.path.insert(0, str(RAIZ))
 
@@ -218,7 +223,8 @@ def selecionar_controladores(nomes=None):
         if n not in todos:
             raise SystemExit(
                 f"controlador '{n}' nao existe. Disponiveis: {', '.join(todos)}\n"
-                f"(ha um modelo em controladores/cc_lqr.yaml.exemplo para o terceiro backend)")
+                f"(cc_lqi, cc_eso, cc_lqi_mesmo_ruido e nativo_lqi saem de "
+                f"modelagem/projeto.py --escrever-yaml)")
     return list(dict.fromkeys(nomes))
 
 
@@ -532,7 +538,9 @@ def set_param(m, nome, valor, tentativas=5):
         while time.monotonic() < fim:
             msg = m.recv_match(type="PARAM_VALUE", blocking=True, timeout=1)
             if msg and msg.param_id.strip("\x00") == nome:
-                if abs(msg.param_value - float(valor)) < 1e-4:
+                # o parametro e float32: 5856.64 volta como 5856.6401, entao a
+                # tolerancia cresce com o valor
+                if abs(msg.param_value - float(valor)) < max(1e-4, 1e-6 * abs(float(valor))):
                     return True
                 break
     return False
@@ -940,7 +948,7 @@ def extrair_params(caminho_bin, destino):
 def analisar(pasta, gerar_gif=True):
     """Analisa uma pasta de resultado e escreve todas as saidas."""
     from analise.leitura import (ler_log, serie_unificada, controlador_ativo,
-                                 ler_params)
+                                 ler_params, torque_segurado)
     from analise import (metricas as mod_metricas, painel, animacao, tabelas,
                          frequencia, veiculo)
     from analise.dryden_ref import Perfil, comparar_com_log
@@ -1011,12 +1019,16 @@ def analisar(pasta, gerar_gif=True):
     #  Chirp: a serie temporal sozinha nao responde nada. A resposta em
     #  frequencia e o resultado do ensaio, e a coerencia diz onde acreditar nela.
     #  Uma estimativa por eixo varrido: torque do eixo -> atitude do mesmo eixo.
+    #  A entrada e o torque segurado entre as escritas do injetor, como a fisica
+    #  o aplica: a coluna da serie e interpolada e atrasaria a fase em pi*f*T.
     if perfil is not None and (perfil.modo & 64):
+        segurado = torque_segurado(dados, grade)
         for eixo in mod_metricas.eixos_com_torque(perfil, col):
             c = COLUNAS[eixo]
             est = frequencia.estimar(grade, col, perfil, entrada=c["torque"],
                                      saida=c["med"],
-                                     rotulo=f"{nome_eixo(eixo)} / {c['torque']}")
+                                     rotulo=f"{nome_eixo(eixo)} / {c['torque']}",
+                                     u=segurado.get(c["torque"]))
             if est is None:
                 continue
             m[tabelas.chave_resposta_freq(eixo)] = frequencia.metricas(est)
@@ -1093,7 +1105,10 @@ class FalhaDeAnalise(Exception):
 def voar(cen, ctl, pasta, speedup, instancia):
     """Sobe o SITL, voa o perfil e deixa na pasta o .BIN e o params.parm."""
     voo = cen["voo"]
-    antes = {p.name for p in LOGS_SITL.glob("*.BIN")} if LOGS_SITL.exists() else set()
+    # nome -> mtime: passado de LOG_MAX_FILES (500) o firmware volta ao 00000001.BIN
+    # e sobrescreve, entao o log novo pode ter o nome de um antigo
+    antes = ({p.name: p.stat().st_mtime for p in LOGS_SITL.glob("*.BIN")}
+             if LOGS_SITL.exists() else {})
 
     sitl = None
     try:
@@ -1103,8 +1118,12 @@ def voar(cen, ctl, pasta, speedup, instancia):
         # UM unico reboot. SCR_ENABLE e CC_TYPE sao os dois parametros que exigem
         # reinicio, entao vao juntos: cada reboot e uma chance de o SITL nao voltar
         # a escutar, e o ensaio ja tem pontos de falha suficientes.
+        # params: do cenario (o ruido do giroscopio, por exemplo) vao junto, e os
+        # do controlador tem a palavra final
+        params_cen = dict(cen.get("params") or {})
         params_ctl = dict(ctl.get("params") or {})
-        aplicar_params(m, {**PARAMS_BASE, **params_ctl}, "de base e do controlador")
+        aplicar_params(m, {**PARAMS_BASE, **params_cen, **params_ctl},
+                       "de base, do cenario e do controlador")
         m = reiniciar(m, instancia, sitl=sitl)
 
         # Os ganhos vao DEPOIS do reboot: os CC2_* do backend so existem quando
@@ -1140,7 +1159,8 @@ def voar(cen, ctl, pasta, speedup, instancia):
         derrubar_sitl(sitl)
 
     time.sleep(2)
-    novos = sorted(p for p in LOGS_SITL.glob("*.BIN") if p.name not in antes)
+    novos = sorted(p for p in LOGS_SITL.glob("*.BIN")
+                   if p.stat().st_mtime > antes.get(p.name, float("-inf")))
     if not novos:
         raise SystemExit(f"nenhum .BIN novo em {LOGS_SITL} — o voo nao gerou log")
     origem = max(novos, key=lambda p: p.stat().st_mtime)
@@ -1152,10 +1172,49 @@ def voar(cen, ctl, pasta, speedup, instancia):
     log(f"params.parm: {n_par} parametros extraidos do log")
 
 
+# backends do TCC (firmware/) por CC_TYPE
+BACKENDS_TCC = {3: "AC_CustomControl_LQR", 4: "AC_CustomControl_LQG"}
+
+
+def conferir_firmware(ctl):
+    """O backend que o controlador pede esta no firmware?
+
+    Os backends AC_CustomControl_LQR (CC_TYPE 3) e AC_CustomControl_LQG (CC_TYPE
+    4) vivem em firmware/ e entram no submodulo por firmware/instalar.sh. Sem
+    eles, o SITL subiria, o CC_TYPE cairia no "default" do init() e o voo sairia
+    com o PID nativo — o que so se veria no aviso do espera_cc_tipo, depois de
+    voar.
+    """
+    backend = BACKENDS_TCC.get(ctl.get("espera_cc_tipo"))
+    if backend and not (ARDUPILOT / "libraries" / "AC_CustomControl" / f"{backend}.cpp").exists():
+        raise SystemExit(
+            f"o controlador {ctl.get('slug')} usa o backend {backend}, que nao "
+            "esta instalado no ardupilot/. Rode firmware/instalar.sh (uma vez); o "
+            "sim_vehicle.py recompila no proximo voo.")
+
+
+def voa_no_cenario(nome_controlador, id_cenario):
+    """O controlador voa esse cenario? Diz a chave ``cenarios:`` do YAML dele.
+
+    Sem a chave, voa todos. Com ela, so os cenarios que comecam por algum dos
+    prefixos da lista ('rolagem', 'ruido/rnd20', 'guinada/torque_degrau'): as
+    variantes de um controlador feitas para uma familia de ensaios (os ganhos
+    do filtro de 10 Hz, o escalonamento por empuxo) nao precisam voar o lote
+    inteiro, e o lote sem argumentos continua sendo "tudo o que faz sentido".
+    """
+    ctl, _ = carregar_controlador(nome_controlador)
+    prefixos = ctl.get("cenarios")
+    if not prefixos:
+        return True
+    return any(id_cenario == pr or id_cenario.startswith(pr.rstrip("/") + "/")
+               for pr in prefixos)
+
+
 def rodar(id_cenario, nome_controlador, speedup, instancia, gerar_gif=True):
     """Um ensaio: resultados/<pasta>/<ensaio>/<controlador>/<carimbo>/."""
     cen, p_cen = carregar_cenario(id_cenario)
     ctl, p_ctl = carregar_controlador(nome_controlador)
+    conferir_firmware(ctl)
 
     carimbo = dt.datetime.now().strftime("%Y-%m-%d_%H%M%S")
     pasta = RESULTADOS / id_cenario / ctl["slug"] / carimbo
@@ -1197,7 +1256,7 @@ def rodar_lote(cenarios, controladores, speedup, instancia, gerar_gif=True,
 
     Devolve True se todos os pares terminaram.
     """
-    plano = [(c, k) for c in cenarios for k in controladores]
+    plano = [(c, k) for c in cenarios for k in controladores if voa_no_cenario(k, c)]
     log(f"{len(plano)} ensaio(s): {len(cenarios)} cenario(s) x "
         f"{len(controladores)} controlador(es) ({', '.join(controladores)})")
     for c in cenarios:

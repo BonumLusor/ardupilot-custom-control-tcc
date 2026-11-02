@@ -32,22 +32,25 @@ from . import estilo                     # noqa: E402
 COERENCIA_MINIMA = 0.8
 
 
-def estimar(grade, col, perfil, entrada="tqx", saida="roll", rotulo=None):
+def estimar(grade, col, perfil, entrada="tqx", saida="roll", rotulo=None, u=None):
     """Estima H(f) e a coerencia dentro da janela da varredura.
 
     ``entrada`` e ``saida`` sao colunas da serie: torque do eixo e atitude do
     mesmo eixo (``tqz`` e ``yaw_rel`` na guinada). ``rotulo`` e o nome que vai no
-    grafico. Devolve None quando o cenario nao tem chirp ou nao ha dados
-    suficientes.
+    grafico. ``u``, se dado, e a entrada na grade no lugar de ``col[entrada]``:
+    o ensaio passa o torque segurado entre as escritas do injetor
+    (leitura.torque_segurado), que e o que a fisica aplica. A coluna da serie e
+    interpolada e atrasaria a fase em pi*f*T. Devolve None quando o cenario nao
+    tem chirp ou nao ha dados suficientes.
     """
     if perfil is None or not (perfil.modo & 64):
         return None
-    if entrada not in col or saida not in col or "tp" not in col:
+    if (u is None and entrada not in col) or saida not in col or "tp" not in col:
         return None
 
     tp = col["tp"]
     dentro = (tp >= perfil.tqt0) & (tp <= perfil.tqt0 + perfil.tqdur)
-    u = np.asarray(col[entrada], dtype=float)[dentro]
+    u = np.asarray(col[entrada] if u is None else u, dtype=float)[dentro]
     y = np.asarray(col[saida], dtype=float)[dentro]
     t = np.asarray(grade, dtype=float)[dentro]
     ok = np.isfinite(u) & np.isfinite(y)

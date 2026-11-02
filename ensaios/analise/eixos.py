@@ -26,6 +26,7 @@ NOMES = {"roll": "rolagem", "pitch": "arfagem", "yaw": "guinada"}
 #  saida     saida do controlador de taxa para a mistura, normalizada (RATE.*Out)
 #  pid       prefixo das colunas com os termos do PID de taxa (Tar, P, I, D, FF...)
 #  msg_pid   mensagem do log com esses termos
+#  msg_ccl   mensagem com os sinais internos do backend LQR (AC_CustomControl_LQR)
 #  torque    coluna do torque injetado no eixo, rad/s2
 #  sufixo    trecho do nome dos parametros do ArduPilot (ATC_RAT_RLL_P, ...)
 #  bit_cc    bit do eixo em CC_AXIS_MASK
@@ -33,15 +34,15 @@ NOMES = {"roll": "rolagem", "pitch": "arfagem", "yaw": "guinada"}
 COLUNAS = {
     "roll": dict(ref="roll_des", med="roll", erro="erro_roll",
                  taxa_ref="p_des", taxa="p", saida="u_roll",
-                 pid="pid_", msg_pid="PIDR", torque="tqx",
+                 pid="pid_", msg_pid="PIDR", msg_ccl="CCLR", torque="tqx",
                  sufixo="RLL", bit_cc=1, rate=("RDes", "R", "ROut")),
     "pitch": dict(ref="pitch_des", med="pitch", erro="erro_pitch",
                   taxa_ref="q_des", taxa="q", saida="u_pitch",
-                  pid="pidp_", msg_pid="PIDP", torque="tqy",
+                  pid="pidp_", msg_pid="PIDP", msg_ccl="CCLP", torque="tqy",
                   sufixo="PIT", bit_cc=2, rate=("PDes", "P", "POut")),
     "yaw": dict(ref="yaw_des_rel", med="yaw_rel", erro="erro_yaw",
                 taxa_ref="r_des", taxa="r", saida="u_yaw",
-                pid="pidy_", msg_pid="PIDY", torque="tqz",
+                pid="pidy_", msg_pid="PIDY", msg_ccl="CCLY", torque="tqz",
                 sufixo="YAW", bit_cc=4, rate=("YDes", "Y", "YOut")),
 }
 
@@ -49,6 +50,11 @@ COLUNAS = {
 # um ganha na serie (depois do prefixo do eixo)
 CAMPOS_PID = (("Tar", "tar"), ("Act", "act"), ("Err", "err"),
               ("P", "p"), ("I", "i"), ("D", "d"), ("FF", "ff"))
+
+# sinais do backend LQR (CCLR/CCLP/CCLY) e o nome de cada um na serie, com o
+# eixo como sufixo: d_hat_roll, x_i_yaw, ... Angulos e taxas ficam em rad e
+# rad/s, e a perturbacao estimada em rad/s2, a mesma escala do torque injetado.
+CAMPOS_CCL = (("XI", "x_i"), ("Uff", "u_ff"), ("Wh", "w_hat"), ("Dh", "d_hat"))
 
 
 def nome(eixo):

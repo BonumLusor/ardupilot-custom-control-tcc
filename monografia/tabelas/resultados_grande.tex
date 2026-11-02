@@ -1,0 +1,36 @@
+% Gerada por ensaios/tabelas_monografia.py — nao editar a mao.
+\begin{tabular}{lllrrrr}
+\toprule
+ & & & \multicolumn{3}{c}{Rolagem} & Guinada \\
+\cmidrule(lr){4-6}
+Graus & Manobra & Controlador & sobressinal (\%) & erro máx. (\si{\degree}) & erro eficaz (\si{\degree}) & erro máx. (\si{\degree}) \\
+\midrule
+30 & rolagem & nativo & 15,1 & 5,77 & 0,79 & --- \\
+30 & rolagem & LQI & 2,1 & 0,69 & 0,09 & --- \\
+30 & rolagem & LQR+ESO & 2,3 & 0,78 & 0,09 & --- \\
+30 & rolagem & LQI (mesmo ruído) & 2,4 & 0,84 & 0,10 & --- \\
+30 & rolagem & LQG & 3,4 & 0,96 & 0,13 & --- \\
+30 & rolagem & LQG (mesmo ruído) & 4,1 & 1,17 & 0,15 & --- \\
+\addlinespace
+30 & combinada & nativo & 2,4 & 8,78 & 2,74 & 13,12 \\
+30 & combinada & LQI & 0,5 & 0,95 & 0,32 & 1,43 \\
+30 & combinada & LQR+ESO & 0,4 & 1,01 & 0,37 & 1,64 \\
+30 & combinada & LQI (mesmo ruído) & 0,4 & 2,44 & 0,80 & 3,39 \\
+30 & combinada & LQG & 0,4 & 2,52 & 0,51 & 4,07 \\
+30 & combinada & LQG (mesmo ruído) & 0,2 & 3,05 & 0,61 & 3,71 \\
+\addlinespace
+45 & rolagem & nativo & 10,9 & 6,87 & 1,00 & --- \\
+45 & rolagem & LQI & 0,0 & 0,68 & 0,09 & --- \\
+45 & rolagem & LQR+ESO & 0,0 & 0,77 & 0,10 & --- \\
+45 & rolagem & LQI (mesmo ruído) & 0,0 & 0,68 & 0,09 & --- \\
+45 & rolagem & LQG & 2,5 & 1,18 & 0,18 & --- \\
+45 & rolagem & LQG (mesmo ruído) & 2,8 & 1,41 & 0,20 & --- \\
+\addlinespace
+45 & combinada & nativo & 1,0 & 15,57 & 4,03 & 15,36 \\
+45 & combinada & LQI & 0,7 & 2,20 & 0,77 & 2,21 \\
+45 & combinada & LQR+ESO & 0,6 & 2,33 & 0,84 & 2,46 \\
+45 & combinada & LQI (mesmo ruído) & 0,6 & 6,23 & 1,93 & 6,59 \\
+45 & combinada & LQG & 0,5 & 5,56 & 1,12 & 5,93 \\
+45 & combinada & LQG (mesmo ruído) & 0,4 & 5,21 & 1,08 & 4,57 \\
+\bottomrule
+\end{tabular}

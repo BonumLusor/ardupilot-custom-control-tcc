@@ -1,0 +1,20 @@
+% Gerada por modelagem/projeto.py — nao editar a mao.
+\begin{tabular}{llrrr}
+\toprule
+ & & & \multicolumn{2}{c}{Erro de rastreamento (\si{\degree})} \\
+\cmidrule(lr){4-5}
+Eixo & Controlador & Sobressinal (\%) & máximo & eficaz \\
+\midrule
+Rolagem & Nativo & 22,8 & 3,219 & 0,346 \\
+Rolagem & PID + FF & 4,0 & 0,688 & 0,061 \\
+Rolagem & LQI & 4,9 & 0,485 & 0,045 \\
+Rolagem & LQG, um estimador & 11,2 & 1,094 & 0,112 \\
+Rolagem & LQG, com manobra & 11,2 & 1,094 & 0,112 \\
+\addlinespace
+Guinada & Nativo & 11,1 & 7,812 & 2,198 \\
+Guinada & PID + FF & 0,0 & 0,157 & 0,043 \\
+Guinada & LQI & 0,3 & 0,117 & 0,036 \\
+Guinada & LQG, um estimador & 0,4 & 0,355 & 0,114 \\
+Guinada & LQG, com manobra & 0,0 & 0,111 & 0,028 \\
+\bottomrule
+\end{tabular}

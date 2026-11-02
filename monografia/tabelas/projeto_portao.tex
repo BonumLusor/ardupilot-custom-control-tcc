@@ -1,0 +1,20 @@
+% Gerada por modelagem/projeto.py — nao editar a mao.
+\begin{tabular}{llrrrrrrrr}
+\toprule
+ & & & & \multicolumn{3}{c}{Pulso de torque} & \multicolumn{2}{c}{Degrau de torque} & \\
+\cmidrule(lr){5-7}\cmidrule(lr){8-9}
+Eixo & Controlador & Ruído & MF (\si{\degree}) & Desvio (\si{\degree}) & RMSE (\si{\degree}) & Recup. (\si{\second}) & Desvio (\si{\degree}) & Recup. (\si{\second}) & Estocástico (\si{\degree}) \\
+\midrule
+Rolagem & Nativo (AutoTune) & 1,00 & 38,8 & 0,900 & 0,225 & 1,23 & 0,600 & 2,20 & 0,521 \\
+Rolagem & PID (cascata, ganhos livres), melhor & 1,00 & 38,8 & 0,900 & 0,225 & 1,23 & 0,600 & 2,20 & 0,521 \\
+Rolagem & LQI, melhor & 0,98 & 42,2 & 1,059 & 0,310 & 0,65 & 0,706 & 0,32 & 0,698 \\
+Rolagem & LQR+ESO, melhor & 0,82 & 40,8 & 1,125 & 0,299 & 0,64 & 0,750 & 0,32 & 0,712 \\
+Rolagem & LQG (portão) & 0,94 & 39,9 & 0,806 & 0,188 & 0,53 & 0,538 & 0,21 & 0,496 \\
+\addlinespace
+Guinada & Nativo (AutoTune) & 1,00 & 37,5 & 5,977 & 1,649 & 0,35 & 2,584 & 23,67 & 1,563 \\
+Guinada & PID (cascata, ganhos livres), melhor & 0,95 & 42,0 & 5,839 & 1,830 & 1,72 & 2,515 & 1,91 & 1,713 \\
+Guinada & LQI, melhor & 0,97 & 65,6 & 8,160 & 3,632 & 3,06 & 6,144 & 1,91 & 3,381 \\
+Guinada & LQR+ESO, melhor & 0,97 & 61,4 & 6,056 & 2,092 & 2,60 & 3,267 & 2,56 & 1,952 \\
+Guinada & LQG (portão) & 0,98 & 46,4 & 4,810 & 1,426 & 1,79 & 1,877 & 1,53 & 1,343 \\
+\bottomrule
+\end{tabular}

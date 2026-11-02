@@ -27,7 +27,10 @@ MODO_TQ_PULSO = 8
 MODO_TQ_COS = 16
 MODO_TQ_DEG = 32
 MODO_TQ_CHIRP = 64
-MODO_TQ_QUALQUER = MODO_TQ_PULSO | MODO_TQ_COS | MODO_TQ_DEG | MODO_TQ_CHIRP
+MODO_TQ_ESTOC = 128
+MODO_EVENTO = 256
+MODO_TQ_QUALQUER = (MODO_TQ_PULSO | MODO_TQ_COS | MODO_TQ_DEG | MODO_TQ_CHIRP
+                    | MODO_TQ_ESTOC)
 
 # Park-Miller minstd, identico ao do Lua
 MINSTD_M = 2147483647
@@ -82,6 +85,10 @@ class Perfil:
     tqdur: float = 0.4
     tqf0: float = 0.2
     tqf1: float = 10.0
+    tqtc: float = 0.1
+    evt: int = 0
+    evm: int = 0
+    evk: float = 1.0
 
     @classmethod
     def de_dict(cls, d):
@@ -91,7 +98,7 @@ class Perfil:
         modos de voo usado no resto dos ensaios.
         """
         campos = set(cls.__annotations__)
-        inteiros = {"modo", "seed"}
+        inteiros = {"modo", "seed", "evt", "evm"}
         limpo = {}
         for k, v in d.items():
             nome = k.lower().removeprefix("wnd_")
@@ -188,6 +195,11 @@ def gerar(perfil: Perfil, duracao_s: float, dt: float = DT):
     rng = RngMinstd(perfil.seed)
     du_x = 0.0
     dv_u1 = dv_u2 = dv_y1 = dv_y2 = 0.0
+    # torque estocastico: OU exato de variancia unitaria por eixo
+    es_phi = np.exp(-dt / max(perfil.tqtc, 1e-3))
+    es_g = np.sqrt(max(1.0 - es_phi * es_phi, 0.0))
+    es = np.zeros(3)
+    estoc = np.zeros((n, 3))
 
     t = np.empty(n)
     wn = np.empty(n)
@@ -220,13 +232,23 @@ def gerar(perfil: Perfil, duracao_s: float, dt: float = DT):
             vel_long += du_x
             vel_lat += y
 
+        if perfil.modo & MODO_TQ_ESTOC:
+            n1, n2 = rng.normais()
+            n3, _ = rng.normais()
+            es = es_phi * es + es_g * np.array([n1, n2, n3])
+            estoc[k] = es
+
         t[k] = tk
         wn[k] = vel_long * cs - vel_lat * sn
         we[k] = vel_long * sn + vel_lat * cs
 
-    # torque: deterministico, sem RNG, entao sai vetorizado de uma vez
+    # torque: as formas deterministicas e, na janela, o estocastico
     ft = forma_torque(perfil, t)
-    return t, wn, we, perfil.tqx * ft, perfil.tqy * ft, perfil.tqz * ft
+    tq = np.outer(ft, [perfil.tqx, perfil.tqy, perfil.tqz])
+    if perfil.modo & MODO_TQ_ESTOC:
+        dentro = (t >= perfil.tqt0) & (t <= perfil.tqt0 + max(perfil.tqdur, 0.01))
+        tq += np.where(dentro[:, None], estoc * [perfil.tqx, perfil.tqy, perfil.tqz], 0.0)
+    return t, wn, we, tq[:, 0], tq[:, 1], tq[:, 2]
 
 
 def comparar_com_log(perfil: Perfil, dados, tolerancia=1e-3):

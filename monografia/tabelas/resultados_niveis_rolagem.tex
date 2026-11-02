@@ -1,0 +1,39 @@
+% Gerada por ensaios/tabelas_monografia.py — nao editar a mao.
+\begin{tabular}{llrrrrr}
+\toprule
+ & & Ruído & Pulso & \multicolumn{2}{c}{Degrau} & Estocástico \\
+\cmidrule(lr){5-6}
+\codigo{SIM\_GYR\_RND} & Controlador & $u_\mathrm{rms}$ calmo & desvio (\si{\degree}) & desvio (\si{\degree}) & recup. (\si{\second}) & RMSE (\si{\degree}) \\
+\midrule
+0 & nativo & 0,0002 & 0,90 & 0,59 & 2,29 & 0,507 \\
+0 & LQI & 0,0003 & 0,98 & 0,65 & 0,45 & 0,605 \\
+0 & LQR+ESO & 0,0003 & 1,00 & 0,66 & 0,43 & 0,608 \\
+0 & LQG & 0,0016 & 0,84 & 0,53 & 0,17 & 0,481 \\
+0 & LQG (mesmo ruído) & 0,0016 & 0,82 & 0,53 & 0,21 & 0,482 \\
+\addlinespace
+10 & nativo & 0,0006 & 0,90 & 0,60 & 2,57 & 0,509 \\
+10 & LQI & 0,0007 & 0,99 & 0,66 & 0,46 & 0,601 \\
+10 & LQR+ESO & 0,0006 & 1,00 & 0,66 & 0,43 & 0,618 \\
+10 & LQG & 0,0016 & 0,83 & 0,53 & 0,16 & 0,488 \\
+10 & LQG (mesmo ruído) & 0,0018 & 0,82 & 0,51 & 0,22 & 0,486 \\
+\addlinespace
+20 & nativo & 0,0014 & 0,91 & 0,61 & 2,59 & 0,511 \\
+20 & LQI & 0,0014 & 0,99 & 0,66 & 0,53 & 0,605 \\
+20 & LQR+ESO & 0,0014 & 1,01 & 0,66 & 0,38 & 0,620 \\
+20 & LQG & 0,0018 & 0,86 & 0,52 & 0,17 & 0,483 \\
+20 & LQG (mesmo ruído) & 0,0018 & 0,84 & 0,52 & 0,21 & 0,487 \\
+\addlinespace
+40 & nativo & 0,0030 & 0,90 & 0,60 & ---$^\ddagger$ & 0,510 \\
+40 & LQI & 0,0028 & 1,01 & 0,66 & ---$^\ddagger$ & 0,602 \\
+40 & LQR+ESO & 0,0029 & 1,02 & 0,68 & ---$^\ddagger$ & 0,619 \\
+40 & LQG & 0,0031 & 0,84 & 0,49 & ---$^\ddagger$ & 0,486 \\
+40 & LQG (mesmo ruído) & 0,0031 & 0,83 & 0,49 & ---$^\ddagger$ & 0,486 \\
+\addlinespace
+80 & nativo & 0,0059 & 0,96 & 0,63 & ---$^\ddagger$ & 0,514 \\
+80 & LQI & 0,0056 & 1,00 & 0,71 & ---$^\ddagger$ & 0,598 \\
+80 & LQR+ESO & 0,0057 & 1,01 & 0,72 & ---$^\ddagger$ & 0,621 \\
+80 & LQG & 0,0061 & 0,79 & 0,46 & ---$^\ddagger$ & 0,490 \\
+80 & LQG (mesmo ruído) & 0,0061 & 0,89 & 0,46 & ---$^\ddagger$ & 0,495 \\
+\bottomrule
+\multicolumn{7}{l}{\footnotesize $^\ddagger$ Recuperação não citada: com \codigo{SIM\_GYR\_RND} de 40 e 80, o limiar vem da faixa de ruído de cada controlador.} \\
+\end{tabular}

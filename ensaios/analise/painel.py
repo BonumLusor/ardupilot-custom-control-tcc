@@ -131,6 +131,12 @@ def _faixa_disturbio(ax, t, col, eixo=None):
             if chave in col and np.nanmax(np.abs(col[chave])) > 1e-4:
                 ax.plot(t, col[chave], color=estilo.SERIE[slot], label=rotulo)
                 tem = True
+                # a estimativa do ESO (backend LQR, CC3_MODO 1), na mesma escala;
+                # no LQI o d_hat fica parado no valor do reset e nao entra
+                d_hat = col.get(f"d_hat_{e_tq}")
+                if d_hat is not None and np.nanstd(d_hat) > 1e-4:
+                    ax.plot(t, d_hat, color=estilo.SERIE[slot], ls="--",
+                            label=f"{rotulo}, estimado (ESO)")
         if tem:
             estilo.legenda(ax, ncols=3)
         else:

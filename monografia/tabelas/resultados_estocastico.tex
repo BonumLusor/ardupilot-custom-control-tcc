@@ -1,0 +1,25 @@
+% Gerada por ensaios/tabelas_monografia.py — nao editar a mao.
+\begin{tabular}{llrrrr}
+\toprule
+Eixo & Controlador & RMSE (\si{\degree}) & $\Delta$ nativo (\%) & Desvio máx. (\si{\degree}) & $u_{\max}$ \\
+\midrule
+Rolagem & nativo & 0,511 & +0 & 1,81 & 0,092 \\
+Rolagem & LQI & 0,601 & +18 & 1,86 & 0,094 \\
+Rolagem & LQR+ESO & 0,611 & +20 & 1,89 & 0,092 \\
+Rolagem & LQG & 0,486 & $-$5 & 1,60 & 0,095 \\
+Rolagem & LQG (mesmo ruído) & 0,483 & $-$5 & 1,60 & 0,088 \\
+\addlinespace
+Arfagem & nativo & 0,551 & +0 & 2,62 & 0,102 \\
+Arfagem & LQI & 0,657 & +19 & 2,76 & 0,097 \\
+Arfagem & LQR+ESO & 0,676 & +23 & 3,20 & 0,110 \\
+Arfagem & LQG & 0,525 & $-$5 & 2,27 & 0,113 \\
+Arfagem & LQG (mesmo ruído) & 0,549 & $-$0 & 2,24 & 0,103 \\
+\addlinespace
+Guinada & nativo & 1,576 & +0 & 5,04 & 0,203 \\
+Guinada & LQI & 1,222 & $-$22 & 3,46 & 0,183 \\
+Guinada & LQR+ESO & 1,234 & $-$22 & 3,58 & 0,193 \\
+Guinada & LQI (mesmo ruído) & 2,931 & +86 & 8,13 & 0,108 \\
+Guinada & LQG & 1,528 & $-$3 & 4,66 & 0,224 \\
+Guinada & LQG (mesmo ruído) & 1,250 & $-$21 & 4,10 & 0,242 \\
+\bottomrule
+\end{tabular}

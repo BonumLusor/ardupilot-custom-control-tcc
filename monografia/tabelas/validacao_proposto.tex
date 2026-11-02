@@ -1,0 +1,81 @@
+% Gerada por modelagem/validacao.py — nao editar a mao.
+\begin{tabular}{lllrrrrrr}
+\toprule
+ & & & \multicolumn{2}{c}{Desvio máx. (\si{\degree})} & \multicolumn{2}{c}{Recuperação (\si{\second})} & \multicolumn{2}{c}{RMSE (\si{\degree})} \\
+\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
+Eixo & Torque & Controlador & SITL & Modelo & SITL & Modelo & SITL & Modelo \\
+\midrule
+Rolagem & pulso & nativo (ganhos do LQI) & 0,99 & 0,99 & 0,74 & 0,76 & 0,263 & 0,263 \\
+Rolagem & pulso & LQI & 0,98 & 0,97 & 0,75 & 0,76 & 0,267 & 0,265 \\
+Rolagem & pulso & LQR+ESO & 0,99 & 0,98 & 0,74 & 0,74 & 0,275 & 0,275 \\
+Rolagem & pulso & LQI (mesmo ruído) & 0,97 & 0,98 & 0,74 & 0,73 & 0,265 & 0,264 \\
+Rolagem & pulso & LQG & 0,81 & 0,82 & 0,51 & 0,17 & 0,180 & 0,178 \\
+Rolagem & pulso & LQG (mesmo ruído) & 0,79 & 0,82 & 0,22 & 0,55 & 0,189 & 0,188 \\
+Arfagem & pulso & nativo (ganhos do LQI) & 1,05 & 1,04 & 0,92 & 0,93 & 0,296 & 0,293 \\
+Arfagem & pulso & LQI & 1,04 & 1,04 & 0,87 & 0,88 & 0,290 & 0,288 \\
+Arfagem & pulso & LQR+ESO & 1,04 & 1,03 & 0,78 & 0,79 & 0,295 & 0,293 \\
+Arfagem & pulso & LQI (mesmo ruído) & 1,04 & 1,04 & 0,88 & 0,89 & 0,290 & 0,289 \\
+Arfagem & pulso & LQG & 0,84 & 0,85 & 0,18 & 0,18 & 0,189 & 0,189 \\
+Arfagem & pulso & LQG (mesmo ruído) & 0,86 & 0,88 & 0,18 & 0,18 & 0,198 & 0,198 \\
+Guinada & pulso & nativo (ganhos do LQI) & 5,94 & 5,92 & 0,35 & 0,35 & 1,641 & 1,631 \\
+Guinada & pulso & LQI & 4,18 & 4,17 & 1,68 & 1,68 & 1,402 & 1,398 \\
+Guinada & pulso & LQR+ESO & 4,21 & 4,20 & 1,55 & 1,54 & 1,379 & 1,374 \\
+Guinada & pulso & LQI (mesmo ruído) & 7,98 & 7,94 & 3,26 & 3,24 & 3,477 & 3,457 \\
+Guinada & pulso & LQG & 5,63 & 5,57 & 1,64 & 1,65 & 1,708 & 1,712 \\
+Guinada & pulso & LQG (mesmo ruído) & 4,70 & 4,66 & 1,72 & 1,72 & 1,357 & 1,360 \\
+Rolagem & degrau & nativo (ganhos do LQI) & 0,66 & 0,65 & 0,45 & 0,44 & 0,048 & 0,048 \\
+Rolagem & degrau & LQI & 0,65 & 0,65 & 0,44 & 0,46 & 0,049 & 0,049 \\
+Rolagem & degrau & LQR+ESO & 0,66 & 0,65 & 0,41 & 0,41 & 0,051 & 0,050 \\
+Rolagem & degrau & LQI (mesmo ruído) & 0,65 & 0,64 & 0,42 & 0,44 & 0,049 & 0,048 \\
+Rolagem & degrau & LQG & 0,51 & 0,54 & 0,18 & 0,17 & 0,031 & 0,028 \\
+Rolagem & degrau & LQG (mesmo ruído) & 0,54 & 0,54 & 0,21 & 0,22 & 0,033 & 0,030 \\
+Arfagem & degrau & nativo (ganhos do LQI) & 0,70 & 0,69 & 0,65 & 0,64 & 0,059 & 0,058 \\
+Arfagem & degrau & LQI & 0,69 & 0,69 & 0,61 & 0,63 & 0,060 & 0,058 \\
+Arfagem & degrau & LQR+ESO & 0,69 & 0,69 & 0,46 & 0,47 & 0,056 & 0,055 \\
+Arfagem & degrau & LQI (mesmo ruído) & 0,69 & 0,69 & 0,64 & 0,64 & 0,059 & 0,058 \\
+Arfagem & degrau & LQG & 0,56 & 0,56 & 0,17 & 0,18 & 0,033 & 0,030 \\
+Arfagem & degrau & LQG (mesmo ruído) & 0,57 & 0,57 & 0,18 & 0,19 & 0,034 & 0,032 \\
+Guinada & degrau & nativo (ganhos do LQI) & 2,56 & 2,55 & 22,15 & 22,77 & 0,847 & 0,845 \\
+Guinada & degrau & LQI & 1,87 & 1,87 & 1,13 & 1,13 & 0,214 & 0,213 \\
+Guinada & degrau & LQR+ESO & 1,77 & 1,77 & 1,02 & 1,01 & 0,193 & 0,192 \\
+Guinada & degrau & LQI (mesmo ruído) & 6,16 & 6,14 & 2,33 & 2,31 & 0,987 & 0,982 \\
+Guinada & degrau & LQG & 2,28 & 2,31 & 1,34 & 1,34 & 0,261 & 0,268 \\
+Guinada & degrau & LQG (mesmo ruído) & 1,90 & 1,93 & 1,61 & 1,61 & 0,230 & 0,234 \\
+Rolagem (3 eixos) & pulso & nativo (ganhos do LQI) & 1,00 & 0,99 & 0,75 & 0,77 & 0,265 & 0,264 \\
+Rolagem (3 eixos) & pulso & LQI & 0,98 & 0,97 & 0,74 & 0,73 & 0,265 & 0,263 \\
+Rolagem (3 eixos) & pulso & LQR+ESO & 1,00 & 0,98 & 0,72 & 0,73 & 0,273 & 0,272 \\
+Rolagem (3 eixos) & pulso & LQI (mesmo ruído) & 0,99 & 0,97 & 0,75 & 0,76 & 0,270 & 0,266 \\
+Rolagem (3 eixos) & pulso & LQG & 0,84 & 0,82 & 0,16 & 0,17 & 0,185 & 0,178 \\
+Rolagem (3 eixos) & pulso & LQG (mesmo ruído) & 0,82 & 0,81 & 0,22 & 0,55 & 0,192 & 0,188 \\
+Arfagem (3 eixos) & pulso & nativo (ganhos do LQI) & 1,04 & 1,04 & 0,90 & 0,91 & 0,288 & 0,290 \\
+Arfagem (3 eixos) & pulso & LQI & 1,03 & 1,04 & 0,88 & 0,90 & 0,286 & 0,288 \\
+Arfagem (3 eixos) & pulso & LQR+ESO & 1,03 & 1,03 & 0,77 & 0,78 & 0,290 & 0,291 \\
+Arfagem (3 eixos) & pulso & LQI (mesmo ruído) & 1,03 & 1,05 & 0,91 & 0,89 & 0,289 & 0,293 \\
+Arfagem (3 eixos) & pulso & LQG & 0,81 & 0,85 & 0,18 & 0,18 & 0,186 & 0,189 \\
+Arfagem (3 eixos) & pulso & LQG (mesmo ruído) & 0,84 & 0,88 & 0,52 & 0,18 & 0,194 & 0,197 \\
+Guinada (3 eixos) & pulso & nativo (ganhos do LQI) & 5,98 & 5,96 & 0,35 & 0,35 & 1,652 & 1,645 \\
+Guinada (3 eixos) & pulso & LQI & 4,14 & 4,14 & 1,68 & 1,67 & 1,387 & 1,385 \\
+Guinada (3 eixos) & pulso & LQR+ESO & 4,11 & 4,11 & 1,55 & 1,54 & 1,345 & 1,338 \\
+Guinada (3 eixos) & pulso & LQI (mesmo ruído) & 8,26 & 8,25 & 3,27 & 3,25 & 3,601 & 3,598 \\
+Guinada (3 eixos) & pulso & LQG & 5,69 & 5,59 & 1,65 & 1,65 & 1,711 & 1,719 \\
+Guinada (3 eixos) & pulso & LQG (mesmo ruído) & 4,91 & 4,93 & 1,74 & 1,74 & 1,456 & 1,472 \\
+Rolagem (3 eixos) & degrau & nativo (ganhos do LQI) & 0,66 & 0,65 & 0,46 & 0,44 & 0,039 & 0,038 \\
+Rolagem (3 eixos) & degrau & LQI & 0,65 & 0,65 & 0,45 & 0,45 & 0,039 & 0,038 \\
+Rolagem (3 eixos) & degrau & LQR+ESO & 0,66 & 0,65 & 0,43 & 0,41 & 0,040 & 0,040 \\
+Rolagem (3 eixos) & degrau & LQI (mesmo ruído) & 0,65 & 0,65 & 0,45 & 0,45 & 0,039 & 0,039 \\
+Rolagem (3 eixos) & degrau & LQG & 0,53 & 0,54 & 0,17 & 0,17 & 0,026 & 0,023 \\
+Rolagem (3 eixos) & degrau & LQG (mesmo ruído) & 0,53 & 0,54 & 0,21 & 0,21 & 0,027 & 0,024 \\
+Arfagem (3 eixos) & degrau & nativo (ganhos do LQI) & 0,69 & 0,69 & 0,66 & 0,64 & 0,047 & 0,046 \\
+Arfagem (3 eixos) & degrau & LQI & 0,69 & 0,69 & 0,66 & 0,64 & 0,047 & 0,046 \\
+Arfagem (3 eixos) & degrau & LQR+ESO & 0,69 & 0,68 & 0,47 & 0,46 & 0,044 & 0,044 \\
+Arfagem (3 eixos) & degrau & LQI (mesmo ruído) & 0,69 & 0,70 & 0,66 & 0,66 & 0,047 & 0,047 \\
+Arfagem (3 eixos) & degrau & LQG & 0,54 & 0,56 & 0,18 & 0,18 & 0,027 & 0,024 \\
+Arfagem (3 eixos) & degrau & LQG (mesmo ruído) & 0,55 & 0,57 & 0,19 & 0,19 & 0,028 & 0,025 \\
+Guinada (3 eixos) & degrau & nativo (ganhos do LQI) & 2,53 & 2,55 & 22,15 & 22,78 & 0,841 & 0,844 \\
+Guinada (3 eixos) & degrau & LQI & 1,86 & 1,87 & 1,13 & 1,12 & 0,213 & 0,213 \\
+Guinada (3 eixos) & degrau & LQR+ESO & 1,76 & 1,77 & 1,02 & 1,01 & 0,191 & 0,192 \\
+Guinada (3 eixos) & degrau & LQI (mesmo ruído) & 6,12 & 6,14 & 2,33 & 2,30 & 0,980 & 0,983 \\
+Guinada (3 eixos) & degrau & LQG & 2,29 & 2,31 & 1,34 & 1,33 & 0,260 & 0,267 \\
+Guinada (3 eixos) & degrau & LQG (mesmo ruído) & 1,90 & 1,93 & 1,59 & 1,61 & 0,229 & 0,235 \\
+\bottomrule
+\end{tabular}

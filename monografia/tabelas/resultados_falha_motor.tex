@@ -1,0 +1,22 @@
+% Gerada por ensaios/tabelas_monografia.py — nao editar a mao.
+\begin{tabular}{llrrrrrr}
+\toprule
+ & & \multicolumn{2}{c}{Rolagem} & \multicolumn{2}{c}{Arfagem} & \multicolumn{2}{c}{Guinada} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}
+Falha & Controlador & desvio (\si{\degree}) & recup. (\si{\second}) & desvio (\si{\degree}) & recup. (\si{\second}) & desvio (\si{\degree}) & recup. (\si{\second}) \\
+\midrule
+leve (0,95) & nativo & 0,51 & 2,19 & 0,53 & 2,28 & 0,82 & 25,13 \\
+leve (0,95) & LQI & 0,55 & 0,42 & 0,59 & 0,65 & 0,55 & 1,09 \\
+leve (0,95) & LQR+ESO & 0,57 & 0,43 & 0,60 & 0,49 & 0,56 & 1,36 \\
+leve (0,95) & LQI (mesmo ruído) & 0,55 & 0,44 & 0,59 & 0,67 & 1,80 & 2,24 \\
+leve (0,95) & LQG & 0,46 & 0,17 & 0,46 & 0,17 & 0,58 & 1,06 \\
+leve (0,95) & LQG (mesmo ruído) & 0,46 & 0,21 & 0,49 & 0,18 & 0,48 & 1,33 \\
+\addlinespace
+severa (0,85) & nativo & 1,72 & 2,19 & 1,75 & 2,23 & 2,82 & 22,71 \\
+severa (0,85) & LQI & 1,85 & 0,51 & 1,99 & 0,70 & 1,96 & 1,05 \\
+severa (0,85) & LQR+ESO & 1,88 & 0,49 & 1,98 & 0,55 & 1,90 & 1,08 \\
+severa (0,85) & LQI (mesmo ruído) & 1,83 & 0,52 & 1,95 & 0,77 & 6,41 & 2,17 \\
+severa (0,85) & LQG & 1,45 & 0,18 & 1,48 & 0,20 & 2,15 & 1,16 \\
+severa (0,85) & LQG (mesmo ruído) & 1,47 & 0,26 & 1,55 & 0,21 & 1,81 & 1,39 \\
+\bottomrule
+\end{tabular}

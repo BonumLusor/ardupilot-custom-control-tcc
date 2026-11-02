@@ -11,6 +11,7 @@ projeto:
     ATT    os mesmos campos, mas sempre a 10 Hz (reserva, quando nao ha ANG)
     RATE   RDes, R, ROut, PDes, P, POut, YDes, Y, YOut
     PIDR   Tar, Act, Err, P, I, D, FF          (idem PIDP, PIDY)
+    CCLR   Eth, Ew, XI, Uff, U, Wh, Dh         backend LQR (idem CCLP, CCLY)
     XKF1   PN, PE, PD, VN, VE, VD              posicao/velocidade em NED
     POS    Lat, Lng, Alt, RelHomeAlt           reserva, quando nao ha XKF1
     RCOU   C1..C4                              saida dos motores
@@ -25,11 +26,11 @@ from __future__ import annotations
 import numpy as np
 from pymavlink import DFReader
 
-from .eixos import CAMPOS_PID, COLUNAS, EIXOS
+from .eixos import CAMPOS_CCL, CAMPOS_PID, COLUNAS, EIXOS
 
 # Mensagens lidas por padrao. WND so existe em ensaios com o injetor ativo.
 TIPOS_PADRAO = ("ANG", "ATT", "RATE", "PIDR", "PIDP", "PIDY", "XKF1", "POS",
-                "RCOU", "CC", "WND", "MODE")
+                "RCOU", "CC", "WND", "MODE", "CCLR", "CCLP", "CCLY")
 
 
 def ler_log(caminho, tipos=TIPOS_PADRAO):
@@ -83,6 +84,32 @@ def _interp(grade, t, y):
     fora = (grade < t[0]) | (grade > t[-1])
     out = np.interp(grade, t, y)
     out[fora] = np.nan
+    return out
+
+
+def torque_segurado(dados, grade):
+    """Torque do injetor na grade como a fisica o aplica: segurado ate a escrita seguinte.
+
+    Devolve {"tqx", "tqy", "tqz"}. As colunas de mesmo nome da serie_unificada
+    sao interpoladas entre as escritas do WND, a cada ~22,5 ms (o laco do Lua a
+    ~44 Hz), e isso adianta a escada em meio passo: numa resposta theta/d, a fase
+    sai atrasada em pi*f*T (cerca de -16 graus a 4 Hz e -35 graus a 8 Hz) e o
+    modulo sobe ate 5 a 9 % a 8 Hz. Para o tempo das metricas a diferenca nao
+    importa; para a resposta em frequencia, sim. Fora do trecho do WND, NaN.
+    """
+    wnd = dados.get("WND")
+    if wnd is None or "t" not in wnd or len(wnd["t"]) < 2:
+        return {}
+    t = np.asarray(wnd["t"], dtype=float)
+    i = np.searchsorted(t, grade, side="right") - 1
+    fora = (i < 0) | (grade > t[-1])
+    i = np.clip(i, 0, len(t) - 1)
+    out = {}
+    for campo, nome in (("Tx", "tqx"), ("Ty", "tqy"), ("Tz", "tqz")):
+        if campo in wnd:
+            y = np.asarray(wnd[campo], dtype=float)[i]
+            y[fora] = np.nan
+            out[nome] = y
     return out
 
 
@@ -209,6 +236,9 @@ def serie_unificada(dados, taxa_hz=400.0, msg_pid="PIDR", janela=None,
         msg = msg_pid if eixo == "roll" else c["msg_pid"]
         for campo, nome in CAMPOS_PID:
             pegar(msg, campo, c["pid"] + nome)
+        # sinais internos do backend LQR (so nos voos com CC_TYPE 3)
+        for campo, nome in CAMPOS_CCL:
+            pegar(c["msg_ccl"], campo, f"{nome}_{eixo}")
 
     # posicao e velocidade em NED; XKF1 e a fonte preferida
     if "XKF1" in dados:

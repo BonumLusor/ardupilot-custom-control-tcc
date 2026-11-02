@@ -1,0 +1,20 @@
+% Gerada por ensaios/tabelas_monografia.py — nao editar a mao.
+\begin{tabular}{llrrrr}
+\toprule
+Torque & Controlador & Desvio máx. (\si{\degree}) & Recuperação (\si{\second}) & RMSE (\si{\degree}) & $u_{\max}$ \\
+\midrule
+pulso 12 rad/s² × 0,5 s & nativo & 44,90 & 1,05 & 15,931 & 1,386 \\
+pulso 12 rad/s² × 0,5 s & LQI & 33,34 & 1,56 & 11,505 & 1,425 \\
+pulso 12 rad/s² × 0,5 s & LQR+ESO & 34,71 & 1,52 & 12,421 & 1,719 \\
+pulso 12 rad/s² × 0,5 s & LQI (mesmo ruído) & 45,21 & 3,38 & 20,622 & 0,827 \\
+pulso 12 rad/s² × 0,5 s & LQG & 44,60 & 0,61 & 15,743 & 1,682 \\
+pulso 12 rad/s² × 0,5 s & LQG (mesmo ruído) & 39,26 & 0,74 & 13,777 & 1,675 \\
+\addlinespace
+degrau 6 rad/s² & nativo & 16,14 & 22,28 & 5,353 & 0,567 \\
+degrau 6 rad/s² & LQI & 11,55 & 1,10 & 1,315 & 0,520 \\
+degrau 6 rad/s² & LQR+ESO & 11,09 & 1,00 & 1,197 & 0,540 \\
+degrau 6 rad/s² & LQI (mesmo ruído) & 37,67 & 2,27 & 6,021 & 0,506 \\
+degrau 6 rad/s² & LQG & 13,98 & 1,21 & 1,582 & 0,593 \\
+degrau 6 rad/s² & LQG (mesmo ruído) & 11,72 & 1,48 & 1,388 & 0,567 \\
+\bottomrule
+\end{tabular}

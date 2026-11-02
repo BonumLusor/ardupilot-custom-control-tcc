@@ -1,0 +1,489 @@
+#!/usr/bin/env python3
+"""Gera as figuras comparativas do Capitulo 6 a partir dos ensaios no SITL.
+
+Como o tabelas_monografia.py, usa o ensaio mais recente de cada cenario x
+controlador (opcionalmente a partir de uma data) e le o series.csv de cada um.
+As curvas do modelo, onde aparecem, vem do modelagem/projeto.py.
+
+    comparacao_torque.pdf   erro de atitude no pulso e no degrau de torque
+    comparacao_degrau.pdf   degraus de atitude dos ensaios nominais
+    comparacao_frf.pdf      |Theta/D| das varreduras, SITL e modelo
+    eso_dhat_sitl.pdf       perturbacao injetada e a estimada pelo ESO no voo
+    comparacao_ruido.pdf    esforco e erro eficazes com ruido de giroscopio
+    comparacao_ff.pdf       erro de rastreamento: {PID, LQI} x {sem, com} alimentacao direta
+
+    ./figuras_monografia.py --desde 2026-10-29
+    ./figuras_monografia.py --desde 2026-10-29 --destino ../monografia/figuras
+"""
+
+from __future__ import annotations
+
+import argparse
+import math
+import sys
+from pathlib import Path
+
+import numpy as np
+import yaml
+
+RAIZ = Path(__file__).resolve().parent
+RESULTADOS = RAIZ / "resultados"
+DESTINO = RAIZ.parent / "monografia" / "figuras"
+sys.path.insert(0, str(RAIZ))
+sys.path.insert(0, str(RAIZ.parent / "modelagem"))
+
+from analise import estilo as E            # noqa: E402
+
+# O LQG das comparacoes e o do portao (cc_lqg_mesmo_ruido): o candidato a ganho
+# real sobre o nativo, com o mesmo ruido no esforco; o cc_lqg (mesma banda) entra
+# nas figuras da fronteira.
+CONTROLADORES = (("nativo", "Nativo"), ("cc_lqi", "LQI"), ("cc_eso", "LQR+ESO"),
+                 ("cc_lqg_mesmo_ruido", "LQG"))
+MESMO_RUIDO = ("cc_lqi_mesmo_ruido", "LQI (mesmo ruído)")
+NUCLEO = (("nativo", "Nativo"), ("cc_lqi", "LQI"), ("cc_eso", "LQR+ESO"),
+          ("cc_lqi_mesmo_ruido", "LQI (mesmo ruído)"), ("cc_lqg", "LQG (mesma banda)"),
+          ("cc_lqg_mesmo_ruido", "LQG"))
+COR = {"nativo": E.SERIE[0], "cc_lqi": E.SERIE[1], "cc_eso": E.SERIE[2],
+       "cc_lqi_mesmo_ruido": E.SERIE[1], "cc_lqg": E.SERIE[3], "cc_lqg_mesmo_ruido": E.SERIE[3]}
+TRACO = {"cc_lqi_mesmo_ruido": "--", "cc_lqg": "--"}
+NOMES = {"roll": "rolagem", "pitch": "arfagem", "yaw": "guinada"}
+GRUPO = {"roll": "rolagem", "pitch": "arfagem", "yaw": "guinada"}
+COL_ERRO = {"roll": "erro_roll", "pitch": "erro_pitch", "yaw": "erro_yaw"}
+COL_ANG = {"roll": ("roll_des", "roll"), "pitch": ("pitch_des", "pitch"),
+           "yaw": ("yaw_des_rel", "yaw_rel")}
+COL_TQ = {"roll": "tqx", "pitch": "tqy", "yaw": "tqz"}
+COL_U = {"roll": "u_roll", "pitch": "u_pitch", "yaw": "u_yaw"}
+
+
+# --------------------------------------------------------------------------
+# leitura
+# --------------------------------------------------------------------------
+
+def ensaio_recente(cenario, slug, desde=None):
+    """A pasta do ensaio mais recente de um cenario x controlador, ou None."""
+    base = RESULTADOS / cenario / slug
+    if not base.exists():
+        return None
+    pastas = [p for p in base.iterdir() if (p / "series.csv").exists()
+              and not p.name.endswith("_falhou") and (not desde or p.name >= desde)]
+    return max(pastas, key=lambda p: p.name) if pastas else None
+
+
+def ler(pasta):
+    import validacao as V
+    col = V.ler_series(pasta / "series.csv")
+    cen = yaml.safe_load((pasta / "cenario.yaml").read_text(encoding="utf-8"))
+    return col, cen
+
+
+def trecho_degrau(col, cen, eixo, antes=1.0, depois=4.0):
+    """(t desde o inicio da subida do alvo, alvo - y0, medida - y0) no degrau de ida.
+
+    O degrau e localizado pelo instante comandado (voo.t_degrau_s) no tempo de
+    perfil gravado no log, e nao por um detector: a ida e a volta tem o mesmo
+    modulo, e um detector pode pegar a volta. A origem e o instante em que o
+    alvo passa de 2 % da amplitude.
+    """
+    voo = cen.get("voo") or {}
+    amp = float(voo.get(f"degrau_{eixo}_deg") or 0.0)
+    if amp == 0.0:
+        return None
+    c_ref, c_med = COL_ANG[eixo]
+    t, tp, ref, med = col["t"], col["tp"], col[c_ref], col[c_med]
+    ok = np.isfinite(tp)
+    t_cmd = float(voo.get("t_degrau_s", 0.0))
+    i0 = np.nonzero(ok & (tp >= t_cmd))[0]
+    if not len(i0):
+        return None
+    t0 = t[i0[0]]
+    y0 = float(np.nanmean(ref[(t >= t0 - 0.5) & (t < t0)]))
+    sel = (t >= t0 - antes) & (t <= t0 + depois)
+    subiu = np.nonzero(sel & (t >= t0) & (np.abs(ref - y0) > 0.02 * abs(amp)))[0]
+    if not len(subiu):
+        return None
+    t_ini = t[subiu[0]]
+    return t[sel] - t_ini, ref[sel] - y0, med[sel] - y0
+
+
+def t_do_torque(col, cen):
+    """Instante (base de tempo da serie) em que o torque comeca, pelo tempo de perfil."""
+    tp = col["tp"]
+    t0 = float(cen["vento"]["WND_TQT0"])
+    i = np.nonzero(np.isfinite(tp) & (tp >= t0))[0]
+    return float(col["t"][i[0]]) if len(i) else None
+
+
+def _eixo_limpo(ax):
+    for lado in ("top", "right"):
+        ax.spines[lado].set_visible(False)
+
+
+def _estilo():
+    import matplotlib
+    matplotlib.use("Agg")
+    E.aplicar()
+    matplotlib.rcParams.update({"font.family": "serif", "axes.grid": True})
+    import matplotlib.pyplot as plt
+    return plt
+
+
+def _salvar(fig, destino):
+    import matplotlib.pyplot as plt
+    fig.tight_layout()
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(destino)
+    plt.close(fig)
+    return destino
+
+
+def _log_legivel(ax):
+    """Marcas dos eixos log em decimal com virgula, sem notacao 10^x."""
+    import matplotlib.ticker as tk
+    fmt = tk.FuncFormatter(lambda v, _: f"{v:g}".replace(".", ","))
+    ax.xaxis.set_major_locator(tk.FixedLocator([0.1, 0.2, 0.5, 1, 2, 5, 10]))
+    ax.xaxis.set_major_formatter(fmt)
+    ax.xaxis.set_minor_formatter(tk.NullFormatter())
+    ax.yaxis.set_major_locator(tk.LogLocator(subs=(1.0, 2.0, 5.0)))
+    ax.yaxis.set_major_formatter(fmt)
+    ax.yaxis.set_minor_formatter(tk.NullFormatter())
+
+
+def _controladores(eixo):
+    return CONTROLADORES + ((MESMO_RUIDO,) if eixo == "yaw" else ())
+
+
+# --------------------------------------------------------------------------
+# figuras
+# --------------------------------------------------------------------------
+
+def fig_torque(desde, destino):
+    plt = _estilo()
+    fig, eixos = plt.subplots(2, 2, figsize=(6.3, 4.6))
+    casos = (("torque_pulso", "roll", (-0.3, 3.0)), ("torque_pulso", "yaw", (-0.3, 4.0)),
+             ("torque_degrau", "roll", (-0.3, 4.0)), ("torque_degrau", "yaw", (-1.0, 30.0)))
+    algum = False
+    for ax, (ensaio, eixo, xlim) in zip(eixos.flat, casos):
+        amp = None
+        for slug, rotulo in _controladores(eixo):
+            pasta = ensaio_recente(f"{GRUPO[eixo]}/{ensaio}", slug, desde)
+            if pasta is None:
+                continue
+            col, cen = ler(pasta)
+            t0 = t_do_torque(col, cen)
+            if t0 is None:
+                continue
+            t = col["t"] - t0
+            erro = col[COL_ERRO[eixo]]
+            base = np.nanmean(erro[(t > -1.0) & (t < -0.1)])
+            ax.plot(t, erro - base, color=COR[slug], ls=TRACO.get(slug, "-"), label=rotulo)
+            amp = float(cen["vento"][{"roll": "WND_TQX", "yaw": "WND_TQZ"}[eixo]])
+            algum = True
+        ax.axhline(0, color=E.MUDO, lw=0.8, zorder=0)
+        ax.set_xlim(*xlim)
+        tipo = "pulso" if "pulso" in ensaio else "degrau"
+        titulo = f"{NOMES[eixo].capitalize()}, {tipo}"
+        if amp is not None:
+            titulo += f" de {amp:g} rad/s²".replace(".", ",")
+        ax.set_title(titulo, loc="left")
+        ax.set_xlabel("Tempo desde o início do torque (s)")
+        ax.set_ylabel("Erro de atitude (°)")
+        _eixo_limpo(ax)
+    eixos[0, 0].legend(loc="upper right")
+    if len(eixos[0, 1].get_lines()) > 4:
+        eixos[0, 1].legend(handles=eixos[0, 1].get_lines()[3:4], loc="lower right")
+    return _salvar(fig, destino) if algum else None
+
+
+def fig_degrau(desde, destino):
+    plt = _estilo()
+    fig, eixos = plt.subplots(1, 2, figsize=(6.3, 2.8))
+    algum = False
+    for ax, eixo, xlim in zip(eixos, ("roll", "yaw"), ((-0.05, 0.4), (-0.2, 2.5))):
+        ref_desenhado = False
+        for slug, rotulo in _controladores(eixo):
+            pasta = ensaio_recente(f"{GRUPO[eixo]}/nominal", slug, desde)
+            if pasta is None:
+                continue
+            col, cen = ler(pasta)
+            trecho = trecho_degrau(col, cen, eixo)
+            if trecho is None:
+                continue
+            tt, r, y = trecho
+            ax.plot(tt, y, color=COR[slug], ls=TRACO.get(slug, "-"), label=rotulo)
+            if not ref_desenhado:
+                ax.plot(tt, r, color=E.REFERENCIA, lw=E.LARGURA_REF, ls="--",
+                        label="Alvo (nativo)", zorder=1)
+                ref_desenhado = True
+            algum = True
+        ax.set_xlim(*xlim)
+        ax.set_xlabel("Tempo desde o degrau (s)")
+        ax.set_title(NOMES[eixo].capitalize(), loc="left")
+        _eixo_limpo(ax)
+    eixos[0].set_ylabel("Ângulo (°)")
+    eixos[1].legend(loc="lower right")
+    return _salvar(fig, destino) if algum else None
+
+
+def fig_frf(desde, destino):
+    """|Theta/D| das varreduras de torque no SITL (pontos) e do modelo (linhas).
+
+    O LQG usa o canal do angulo, entao a linha dele e a da planta real
+    (projeto.PLANTA_REAL), com os ganhos do proprio voo; as outras ficam na planta
+    do projeto, que difere dela menos de 2 % para quem so usa o giroscopio.
+    """
+    import validacao as V
+    import projeto as P
+    from analise.leitura import ler_params
+    plt = _estilo()
+    mod = P.carregar_modelo()
+    proj = P.projetar(mod, eixos=("roll", "yaw"))
+    variante = {"nativo": "nativo", "cc_lqi": "lqi", "cc_eso": "eso"}
+    fig, eixos = plt.subplots(1, 2, figsize=(6.3, 2.9))
+    algum = False
+    for ax, eixo in zip(eixos, ("roll", "yaw")):
+        for slug, rotulo in CONTROLADORES:
+            pasta = ensaio_recente(f"{GRUPO[eixo]}/torque_chirp", slug, desde)
+            if slug in variante:
+                an = proj[eixo][variante[slug]]["analise"]
+            elif pasta is not None:
+                ctl, _ = V.montar_controlador("cc_lqg", "CC4", ler_params(pasta / "params.parm"),
+                                              eixo, mod.a, mod.b[eixo], mod.ts)
+                an = P.analisar(ctl, mod.a, mod.b[eixo], mod.ts, mod.fc_giro,
+                                planta=P.PLANTA_REAL)
+            else:
+                continue
+            f_m = an.w / (2 * np.pi)
+            faixa = (0.1, 10.0)
+            if pasta is not None:
+                col, cen = ler(pasta)
+                v = cen["vento"]
+                f0, f1 = float(v["WND_TQF0"]), float(v["WND_TQF1"])
+                faixa = (f0, f1)
+                tp = col["tp"]
+                t0 = float(v["WND_TQT0"])
+                dentro = np.isfinite(tp) & (tp >= t0) & (tp <= t0 + float(v["WND_TQDUR"]))
+                # torque segurado entre as escritas do injetor, como a fisica o aplica
+                _vr, wnd = V.ler_bat_wnd(pasta)
+                u = V.torque_segurado(col["t"][dentro], wnd, COL_TQ[eixo])
+                f, h, coer = V.resposta_freq(col["t"][dentro], u,
+                                             col[COL_ANG[eixo][1]][dentro], f0, f1)
+                ok = coer >= V.COERENCIA_MINIMA
+                ax.loglog(f[ok], np.abs(h[ok]), "o", ms=3, color=COR[slug], alpha=0.75)
+                algum = True
+            sel = (f_m >= faixa[0]) & (f_m <= faixa[1])
+            ax.loglog(f_m[sel], np.degrees(np.abs(an.S_d[sel])), color=COR[slug], label=rotulo)
+        ax.set_xlabel("Frequência (Hz)")
+        ax.set_title(NOMES[eixo].capitalize(), loc="left")
+        _log_legivel(ax)
+        _eixo_limpo(ax)
+    eixos[0].set_ylabel("$|\\Theta/D|$ (° por rad/s²)")
+    eixos[0].legend(loc="lower right", title="linha: modelo; ponto: SITL", title_fontsize=7)
+    return _salvar(fig, destino) if algum else None
+
+
+def fig_eso(desde, destino):
+    plt = _estilo()
+    fig, eixos = plt.subplots(1, 2, figsize=(6.3, 2.8))
+    algum = False
+    for ax, (ensaio, eixo, xlim) in zip(eixos, (("torque_pulso", "roll", (-0.2, 1.2)),
+                                                ("torque_degrau", "yaw", (-0.5, 3.0)))):
+        pasta = ensaio_recente(f"{GRUPO[eixo]}/{ensaio}", "cc_eso", desde)
+        if pasta is None:
+            continue
+        col, cen = ler(pasta)
+        if f"d_hat_{eixo}" not in col:
+            continue
+        t = col["t"] - t_do_torque(col, cen)
+        ax.plot(t, col[COL_TQ[eixo]], color=E.REFERENCIA, lw=E.LARGURA_REF, ls="--",
+                label="Injetada $d$")
+        ax.plot(t, col[f"d_hat_{eixo}"], color=COR["cc_eso"], label="Estimada $\\hat d$")
+        ax.set_xlim(*xlim)
+        tipo = "pulso" if "pulso" in ensaio else "degrau"
+        ax.set_title(f"{NOMES[eixo].capitalize()}, {tipo} (SITL)", loc="left")
+        ax.set_xlabel("Tempo desde o início do torque (s)")
+        _eixo_limpo(ax)
+        algum = True
+    eixos[0].set_ylabel("Perturbação (rad/s²)")
+    eixos[0].legend(loc="upper right")
+    return _salvar(fig, destino) if algum else None
+
+
+def fig_ruido(desde, destino):
+    """Esforco e erro eficazes no trecho calmo do ruido/torque_pulso, por controlador."""
+    plt = _estilo()
+    ctl = CONTROLADORES + (MESMO_RUIDO,)
+    rms_u = {s: [] for s, _ in ctl}
+    rms_e = {s: [] for s, _ in ctl}
+    algum = False
+    for slug, _ in ctl:
+        pasta = (ensaio_recente("ruido/rnd20/torque_pulso", slug, desde)
+                 or ensaio_recente("ruido/torque_pulso", slug, desde))
+        for eixo in ("roll", "pitch", "yaw"):
+            if pasta is None:
+                rms_u[slug].append(np.nan)
+                rms_e[slug].append(np.nan)
+                continue
+            col, cen = ler(pasta)
+            tp = col["tp"]
+            # do primeiro segundo do perfil ate meio segundo antes do torque
+            calmo = np.isfinite(tp) & (tp >= 1.0) & (tp <= float(cen["vento"]["WND_TQT0"]) - 0.5)
+            u = col[COL_U[eixo]][calmo]
+            e = col[COL_ERRO[eixo]][calmo]
+            rms_u[slug].append(float(np.sqrt(np.nanmean((u - np.nanmean(u)) ** 2))))
+            rms_e[slug].append(float(np.sqrt(np.nanmean((e - np.nanmean(e)) ** 2))))
+            algum = True
+    if not algum:
+        return None
+    fig, eixos = plt.subplots(1, 2, figsize=(6.3, 2.8))
+    x = np.arange(3)
+    larg = 0.8 / len(ctl)
+    for ax, dados, rot in ((eixos[0], rms_u, "Esforço eficaz $u_{\\mathrm{rms}}$"),
+                           (eixos[1], rms_e, "Erro de atitude eficaz (°)")):
+        for j, (slug, rotulo) in enumerate(ctl):
+            ax.bar(x + (j - (len(ctl) - 1) / 2) * larg, dados[slug], larg * 0.92,
+                   color=COR[slug], hatch="//" if slug in TRACO else None,
+                   edgecolor="white", label=rotulo)
+        ax.set_xticks(x)
+        ax.set_xticklabels([NOMES[e].capitalize() for e in ("roll", "pitch", "yaw")])
+        ax.set_title(rot, loc="left")
+        ax.grid(False, axis="x")
+        _eixo_limpo(ax)
+    eixos[0].legend(loc="upper left", fontsize=7)
+    return _salvar(fig, destino)
+
+
+def fig_alimentacao_direta(desde, destino):
+    """Erro de rastreamento no degrau: a cor e a realimentacao, o traco e a alimentacao direta."""
+    plt = _estilo()
+    quadro = (("cc_pid", "PID, sem alim. direta", E.SERIE[0], "--"),
+              ("cc_pid_ff", "PID, com alim. direta", E.SERIE[0], "-"),
+              ("cc_lqi_sem_ff", "LQI, sem alim. direta", E.SERIE[1], "--"),
+              ("cc_lqi", "LQI, com alim. direta", E.SERIE[1], "-"))
+    fig, eixos = plt.subplots(1, 2, figsize=(6.3, 2.9))
+    algum = False
+    for ax, eixo, xlim in zip(eixos, ("roll", "yaw"), ((-0.05, 0.5), (-0.2, 3.0))):
+        for slug, rotulo, cor, traco in quadro:
+            pasta = ensaio_recente(f"{GRUPO[eixo]}/nominal", slug, desde)
+            if pasta is None:
+                continue
+            col, cen = ler(pasta)
+            trecho = trecho_degrau(col, cen, eixo)
+            if trecho is None:
+                continue
+            tt, r, y = trecho
+            ax.plot(tt, r - y, color=cor, ls=traco, label=rotulo)
+            algum = True
+        ax.axhline(0, color=E.MUDO, lw=0.8, zorder=0)
+        ax.set_xlim(*xlim)
+        ax.set_xlabel("Tempo desde o degrau (s)")
+        ax.set_title(NOMES[eixo].capitalize(), loc="left")
+        _eixo_limpo(ax)
+    eixos[0].set_ylabel("Erro de rastreamento (°)")
+    eixos[1].legend(loc="upper right", fontsize=7)
+    return _salvar(fig, destino) if algum else None
+
+
+def _metricas(cenario, slug, desde):
+    pasta = ensaio_recente(cenario, slug, desde)
+    if pasta is None or not (pasta / "metricas.json").exists():
+        return None
+    import json
+    return json.loads((pasta / "metricas.json").read_text(encoding="utf-8"))
+
+
+NIVEIS = ((0, "rolagem_arfagem_guinada"), (10, "ruido/rnd10"), (20, "ruido/rnd20"),
+          (40, "ruido/rnd40"), (80, "ruido/rnd80"))
+
+
+def fig_fronteira_sitl(desde, destino):
+    """A fronteira rejeicao x ruido medida: u eficaz no trecho calmo x desvio, por nivel.
+
+    Cada controlador e uma curva: um ponto por nivel de SIM_GYRn_RND (0, 10, 20, 40,
+    80), com o ruido no esforco medido antes do pulso e o desvio no ensaio que
+    define a metrica primaria do eixo (pulso em rolagem, degrau em guinada).
+    """
+    plt = _estilo()
+    casos = (("roll", "torque_pulso", "Rolagem: desvio no pulso de torque"),
+             ("yaw", "torque_degrau", "Guinada: desvio no degrau de torque"))
+    fig, eixos = plt.subplots(1, 2, figsize=(6.3, 3.0))
+    algum = False
+    for ax, (eixo, ensaio, titulo) in zip(eixos, casos):
+        for slug, rotulo in NUCLEO:
+            x, y = [], []
+            for nivel, grupo in NIVEIS:
+                mp = _metricas(f"{grupo}/torque_pulso", slug, desde)
+                me = _metricas(f"{grupo}/{ensaio}", slug, desde)
+                u = ((mp or {}).get(f"calmo_{eixo}") or {}).get("u_rms")
+                dv = ((me or {}).get(f"disturbio_{eixo}") or {}).get("desvio_max_deg")
+                if u is None or dv is None:
+                    continue
+                x.append(u)
+                y.append(dv)
+            if not x:
+                continue
+            algum = True
+            ax.plot(x, y, color=COR[slug], ls=TRACO.get(slug, "-"), marker="o", ms=3.5,
+                    label=rotulo)
+        ax.set_xscale("log")
+        ax.set_title(titulo, loc="left")
+        ax.set_xlabel("Ruído no esforço, $u_{\\mathrm{rms}}$ calmo")
+        _eixo_limpo(ax)
+    if not algum:
+        plt.close(fig)
+        return None
+    eixos[0].set_ylabel("Desvio máximo (°)")
+    eixos[1].legend(loc="upper left", fontsize=7)
+    return _salvar(fig, destino)
+
+
+def fig_estocastico(desde, destino):
+    """Torque estocastico: erro eficaz de cada controlador, relativo ao nativo, por eixo."""
+    plt = _estilo()
+    fig, ax = plt.subplots(figsize=(6.3, 2.8))
+    x = np.arange(3)
+    larg = 0.8 / len(NUCLEO)
+    algum = False
+    for j, (slug, rotulo) in enumerate(NUCLEO):
+        rel = []
+        for eixo in ("roll", "pitch", "yaw"):
+            cen = f"{GRUPO[eixo]}/torque_estocastico"
+            m, n = _metricas(cen, slug, desde), _metricas(cen, "nativo", desde)
+            a = ((m or {}).get(f"disturbio_{eixo}") or {}).get("rmse_deg")
+            b = ((n or {}).get(f"disturbio_{eixo}") or {}).get("rmse_deg")
+            rel.append(a / b if a and b else np.nan)
+        algum = algum or np.isfinite(rel).any()
+        ax.bar(x + (j - (len(NUCLEO) - 1) / 2) * larg, rel, larg * 0.92, color=COR[slug],
+               hatch="//" if slug in TRACO else None, edgecolor="white", label=rotulo)
+    if not algum:
+        plt.close(fig)
+        return None
+    ax.axhline(1.0, color=E.MUDO, lw=0.8)
+    ax.set_xticks(x)
+    ax.set_xticklabels([NOMES[e].capitalize() for e in ("roll", "pitch", "yaw")])
+    ax.set_ylabel("RMSE (× nativo)")
+    ax.grid(False, axis="x")
+    _eixo_limpo(ax)
+    ax.legend(loc="upper left", fontsize=7, ncol=3)
+    return _salvar(fig, destino)
+
+
+def main():
+    import warnings
+    warnings.filterwarnings("ignore")
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--desde", help="so ensaios com carimbo a partir deste (AAAA-MM-DD)")
+    ap.add_argument("--destino", type=Path, default=DESTINO)
+    args = ap.parse_args()
+    for nome, fn in (("comparacao_torque.pdf", fig_torque), ("comparacao_degrau.pdf", fig_degrau),
+                     ("comparacao_frf.pdf", fig_frf), ("eso_dhat_sitl.pdf", fig_eso),
+                     ("comparacao_ruido.pdf", fig_ruido),
+                     ("comparacao_ff.pdf", fig_alimentacao_direta),
+                     ("comparacao_fronteira.pdf", fig_fronteira_sitl),
+                     ("comparacao_estocastico.pdf", fig_estocastico)):
+        d = fn(args.desde, args.destino / nome)
+        print(f"{'figura: ' + str(d) if d else 'sem ensaios para ' + nome}")
+
+
+if __name__ == "__main__":
+    main()

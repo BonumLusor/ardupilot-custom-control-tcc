@@ -1,0 +1,21 @@
+% Gerada por modelagem/projeto.py — nao editar a mao.
+\begin{tabular}{llrrrrrrrrr}
+\toprule
+ & & & & & & & & \multicolumn{3}{c}{MF com a planta alterada (\si{\degree})} \\
+\cmidrule(lr){9-11}
+Eixo & Controlador & $\omega_c$ (\si{\radian\per\second}) & MF (\si{\degree}) & MG (\si{\decibel}) & Atraso (\si{\milli\second}) & Polo lento (\si{\per\second}) & Ruído & $b-20\,\%$ & $b+20\,\%$ & +1 laço \\
+\midrule
+Rolagem & Nativo & 48,5 & 40,2 & 9,3 & 14,5 & $-$1,00 & 0,046 & 40,8 & 37,7 & 33,2 \\
+Rolagem & LQI & 48,5 & 40,2 & 9,4 & 14,5 & $-$6,30 & 0,041 & 43,1 & 36,1 & 33,3 \\
+Rolagem & LQR+ESO & 48,5 & 40,5 & 9,5 & 14,6 & $-$8,73 & 0,042 & 43,6 & 36,3 & 33,6 \\
+\addlinespace
+Arfagem & Nativo & 47,9 & 41,2 & 9,4 & 15,0 & $-$1,00 & 0,046 & 41,9 & 38,7 & 34,3 \\
+Arfagem & LQI & 47,9 & 41,2 & 9,7 & 15,0 & $-$3,90 & 0,041 & 44,3 & 37,1 & 34,4 \\
+Arfagem & LQR+ESO & 47,9 & 41,3 & 9,6 & 15,1 & $-$7,68 & 0,041 & 44,5 & 37,1 & 34,5 \\
+\addlinespace
+Guinada & Nativo & 6,3 & 37,5 & 19,6 & 104,1 & $-$0,10 & 0,057 & 41,9 & 33,9 & 36,6 \\
+Guinada & LQI & 6,3 & 64,9 & 27,9 & 180,4 & $-$2,71 & 0,136 & 61,4 & 67,2 & 64,0 \\
+Guinada & LQR+ESO & 6,3 & 56,7 & 29,5 & 157,5 & $-$3,64 & 0,114 & 54,1 & 58,4 & 55,8 \\
+Guinada & LQI (mesmo ruído) & 2,7 & 68,0 & 35,4 & 433,8 & $-$1,51 & 0,057 & 64,8 & 70,3 & 67,6 \\
+\bottomrule
+\end{tabular}

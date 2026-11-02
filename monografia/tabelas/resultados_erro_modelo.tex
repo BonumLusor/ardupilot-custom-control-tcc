@@ -1,0 +1,37 @@
+% Gerada por ensaios/tabelas_monografia.py — nao editar a mao.
+\begin{tabular}{llrrrrrr}
+\toprule
+ & & \multicolumn{3}{c}{Rolagem} & \multicolumn{3}{c}{Guinada} \\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}
+Veículo & Controlador & pulso (\si{\degree}) & degrau (\si{\degree}) & recup. (\si{\second}) & pulso (\si{\degree}) & degrau (\si{\degree}) & recup. (\si{\second}) \\
+\midrule
+nominal & nativo & 0,90 & 0,59 & 2,29 & 5,58$^\dagger$ & 2,54 & 22,14 \\
+nominal & LQI & 0,98 & 0,65 & 0,45 & 3,96$^\dagger$ & 1,86 & 1,13 \\
+nominal & LQR+ESO & 1,00 & 0,66 & 0,43 & 4,03$^\dagger$ & 1,76 & 1,02 \\
+nominal & LQI (mesmo ruído) & 0,99 & 0,65 & 0,45 & 7,59$^\dagger$ & 6,12 & 2,33 \\
+nominal & LQG & 0,84 & 0,53 & 0,17 & 5,29$^\dagger$ & 2,29 & 1,33 \\
+nominal & LQG (mesmo ruído) & 0,82 & 0,53 & 0,21 & 4,43$^\dagger$ & 1,90 & 1,59 \\
+\addlinespace
+empuxo $-22\,\%$ & nativo & 1,22 & 0,80 & 2,18 & 5,74$^\dagger$ & 2,79 & 21,91 \\
+empuxo $-22\,\%$ & LQI & 1,32 & 0,88 & 0,41 & 4,21$^\dagger$ & 2,04 & 1,10 \\
+empuxo $-22\,\%$ & LQR+ESO & 1,34 & 0,89 & 0,40 & 4,30$^\dagger$ & 1,93 & 0,97 \\
+empuxo $-22\,\%$ & LQI (mesmo ruído) & 1,33 & 0,88 & 0,42 & 8,04$^\dagger$ & 6,67 & 2,28 \\
+empuxo $-22\,\%$ & LQG & 1,10 & 0,70 & 0,14 & 5,54$^\dagger$ & 2,48 & 1,26 \\
+empuxo $-22\,\%$ & LQG (mesmo ruído) & 1,11 & 0,71 & 0,18 & 4,76$^\dagger$ & 2,09 & 1,55 \\
+\addlinespace
+braço $+20\,\%$ & nativo & 1,13 & 0,75 & 2,22 & 6,22$^\dagger$ & 3,07 & 22,01 \\
+braço $+20\,\%$ & LQI & 1,23 & 0,82 & 0,43 & 4,47$^\dagger$ & 2,24 & 1,06 \\
+braço $+20\,\%$ & LQR+ESO & 1,25 & 0,83 & 0,41 & 4,58$^\dagger$ & 2,12 & 0,95 \\
+braço $+20\,\%$ & LQI (mesmo ruído) & 1,23 & 0,82 & 0,42 & 8,38$^\dagger$ & 7,26 & 2,25 \\
+braço $+20\,\%$ & LQG & 1,03 & 0,66 & 0,15 & 5,86$^\dagger$ & 2,72 & 1,20 \\
+braço $+20\,\%$ & LQG (mesmo ruído) & 1,02 & 0,69 & 0,19 & 5,19$^\dagger$ & 2,30 & 1,49 \\
+\addlinespace
+braço $-17\,\%$ & nativo & 0,71 & 0,47 & 2,31 & 4,91$^\dagger$ & 2,08 & 21,39 \\
+braço $-17\,\%$ & LQI & 0,78 & 0,51 & 0,44 & 3,45$^\dagger$ & 1,53 & 1,22 \\
+braço $-17\,\%$ & LQR+ESO & 0,79 & 0,53 & 0,42 & 3,48$^\dagger$ & 1,44 & 1,09 \\
+braço $-17\,\%$ & LQI (mesmo ruído) & 0,78 & 0,51 & 0,45 & 6,79$^\dagger$ & 5,10 & 2,41 \\
+braço $-17\,\%$ & LQG & 0,67 & 0,43 & 0,18 & 4,55$^\dagger$ & 1,88 & 1,47 \\
+braço $-17\,\%$ & LQG (mesmo ruído) & 0,65 & 0,44 & 0,22 & 3,95$^\dagger$ & 1,56 & 1,75 \\
+\bottomrule
+\multicolumn{8}{l}{\footnotesize $^\dagger$ Pulso de guinada: desvio máximo normalizado ao impulso nominal do cenário, $\delta_{\max}\,I_{\mathrm{nom}}/I_{\mathrm{reg}}$.} \\
+\end{tabular}

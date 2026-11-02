@@ -29,6 +29,17 @@ from .eixos import COLUNAS, EIXOS, ordenar
 # ensaio de torque deste projeto.
 GUARDA_ANTES_DISTURBIO_S = 0.5
 
+# Tempo de recuperacao dos voos (decisao de 02/11). O limiar ganha um piso no
+# ruido: max(10 % do pico, |media| + 3 sigma do erro no trecho calmo antes do
+# disturbio). E a recuperacao vale quando o erro fica abaixo dele por 0,5 s, e
+# nao ate o fim da janela. Sem o piso, com RND 40 e 80, o ruido passava de 10 %
+# do pico o tempo todo e a "recuperacao" era o tamanho da janela. Sem a
+# permanencia finita, uma unica excursao de ruido perto do fim da janela zerava
+# a contagem. O projeto (modelagem/projeto.py) chama metricas_disturbio sem estes
+# argumentos e fica com a regra antiga, com que os ganhos foram escolhidos.
+K_SIGMA_RECUPERACAO = 3.0
+PERMANENCIA_RECUPERACAO_S = 0.5
+
 
 def _limpar(t, y):
     """Descarta amostras nao finitas, que aparecem fora do alcance de cada mensagem."""
@@ -67,19 +78,35 @@ def detectar_degrau(t, ref, amplitude_esperada=None, minimo=2.0,
         return None
 
     i = None
+    k_calmo = None
+    sentido = 1.0
     if amplitude_esperada is not None and abs(amplitude_esperada) >= minimo:
         alvo = abs(float(amplitude_esperada))
+        sentido = 1.0 if amplitude_esperada > 0 else -1.0
         n_estavel = max(int(1.5 / dt), 1)
         baixo = np.abs(ref) < 0.25 * alvo
         # soma corrida de "esteve baixo": exige um trecho calmo antes da borda
         calmo = np.convolve(baixo.astype(float), np.ones(n_estavel), mode="full")[:len(ref)]
-        cruzou = np.nonzero((np.abs(ref) >= 0.5 * alvo) & (calmo >= n_estavel * 0.9))[0]
-        if len(cruzou):
-            i = int(cruzou[0])
+        # O trecho calmo e medido onde a referencia SAI da faixa baixa, e nao no
+        # cruzamento de 50%: entre 25% e 50% a referencia ja esta na rampa do
+        # modelador, e contar essa rampa como "nao calmo" reprovava o degrau de
+        # guinada (rampa de ~0,15 s em 1,5 s, no limiar de 90%) por arredondamento.
+        # A borda tambem tem de ir no SENTIDO comandado: o retorno ao nivel e uma
+        # borda de mesma amplitude no sentido oposto.
+        cruzou = np.nonzero(sentido * ref >= 0.5 * alvo)[0]
+        cruzou = cruzou[(cruzou > 0) & (sentido * ref[cruzou - 1] < 0.5 * alvo)]
+        for c in cruzou:
+            k = int(c)
+            while k > 0 and not baixo[k]:
+                k -= 1
+            if baixo[k] and calmo[k] >= n_estavel * 0.9:
+                i, k_calmo = int(c), k
+                break
 
     if i is None:
         d = ref[w:] - ref[:-w]
-        j = int(np.argmax(np.abs(d)))
+        # com o degrau comandado conhecido, so vale a variacao no sentido dele
+        j = int(np.argmax(sentido * d)) if amplitude_esperada else int(np.argmax(np.abs(d)))
         if abs(d[j]) < minimo:
             return None
         i = j
@@ -91,12 +118,27 @@ def detectar_degrau(t, ref, amplitude_esperada=None, minimo=2.0,
     #  que o real — medido neste projeto, ~0,15 s a menos. O instante do comando
     #  e onde o alvo DEIXA o patamar inicial: dali a diante o firmware ja sabia
     #  do degrau.
+    #  O patamar inicial vem do trecho calmo que a deteccao exigiu, e nao do
+    #  segundo antes do cruzamento: numa manobra combinada (30/30/90 graus), o alvo
+    #  em angulos de Euler mergulha antes de subir (acoplamento do quaternio), e a
+    #  mediana desse segundo caia no meio da rampa, ancorando o degrau tarde e com
+    #  amplitude menor (83 graus num degrau de 90).
     n_antes = max(int(1.0 / dt), 1)
-    antes = float(np.median(ref[max(i - n_antes, 0):i + 1]))
+    if k_calmo is not None:
+        n_estavel = max(int(1.5 / dt), 1)
+        antes = float(np.median(ref[max(k_calmo - n_estavel + 1, 0):k_calmo + 1]))
+    else:
+        antes = float(np.median(ref[max(i - n_antes, 0):i + 1]))
 
     limiar_saida = abs(0.02 * (float(np.median(ref[i:i + n_antes])) - antes)) + 1e-6
+    #  Volta ate onde o alvo ESTAVA PARADO no patamar (0,1 s dentro do limiar), e
+    #  nao ate a primeira amostra perto dele: no mergulho da manobra combinada de
+    #  45 graus o alvo de guinada cruza o zero de novo no meio da subida, e parar
+    #  ali atrasava o degrau em 0,25 s.
+    m_plato = max(int(0.1 / dt), 1)
+    dentro = np.abs(ref - antes) <= limiar_saida
     j = i
-    while j > 0 and abs(ref[j - 1] - antes) > limiar_saida:
+    while j > 0 and not dentro[max(j - m_plato, 0):j].all():
         j -= 1
     t_deg = float(t[j])
     i = j
@@ -203,13 +245,58 @@ def metricas_degrau(t, ref, y, amplitude_esperada=None, banda=0.02,
     return res
 
 
-def metricas_disturbio(t, erro, janela, frac_recuperacao=0.1):
+def faixa_calma(grade, erro, tp, janela, k_sigma=K_SIGMA_RECUPERACAO, minimo_s=1.0):
+    """|media| + k sigma do erro no trecho calmo: do 1o s do perfil ate 0,5 s antes
+    da janela do disturbio. ``None`` sem trecho calmo de pelo menos ``minimo_s``.
+
+    A media entra porque o erro calmo nem sempre e centrado: com RND 80, o rumo do
+    LQG vaga 2 a 3 graus em relacao ao AHRS. Recuperar, entao, e voltar a faixa em
+    que o erro ja estava antes do disturbio.
+    """
+    if tp is None or janela is None:
+        return None
+    sel = np.isfinite(tp) & (tp >= 1.0) & (grade <= janela[0] - 0.5) & np.isfinite(erro)
+    if sel.sum() < 2:
+        return None
+    dt = float(np.median(np.diff(grade))) if len(grade) > 1 else 0.0
+    if sel.sum() * dt < minimo_s:
+        return None
+    e = erro[sel]
+    return float(abs(np.mean(e)) + k_sigma * np.std(e))
+
+
+def _entrada_com_permanencia(tt, abaixo, permanencia_s):
+    """Primeiro instante a partir do qual ``abaixo`` vale sem parar por
+    ``permanencia_s``, ou ate o fim de ``tt`` quando a janela acaba antes disso
+    (a regra antiga, que so assim nao deixa sem valor uma recuperacao lenta que
+    termina perto do fim da janela). ``None`` se nada disso acontece."""
+    if len(tt) < 2:
+        return None
+    dt = float(np.median(np.diff(tt)))
+    borda = np.diff(np.concatenate(([0], abaixo.astype(np.int8), [0])))
+    inicios = np.nonzero(borda == 1)[0]
+    fins = np.nonzero(borda == -1)[0]          # exclusivos
+    for a, b in zip(inicios, fins):
+        if tt[b - 1] - tt[a] >= permanencia_s - 0.5 * dt or b == len(tt):
+            return float(tt[a])
+    return None
+
+
+def metricas_disturbio(t, erro, janela, frac_recuperacao=0.1, faixa_calma_deg=None,
+                       permanencia_s=None):
     """Desvio maximo, tempo de recuperacao e RMSE dentro da janela de disturbio.
 
     O tempo de recuperacao conta do instante do pico ate o erro entrar e
-    PERMANECER abaixo de ``frac_recuperacao`` do pico. Exigir permanencia, e nao
-    apenas o primeiro cruzamento, evita creditar uma recuperacao a uma passagem
-    pelo zero no meio de uma oscilacao.
+    PERMANECER abaixo do limiar. Exigir permanencia, e nao apenas o primeiro
+    cruzamento, evita creditar uma recuperacao a uma passagem pelo zero no meio
+    de uma oscilacao.
+
+    Sem ``faixa_calma_deg`` e sem ``permanencia_s`` (a regra com que o projeto
+    escolheu os ganhos), o limiar e ``frac_recuperacao`` do pico e a permanencia
+    vai ate o fim da janela. Os voos usam os dois argumentos: o limiar passa a
+    max(``frac_recuperacao`` do pico, ``faixa_calma_deg``), e basta o erro ficar
+    abaixo dele por ``permanencia_s``. Se o pico nao sai da faixa calma, o
+    disturbio nao se distingue do ruido e a recuperacao fica indefinida.
     """
     t_ini, t_fim = janela
     tt, ee = _limpar(t, erro)
@@ -224,15 +311,27 @@ def metricas_disturbio(t, erro, janela, frac_recuperacao=0.1):
     t_pico = float(tt[i_pico])
 
     t_rec = None
+    limiar = None
+    indefinida = False
     if pico > 1e-6:
         limiar = frac_recuperacao * pico
+        if faixa_calma_deg is not None:
+            limiar = max(limiar, float(faixa_calma_deg))
+            indefinida = float(faixa_calma_deg) >= pico
         depois = absr[i_pico:]
-        # ultimo indice acima do limiar: dali em diante o erro nunca mais sobe
-        acima = np.nonzero(depois > limiar)[0]
-        if len(acima) and acima[-1] < len(depois) - 1:
-            t_rec = float(tt[i_pico + acima[-1] + 1] - t_pico)
+        if indefinida:
+            pass
+        elif permanencia_s is None:
+            # ultimo indice acima do limiar: dali em diante o erro nunca mais sobe
+            acima = np.nonzero(depois > limiar)[0]
+            if len(acima) and acima[-1] < len(depois) - 1:
+                t_rec = float(tt[i_pico + acima[-1] + 1] - t_pico)
+        else:
+            t_ent = _entrada_com_permanencia(tt[i_pico:], depois <= limiar, permanencia_s)
+            if t_ent is not None:
+                t_rec = t_ent - t_pico
 
-    return {
+    res = {
         "desvio_max_deg": pico,
         "t_desvio_max_s": t_pico,
         "tempo_recuperacao_s": t_rec,
@@ -240,6 +339,13 @@ def metricas_disturbio(t, erro, janela, frac_recuperacao=0.1):
         "erro_medio_abs_deg": float(np.mean(absr)),
         "janela_s": [float(tt[0]), float(tt[-1])],
     }
+    if faixa_calma_deg is not None or permanencia_s is not None:
+        res["limiar_recuperacao_deg"] = limiar
+        res["faixa_calma_deg"] = faixa_calma_deg
+        res["permanencia_s"] = permanencia_s
+        if indefinida:
+            res["recuperacao_indefinida"] = "pico dentro da faixa calma"
+    return res
 
 
 def metricas_deriva(grade, col, janela):
@@ -315,7 +421,10 @@ def _pico(v):
 def tem_torque(perfil, col=None, limiar=1e-4):
     """True se o cenario aplica disturbio de TORQUE."""
     if perfil is not None:
-        return bool(abs(perfil.tqx) > 0 or abs(perfil.tqy) > 0 or abs(perfil.tqz) > 0)
+        # o evento de planta (bit 256: motor fraco, perda de empuxo) nao escreve
+        # torque, mas perturba a atitude e e medido como um disturbio de torque
+        return bool(abs(perfil.tqx) > 0 or abs(perfil.tqy) > 0 or abs(perfil.tqz) > 0
+                    or (perfil.modo & 256))
     if col is not None and "tq_mod" in col:
         v = col["tq_mod"][np.isfinite(col["tq_mod"])]
         return bool(len(v) and np.max(v) > limiar)
@@ -325,6 +434,8 @@ def tem_torque(perfil, col=None, limiar=1e-4):
 def eixos_com_torque(perfil, col=None, limiar=1e-4):
     """Eixos com componente de torque nao nula, na ordem canonica."""
     if perfil is not None:
+        if perfil.modo & 256:
+            return list(EIXOS)      # o evento de planta perturba os tres eixos
         amp = {"roll": perfil.tqx, "pitch": perfil.tqy, "yaw": perfil.tqz}
         return [e for e in EIXOS if abs(amp[e]) > 0]
     if col is None:
@@ -385,9 +496,12 @@ def janela_disturbio(grade, col, perfil=None):
 
     if tem_torque(perfil, col) and tp is not None and perfil is not None:
         ini = perfil.tqt0
-        # o degrau sustentado nao termina; os demais ganham folga para recuperar
+        # o degrau sustentado nao termina; o torque estocastico e o evento de
+        # planta valem enquanto duram; os demais ganham folga para recuperar
         if perfil.modo & 32:
             fim = float(tp[-1])
+        elif perfil.modo & (128 | 256):
+            fim = perfil.tqt0 + perfil.tqdur
         else:
             fim = perfil.tqt0 + max(perfil.tqdur * 8, 4.0)
         dentro = np.nonzero((tp >= ini) & (tp <= fim))[0]
@@ -454,7 +568,10 @@ def calcular(grade, col, perfil=None, degraus=None, inercia_kgm2=None):
     # rotulos que dizem outra coisa. Numero com rotulo errado e pior que numero
     # nenhum.
     for eixo in eixos_dist:
-        res[f"disturbio_{eixo}"] = metricas_disturbio(grade, col[COLUNAS[eixo]["erro"]], jan)
+        e = col[COLUNAS[eixo]["erro"]]
+        res[f"disturbio_{eixo}"] = metricas_disturbio(
+            grade, e, jan, faixa_calma_deg=faixa_calma(grade, e, col.get("tp"), jan),
+            permanencia_s=PERMANENCIA_RECUPERACAO_S)
     if jan is not None:
         # A deriva so e calculada quando ha VENTO. Num cenario so de torque ela
         # mediria a translacao provocada pela inclinacao comandada — um numero
@@ -470,10 +587,30 @@ def calcular(grade, col, perfil=None, degraus=None, inercia_kgm2=None):
     ativos.update(e for e in EIXOS if res.get(f"degrau_{e}") or (degraus or {}).get(e))
     res["eixos_ativos"] = ordenar(ativos) or ["roll"]
 
-    # o esforco so e integrado nos eixos exercitados: o de um eixo parado e ruido
+    # o esforco so e integrado nos eixos exercitados: o de um eixo parado e ruido.
+    # Com disturbio, na janela dele, como as outras metricas de rejeicao; sem
+    # disturbio (nominais), no perfil inteiro.
     for eixo in res["eixos_ativos"]:
         if COLUNAS[eixo]["saida"] in col:
-            res[f"esforco_{eixo}"] = esforco_controle(grade, col[COLUNAS[eixo]["saida"]])
+            res[f"esforco_{eixo}"] = esforco_controle(grade, col[COLUNAS[eixo]["saida"]],
+                                                      janela=jan)
+
+    # O que cada controlador repassa do ruido do giroscopio: esforco e erro
+    # eficazes (em torno da media) no trecho calmo antes do disturbio, do 1o s do
+    # perfil ate 0,5 s antes do torque. E o eixo "ruido" da fronteira medida
+    # (ruido/rndNN), o mesmo trecho da figura comparacao_ruido.
+    tp = col.get("tp")
+    if (tp is not None and perfil is not None and tem_torque(perfil, col)
+            and perfil.tqt0 >= 2.0):
+        calmo = np.isfinite(tp) & (tp >= 1.0) & (tp <= perfil.tqt0 - 0.5)
+        if calmo.sum() > 100:
+            for eixo in EIXOS:
+                c = COLUNAS[eixo]
+                if c["saida"] in col and c["erro"] in col:
+                    u, e = col[c["saida"]][calmo], col[c["erro"]][calmo]
+                    res[f"calmo_{eixo}"] = {
+                        "u_rms": float(np.sqrt(np.nanmean((u - np.nanmean(u)) ** 2))),
+                        "erro_rms_deg": float(np.sqrt(np.nanmean((e - np.nanmean(e)) ** 2)))}
 
     # o bloco de vento so existe quando ha vento: tres zeros num ensaio de torque
     # sao ruido visual, nao informacao
@@ -498,11 +635,13 @@ def calcular(grade, col, perfil=None, degraus=None, inercia_kgm2=None):
             #  soaria enorme sem querer dizer nada. Para o chirp vale a faixa de
             #  frequencia; a analise fica em analise/frequencia.py.
             chirp = perfil is not None and bool(perfil.modo & 64)
+            # o torque estocastico tambem e bipolar: impulso nao o descreve
+            bipolar = chirp or (perfil is not None and bool(perfil.modo & 128))
             if chirp:
                 res["torque"]["chirp_f0_hz"] = float(perfil.tqf0)
                 res["torque"]["chirp_f1_hz"] = float(perfil.tqf1)
                 res["torque"]["chirp_dur_s"] = float(perfil.tqdur)
-            else:
+            elif not bipolar:
                 imp = float(np.trapezoid(v[ok], grade[ok]))
                 res["torque"]["impulso_ang_rads"] = imp
                 res["torque"]["impulso_ang_degs"] = float(np.degrees(imp))
@@ -522,9 +661,32 @@ def calcular(grade, col, perfil=None, degraus=None, inercia_kgm2=None):
                 res["torque"][f"{eixo}_pico_rads2"] = pico
                 if inercia_kgm2 and inercia_kgm2.get(eixo):
                     res["torque"][f"{eixo}_pico_nm"] = pico * float(inercia_kgm2[eixo])
-                if not chirp:
+                if not bipolar:
                     imp_e = float(np.trapezoid(np.abs(serie[ok_e]), grade[ok_e]))
                     res["torque"][f"{eixo}_impulso_degs"] = float(np.degrees(imp_e))
+
+    # Pulso normalizado pelo impulso. O laco do injetor roda a ~44 Hz, e a duracao
+    # efetiva do pulso nominal de 0,3 s varia de 300 a 344 ms entre voos: o
+    # impulso aplicado varia junto. O desvio normalizado e o que o voo teria dado
+    # com o impulso nominal (amplitude x duracao; metade no meio cosseno), na
+    # hipotese linear desvio ~ impulso. Ela vale quando o pico vem depois do fim
+    # do pulso (guinada); em rolagem e arfagem o pico vem durante o pulso e nao
+    # depende da duracao, entao quem usa a metrica escolhe o eixo.
+    so_pulso = (perfil is not None and perfil.modo & (8 | 16)
+                and not perfil.modo & (32 | 64 | 128 | 256))
+    if so_pulso and "torque" in res:
+        amp_eixo = {"roll": perfil.tqx, "pitch": perfil.tqy, "yaw": perfil.tqz}
+        fator = 0.5 if perfil.modo & 16 else 1.0
+        for eixo in eixos_dist:
+            d = res.get(f"disturbio_{eixo}")
+            reg = res["torque"].get(f"{eixo}_impulso_degs")
+            nom = abs(float(amp_eixo[eixo])) * float(perfil.tqdur) * fator
+            if not d or not reg or nom <= 0 or d.get("desvio_max_deg") is None:
+                continue
+            reg = float(np.radians(reg))
+            d["impulso_nominal_rads"] = nom
+            d["impulso_registrado_rads"] = reg
+            d["desvio_max_norm_deg"] = float(d["desvio_max_deg"] * nom / reg)
 
     return res
 

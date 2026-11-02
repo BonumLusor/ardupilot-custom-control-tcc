@@ -67,7 +67,10 @@ local MODO_TQ_PULSO = 8      -- torque: pulso retangular
 local MODO_TQ_COS   = 16     -- torque: meio cosseno
 local MODO_TQ_DEG   = 32     -- torque: degrau sustentado
 local MODO_TQ_CHIRP = 64     -- torque: varredura em frequencia
+local MODO_TQ_ESTOC = 128    -- torque: estocastico (Gauss-Markov por eixo)
+local MODO_EVENTO   = 256    -- evento de planta: motor fraco ou perda de empuxo
 local MODO_TQ_QUALQUER = MODO_TQ_PULSO | MODO_TQ_COS | MODO_TQ_DEG | MODO_TQ_CHIRP
+                         | MODO_TQ_ESTOC
 
 -------------------------------------------------------------------------------
 -- parametros
@@ -85,14 +88,16 @@ local function bind_add_param(name, idx, default_value)
    return bind_param(PARAM_TABLE_PREFIX .. name)
 end
 
-assert(param:add_table(PARAM_TABLE_KEY, PARAM_TABLE_PREFIX, 18), 'vento: nao consegui criar a tabela de parametros')
+assert(param:add_table(PARAM_TABLE_KEY, PARAM_TABLE_PREFIX, 24), 'vento: nao consegui criar a tabela de parametros')
 
 --[[ bitmask, combinavel. 0 desliga o injetor.
        1  vento medio          |   8  torque: pulso retangular
        2  rajada 1-cosseno     |  16  torque: meio cosseno
        4  turbulencia Dryden   |  32  torque: degrau sustentado
                               |  64  torque: varredura em frequencia (chirp)
-     As tres formas de torque compartilham amplitude, inicio e duracao; ligar mais
+                              | 128  torque: estocastico (Gauss-Markov)
+                              | 256  evento de planta (motor fraco, empuxo)
+     As formas de torque compartilham amplitude, inicio e duracao; ligar mais
      de uma ao mesmo tempo as SOMA.                                            --]]
 local WND_MODE = bind_add_param('MODE', 1, 0)
 -- vento medio: modulo (m/s) e direcao de ONDE VEM (graus, convencao do SIM_WIND_DIR)
@@ -146,6 +151,25 @@ local WND_TQDUR = bind_add_param('TQDUR', 16, 0.4)
 local WND_TQF0  = bind_add_param('TQF0', 17, 0.2)    -- Hz, inicio
 local WND_TQF1  = bind_add_param('TQF1', 18, 10.0)   -- Hz, fim
 
+--[[ Torque ESTOCASTICO (bit 128): em cada eixo, um processo de Gauss-Markov
+     (Ornstein-Uhlenbeck) de variancia unitaria e tempo de correlacao WND_TQTC,
+     discretizado EXATAMENTE a DT, vezes WND_TQX/Y/Z — que aqui sao o DESVIO
+     PADRAO do torque, em rad/s^2. O processo corre desde o inicio do perfil
+     (estacionario muito antes de TQT0) e o torque so e aplicado entre TQT0 e
+     TQT0 + TQDUR. E a turbulencia que gera momento, que o vento deste simulador
+     nao gera; a metrica e o erro eficaz, o que um LQG minimiza.            --]]
+local WND_TQTC  = bind_add_param('TQTC', 19, 0.1)    -- s
+
+--[[ EVENTO DE PLANTA (bit 256): em TQT0 o injetor muda um parametro da fisica
+     do SITL e o desfaz em TQT0 + TQDUR (antes do pouso):
+       WND_EVT = 1  motor fraco: SIM_ENGINE_FAIL = WND_EVM (mascara de motores)
+                    e SIM_ENGINE_MUL = WND_EVK (fator sobre PWM - 1000)
+       WND_EVT = 2  perda uniforme de empuxo: SIM_FRM_HOVR_THR = WND_EVK
+     Os dois sao relidos pelo SITL a cada passo (SITL_State, SIM_Frame).     --]]
+local WND_EVT   = bind_add_param('EVT', 20, 0)
+local WND_EVM   = bind_add_param('EVM', 21, 0)
+local WND_EVK   = bind_add_param('EVK', 22, 1.0)
+
 -- parametros do SITL que o injetor escreve
 local SIM_WIND_SPD   = bind_param('SIM_WIND_SPD')
 local SIM_WIND_DIR   = bind_param('SIM_WIND_DIR')
@@ -154,6 +178,9 @@ local SIM_TWIST_X    = bind_param('SIM_TWIST_X')
 local SIM_TWIST_Y    = bind_param('SIM_TWIST_Y')
 local SIM_TWIST_Z    = bind_param('SIM_TWIST_Z')
 local SIM_TWIST_TIME = bind_param('SIM_TWIST_TIME')
+local SIM_ENGINE_FAIL = bind_param('SIM_ENGINE_FAIL')
+local SIM_ENGINE_MUL  = bind_param('SIM_ENGINE_MUL')
+local SIM_FRM_HOVR_THR = bind_param('SIM_FRM_HOVR_THR')
 
 -- O twist se auto-desarma quando SIM_TWIST_TIME expira, zerando o proprio
 -- parametro. Armamos uma vez com um valor longo e modulamos so as amplitudes a
@@ -163,12 +190,18 @@ local TWIST_ARMADO_MS = 3600000
 
 -------------------------------------------------------------------------------
 -- PRNG determinista: Park-Miller minstd + Box-Muller
--- O maior produto intermediario e 16807*2147483646 ~ 3.6e13, bem abaixo de 2^53,
--- entao o resultado e exato tanto em inteiro de 64 bits quanto em ponto flutuante.
+-- O ArduPilot compila o Lua com LUA_32BITS (Tools/ardupilotwaf/boards.py), em
+-- todas as placas e no SITL: inteiros e floats de 32 bits. O produto direto
+-- 16807*estado passa de 2^31 e da a volta, e o gerador deixa de ser o minstd
+-- (foi o que se viu no primeiro ensaio de torque estocastico: o log nao batia
+-- com analise.dryden_ref). O metodo de Schrage calcula o MESMO minstd sem que
+-- nenhum produto intermediario passe de 2^31: exato em 32 bits.
 -------------------------------------------------------------------------------
 
 local MINSTD_M = 2147483647
 local MINSTD_A = 16807
+local MINSTD_Q = 127773            -- M // A
+local MINSTD_R = 2836              -- M % A
 
 local rng_estado = 1
 
@@ -178,7 +211,13 @@ local function rng_semear(semente)
 end
 
 local function rng_uniforme()      -- em (0, 1)
-   rng_estado = (MINSTD_A * rng_estado) % MINSTD_M
+   local hi = rng_estado // MINSTD_Q
+   local lo = rng_estado % MINSTD_Q
+   local x = MINSTD_A * lo - MINSTD_R * hi
+   if x <= 0 then
+      x = x + MINSTD_M
+   end
+   rng_estado = x
    return rng_estado / MINSTD_M
 end
 
@@ -207,6 +246,11 @@ local p = {}
 
 -- estados dos filtros de Dryden
 local du_x = 0.0                                  -- OU exato (longitudinal)
+-- estados do torque estocastico (variancia unitaria, por eixo)
+local es_x, es_y, es_z = 0.0, 0.0, 0.0
+-- evento de planta: 0 antes, 1 aplicado, 2 desfeito; e os valores originais
+local evento = 0
+local evento_orig = {}
 local dv_u1, dv_u2, dv_y1, dv_y2 = 0.0, 0.0, 0.0, 0.0   -- Tustin 2a ordem (lateral)
 
 -- contador de passos do gerador e ultima saida calculada
@@ -242,6 +286,13 @@ local function iniciar_perfil(agora_ms)
    p.tq_wmin = 2.0 * math.pi * p.tqf0
    p.tq_wmax = 2.0 * math.pi * p.tqf1
    p.tq_B = math.log(p.tq_wmax / p.tq_wmin)
+   -- torque estocastico: OU exato de variancia unitaria
+   p.tqtc = math.max(WND_TQTC:get() or 0.1, 1e-3)
+   p.es_phi = math.exp(-DT / p.tqtc)
+   p.es_g = math.sqrt(math.max(1.0 - p.es_phi * p.es_phi, 0.0))
+   p.evt = math.floor(WND_EVT:get() or 0)
+   p.evm = math.floor(WND_EVM:get() or 0)
+   p.evk = WND_EVK:get() or 1.0
 
    -- Velocidade de referencia dos filtros de Dryden. Um quadrotor em voo pairado
    -- tem velocidade propria quase nula, entao quem "varre" a escala de turbulencia
@@ -275,6 +326,8 @@ local function iniciar_perfil(agora_ms)
 
    du_x = 0.0
    dv_u1, dv_u2, dv_y1, dv_y2 = 0.0, 0.0, 0.0, 0.0
+   es_x, es_y, es_z = 0.0, 0.0, 0.0
+   evento = 0
    passo = 0
    wn_atual, we_atual = 0.0, 0.0
    tq_x, tq_y, tq_z = 0.0, 0.0, 0.0
@@ -297,7 +350,35 @@ local function iniciar_perfil(agora_ms)
       math.floor(WND_SEED:get() or 1)))
 end
 
+local function desfazer_evento()
+   if evento == 1 then
+      if p.evt == 1 then
+         SIM_ENGINE_FAIL:set(evento_orig.fail)
+         SIM_ENGINE_MUL:set(evento_orig.mul)
+      elseif p.evt == 2 then
+         SIM_FRM_HOVR_THR:set(evento_orig.hovr)
+      end
+      evento = 2
+      gcs:send_text(6, 'vento: evento de planta desfeito')
+   end
+end
+
+local function aplicar_evento()
+   evento_orig = {fail = SIM_ENGINE_FAIL:get(), mul = SIM_ENGINE_MUL:get(),
+                  hovr = SIM_FRM_HOVR_THR:get()}
+   if p.evt == 1 then
+      SIM_ENGINE_MUL:set(p.evk)
+      SIM_ENGINE_FAIL:set(p.evm)
+   elseif p.evt == 2 then
+      SIM_FRM_HOVR_THR:set(p.evk)
+   end
+   evento = 1
+   gcs:send_text(6, string.format('vento: evento de planta %d (mascara %d, valor %.3f)',
+                                  p.evt, p.evm, p.evk))
+end
+
 local function parar_perfil()
+   desfazer_evento()
    perfil_ativo = false
    t_gatilho_ms = nil
    SIM_WIND_SPD:set(0)
@@ -432,9 +513,25 @@ local function avancar_um_passo()
    local psi = (p.dir + 180.0) * RAD
    local cs, sn = math.cos(psi), math.sin(psi)
 
+   -- torque estocastico: tres normais por passo (duas chamadas, a quarta e
+   -- descartada), sorteadas DEPOIS das do Dryden e so com o bit ligado, para a
+   -- sequencia ser a mesma em ensaios.analise.dryden_ref
+   if (modo & MODO_TQ_ESTOC) ~= 0 then
+      local n1, n2 = rng_normais()
+      local n3, _ = rng_normais()
+      es_x = p.es_phi * es_x + p.es_g * n1
+      es_y = p.es_phi * es_y + p.es_g * n2
+      es_z = p.es_phi * es_z + p.es_g * n3
+   end
+
    -- torque: mesma base de tempo, mesmo passo fixo
    local ft = forma_torque(t)
    tq_x, tq_y, tq_z = p.tqx * ft, p.tqy * ft, p.tqz * ft
+   if (modo & MODO_TQ_ESTOC) ~= 0 and t >= p.tqt0 and t <= p.tqt0 + p.tqdur then
+      tq_x = tq_x + p.tqx * es_x
+      tq_y = tq_y + p.tqy * es_y
+      tq_z = tq_z + p.tqz * es_z
+   end
 
    return vel_long * cs - vel_lat * sn,
           vel_long * sn + vel_lat * cs
@@ -492,6 +589,16 @@ local function update()
       passo = alvo                              -- desistiu de recuperar; segue em frente
    end
 
+   -- evento de planta, no relogio do perfil
+   if (p.modo & MODO_EVENTO) ~= 0 then
+      local tp = passo * DT
+      if evento == 0 and tp >= p.tqt0 then
+         aplicar_evento()
+      elseif evento == 1 and tp > p.tqt0 + p.tqdur then
+         desfazer_evento()
+      end
+   end
+
    local wn, we = wn_atual, we_atual
    local spd = math.sqrt(wn * wn + we * we)
 
@@ -512,8 +619,8 @@ local function update()
    -- Verdade do vento, na mesma base de tempo de ATT/RATE/PIDR. O campo Tp e o
    -- tempo do PERFIL (passo * DT): e ele que permite conferir o log contra a
    -- referencia em Python sem depender de quando cada amostra foi gravada.
-   logger:write('WND', 'Tp,Wn,We,Wd,Spd,Dir,Tx,Ty,Tz,Mode', 'fffffffffB',
-                passo * DT, wn, we, wd, spd, dir, tq_x, tq_y, tq_z, p.modo)
+   logger:write('WND', 'Tp,Wn,We,Wd,Spd,Dir,Tx,Ty,Tz,Mode,Ev', 'fffffffffHB',
+                passo * DT, wn, we, wd, spd, dir, tq_x, tq_y, tq_z, p.modo, evento)
 
    return update, INTERVALO_MS
 end

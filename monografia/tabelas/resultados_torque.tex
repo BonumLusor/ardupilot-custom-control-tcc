@@ -5,16 +5,43 @@ Eixo & Torque & Controlador & Desvio máx. (\si{\degree}) & Recuperação (\si{\
 \midrule
 Rolagem & pulso & nativo & 0,90 & 1,32 & 0,229 & 0,051 \\
 Rolagem & pulso & \codigo{cc\_pid} & 0,91 & 1,21 & 0,224 & 0,051 \\
+Rolagem & pulso & LQI & 0,98 & 0,75 & 0,267 & 0,051 \\
+Rolagem & pulso & LQR+ESO & 0,99 & 0,73 & 0,275 & 0,051 \\
+Rolagem & pulso & LQG & 0,81 & 0,51 & 0,180 & 0,053 \\
+Rolagem & pulso & LQG (mesmo ruído) & 0,79 & 0,22 & 0,189 & 0,051 \\
 Arfagem & pulso & nativo & 0,93 & 1,25 & 0,233 & 0,050 \\
 Arfagem & pulso & \codigo{cc\_pid} & 0,94 & 1,25 & 0,233 & 0,050 \\
-Guinada & pulso & nativo & 6,06 & 0,35 & 1,678 & 0,254 \\
-Guinada & pulso & \codigo{cc\_pid} & 5,70 & 0,35 & 1,563 & 0,242 \\
+Arfagem & pulso & LQI & 1,04 & 0,87 & 0,290 & 0,049 \\
+Arfagem & pulso & LQR+ESO & 1,04 & 0,78 & 0,295 & 0,050 \\
+Arfagem & pulso & LQG & 0,84 & 0,18 & 0,189 & 0,051 \\
+Arfagem & pulso & LQG (mesmo ruído) & 0,86 & 0,17 & 0,198 & 0,051 \\
+Guinada & pulso & nativo & 5,55$^\dagger$ & 0,35 & 1,678 & 0,254 \\
+Guinada & pulso & \codigo{cc\_pid} & 5,64$^\dagger$ & 0,35 & 1,563 & 0,242 \\
+Guinada & pulso & LQI & 3,96$^\dagger$ & 1,68 & 1,402 & 0,225 \\
+Guinada & pulso & LQR+ESO & 3,97$^\dagger$ & 1,55 & 1,379 & 0,235 \\
+Guinada & pulso & LQI (mesmo ruído) & 7,53$^\dagger$ & 3,25 & 3,477 & 0,132 \\
+Guinada & pulso & LQG & 5,35$^\dagger$ & 1,64 & 1,708 & 0,276 \\
+Guinada & pulso & LQG (mesmo ruído) & 4,66$^\dagger$ & 1,72 & 1,357 & 0,271 \\
 \addlinespace
 Rolagem & degrau & nativo & 0,60 & 2,25 & 0,070 & 0,034 \\
 Rolagem & degrau & \codigo{cc\_pid} & 0,61 & 2,09 & 0,070 & 0,034 \\
+Rolagem & degrau & LQI & 0,65 & 0,44 & 0,049 & 0,035 \\
+Rolagem & degrau & LQR+ESO & 0,66 & 0,41 & 0,051 & 0,033 \\
+Rolagem & degrau & LQG & 0,51 & 0,17 & 0,031 & 0,034 \\
+Rolagem & degrau & LQG (mesmo ruído) & 0,54 & 0,20 & 0,033 & 0,035 \\
 Arfagem & degrau & nativo & 0,61 & 2,15 & 0,073 & 0,033 \\
 Arfagem & degrau & \codigo{cc\_pid} & 0,62 & 2,22 & 0,073 & 0,033 \\
+Arfagem & degrau & LQI & 0,69 & 0,60 & 0,060 & 0,033 \\
+Arfagem & degrau & LQR+ESO & 0,69 & 0,46 & 0,056 & 0,033 \\
+Arfagem & degrau & LQG & 0,56 & 0,17 & 0,033 & 0,035 \\
+Arfagem & degrau & LQG (mesmo ruído) & 0,57 & 0,18 & 0,034 & 0,036 \\
 Guinada & degrau & nativo & 2,56 & 22,18 & 0,847 & 0,093 \\
 Guinada & degrau & \codigo{cc\_pid} & 2,56 & 22,09 & 0,847 & 0,093 \\
+Guinada & degrau & LQI & 1,87 & 1,13 & 0,214 & 0,084 \\
+Guinada & degrau & LQR+ESO & 1,77 & 1,02 & 0,193 & 0,087 \\
+Guinada & degrau & LQI (mesmo ruído) & 6,16 & 2,33 & 0,987 & 0,082 \\
+Guinada & degrau & LQG & 2,28 & 1,34 & 0,261 & 0,097 \\
+Guinada & degrau & LQG (mesmo ruído) & 1,90 & 1,61 & 0,230 & 0,093 \\
 \bottomrule
+\multicolumn{7}{l}{\footnotesize $^\dagger$ Pulso de guinada: desvio máximo normalizado ao impulso nominal do cenário, $\delta_{\max}\,I_{\mathrm{nom}}/I_{\mathrm{reg}}$.} \\
 \end{tabular}
