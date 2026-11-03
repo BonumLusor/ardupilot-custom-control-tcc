@@ -11,11 +11,10 @@ Os veículos aéreos não tripulados (VANTs) de asas rotativas, em especial os
 quadrirrotores, deixaram de ser objeto exclusivo de pesquisa e passaram a
 ocupar aplicações cotidianas de inspeção de estruturas, agricultura de
 precisão, levantamento topográfico, monitoramento ambiental e logística de
-última milha. Essa difusão foi possibilitada tanto pela redução do custo dos
-sensores inerciais microeletromecânicos quanto pela maturidade dos pilotos
-automáticos de código aberto, que hoje entregam, em plataformas de baixo
-custo, funcionalidades antes restritas a sistemas aeronáuticos
-certificados~\cite{mahony2012}.
+última milha. Na pesquisa em robótica, tornaram-se plataforma padrão, por
+permitirem experimentação segura e de baixo custo~\cite{mahony2012}, e os
+pilotos automáticos de código aberto, hoje maduros, permitem que outros
+pesquisadores validem e ampliem os trabalhos existentes~\cite{ebeid2018}.
 
 Do ponto de vista da Engenharia de Controle e Automação, o quadrirrotor é uma
 planta de interesse particular. Ele é \emph{subatuado} --- possui seis graus
@@ -38,14 +37,16 @@ alocação de empuxo entre os motores. Nas duas malhas internas, o ArduPilot
 emprega um controlador proporcional sobre o erro de ângulo seguido de um
 controlador proporcional-integral-derivativo (PID) sobre o erro de velocidade
 angular, ambos precedidos por um modelador de referência que limita a
-aceleração angular comandada~\cite{ardupilotdev}.
+aceleração angular comandada~\cite{ardupilotdev,ardupilot2026}.
 
 \section{Problema e motivação}
 \label{sec:motivacao}
 
 O PID em cascata é consagrado pelo bom desempenho, pela robustez e pela
-facilidade de sintonia empírica~\cite{astrom2008}. No ArduPilot, ele é
-sintonizado por décadas de uso em campo e, em cada aeronave, por um
+facilidade de sintonia empírica~\cite[Cap.~10]{astrom2008}: mais de 95\,\%
+dos problemas de controle industrial são resolvidos por controle
+PID~\cite[Cap.~1]{astrom2008}. No ArduPilot, ele é
+sintonizado por mais de uma década de uso em campo e, em cada aeronave, por um
 procedimento automático que excita os eixos em voo e ajusta os ganhos pela
 resposta observada. Os ganhos resultantes, contudo, não decorrem de um modelo
 dinâmico explícito da aeronave, e a estrutura do controlador permanece a mesma
@@ -74,11 +75,12 @@ Há ainda um aspecto que distingue o desempenho aceitável em bancada do
 desempenho aceitável em operação: a aeronave real não voa em ar parado. Vento
 médio, rajadas e turbulência atmosférica são a principal fonte de perturbação
 externa sobre um quadrirrotor de pequeno porte, e seu efeito é agravado pela
-baixa inércia dessas aeronaves~\cite{beard2012}. Avaliar um controlador apenas
+baixa velocidade de voo dessas aeronaves, em que o vento chega a 20\,\% a
+50\,\% da velocidade em relação ao ar~\cite{beard2012}. Avaliar um controlador apenas
 pela resposta ao degrau em condição nominal diz, portanto, pouco sobre sua
 utilidade prática. Neste trabalho, as perturbações são tratadas ao mesmo tempo
 como \emph{cenário de ensaio}, por meio de perfis reprodutíveis de torque e de
-vento aplicados igualmente aos dois controladores, e como \emph{objeto de
+vento aplicados igualmente a todos os controladores, e como \emph{objeto de
 projeto}, por meio de mecanismos de estimação e compensação de perturbação
 incorporados à lei de controle. A capacidade de rejeição de perturbação passa,
 assim, de efeito colateral a critério explícito de comparação.
@@ -99,7 +101,9 @@ nulo.
 \subsection{Objetivo geral}
 
 Projetar, implementar e validar em simulação um controlador de atitude
-alternativo para um quadrirrotor, embarcado no firmware ArduPilot por meio do
+baseado em modelo para um quadrirrotor, em três variantes (LQI, LQR com
+observador de estado estendido e LQG), embarcado no firmware ArduPilot por
+meio do
 \textit{framework} \codigo{AC\_CustomControl}, comparando quantitativamente
 seu desempenho ao do controlador PID nativo em ambiente SITL, com uso
 exclusivo de ferramentas de código aberto.
@@ -120,17 +124,19 @@ exclusivo de ferramentas de código aberto.
     \item identificar a dinâmica de atitude da aeronave simulada no domínio da
           frequência e confrontá-la com o modelo analítico;
     \item projetar o controlador de atitude pelo regulador linear quadrático
-          (LQR) com ação integral, mantendo a alocação de polos como
-          alternativa, verificar as margens de estabilidade e discretizá-lo na
-          taxa de execução do firmware;
+          (LQR) com ação integral (LQI), pelo LQR com observador de estado
+          estendido e pelo LQG, verificar as margens de estabilidade e
+          projetá-lo em tempo discreto, na taxa de execução do laço;
     \item modelar e implementar perturbações externas reprodutíveis ---
-          perturbações de torque em pulso, em degrau sustentado e em varredura
-          de frequência, além de vento médio, rajada e turbulência ---,
-          compondo cenários de ensaio parametrizáveis;
-    \item incorporar ao controlador um observador de estado estendido para
-          estimação e compensação de perturbação, quantificando o ganho em
-          relação à realimentação de estados pura;
-    \item implementar o controlador em C++ no ArduPilot, com ganhos expostos
+          perturbações de torque em pulso, em degrau sustentado, em varredura
+          de frequência e estocásticas, além de vento médio, rajada e
+          turbulência ---, compondo cenários de ensaio parametrizáveis, e
+          cenários de robustez com erro de modelo, falha de motor, ruído de
+          giroscópio, saturação e grandes ângulos;
+    \item estimar e compensar a perturbação, por um observador de estado
+          estendido e por um filtro de Kalman, e comparar essa estratégia à
+          da ação integral;
+    \item implementar os controladores em C++ no ArduPilot, com ganhos expostos
           como parâmetros ajustáveis em tempo de execução, registro dos sinais
           internos e reinicialização adequada dos estados na comutação entre
           controladores;
@@ -145,7 +151,7 @@ exclusivo de ferramentas de código aberto.
 \label{sec:justificativa}
 
 A relevância do tema é reforçada por trabalhos consolidados na área.
-\citeonline{bouabdallah2007} desenvolveu a modelagem, a identificação e o
+\citeonline{bouabdallah2007} desenvolveu a modelagem, o projeto e o
 controle de um quadrirrotor, comparando estratégias lineares e não lineares em
 uma plataforma experimental construída para esse fim.
 \citeonline{sabatino2015}, por sua vez, derivou o modelo não linear de seis
@@ -180,9 +186,20 @@ utilizado é a versão de desenvolvimento 4.8 do ArduCopter, fixada em um
 \textit{commit} específico do repositório oficial~\cite{ardupilot2026}, de modo
 que os resultados possam ser reproduzidos.
 
+O SITL simplifica a aeronave em pontos que favorecem os controladores
+baseados em modelo: não tem dinâmica de motor, não modela o termo giroscópico
+$\vetor{\omega}\times\matriz{J}\,\vetor{\omega}$, trata o vento quase só como
+perturbação de posição, aplica a carga suspensa e o cabo sem momento e, nos
+ensaios-base, entrega um giroscópio praticamente sem ruído
+(Seções~\ref{sec:sitl} e~\ref{sec:motor-sitl}). O último capítulo discute o
+que isso implica para uma aeronave real.
+
 Quanto às perturbações, o escopo abrange perturbações aditivas de torque nos
-três eixos e os modelos de vento médio, rajada determinística e turbulência
-estocástica aplicados de forma uniforme ao volume ocupado pela aeronave. Ficam
+três eixos --- em pulso, em degrau, em varredura e estocásticas ---, os
+modelos de vento médio, rajada determinística e turbulência estocástica
+aplicados de forma uniforme ao volume ocupado pela aeronave e variações da
+própria aeronave e dos sensores: erro de modelo, falha de motor e ruído de
+giroscópio. Ficam
 fora do escopo os campos de vento espacialmente distribuídos, as esteiras de
 obstáculos e os efeitos aerodinâmicos de proximidade ao solo ou a paredes, que
 exigiriam simulação fluidodinâmica. Ficam igualmente fora do escopo o voo em
