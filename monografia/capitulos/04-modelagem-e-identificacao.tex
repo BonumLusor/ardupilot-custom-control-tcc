@@ -6,8 +6,10 @@
 %  equilíbrio no pairado e linearização numérica. Cada bloco foi conferido
 %  no código do firmware e do SITL (commit ce9c2d01a4), e os números saem de
 %  modelagem/modelo_sitl.py, que porta essa cadeia e lê o params.parm de um
-%  ensaio (guinada/torque_degrau/cc_pid/2026-10-15_220039), rodado com
-%  --tensao-repouso 12.44, o BAT.VoltR do .BIN do mesmo voo. Os do minicurso não são usados: o modelo é o da aeronave simulada.
+%  ensaio (vento/rajada/nativo/2026-10-27_214349, o VOO_DO_PROJETO de
+%  modelagem/projeto.py), rodado com --tensao-repouso 12.44, o BAT.VoltR do
+%  .BIN do mesmo voo. Os do minicurso não são usados: o modelo é o da
+%  aeronave simulada.
 % ======================================================================
 \chapter{Modelagem e identificação da aeronave simulada}
 \label{cap:modelagem}
@@ -134,7 +136,8 @@ Em torno dele, as pequenas variações obedecem a
 $L_m\,\delta\dot I = \delta V - R_m\,\delta I - K_e\,\delta\Omega$ e
 $J_m\,\delta\dot\Omega = K_\tau\,\delta I - (2k_Q\Omega_{\mathrm{eq}} + B_m)\,\delta\Omega$.
 A constante de tempo elétrica $L_m/R_m$ costuma ser bem menor que a mecânica;
-desprezando-a, $\delta I = (\delta V - K_e\,\delta\Omega)/R_m$, e o conjunto se
+desprezando-a (aproximação de quase regime
+permanente~\cite{kokotovic1999}), $\delta I = (\delta V - K_e\,\delta\Omega)/R_m$, e o conjunto se
 reduz ao modelo de primeira ordem apresentado no minicurso,
 \begin{equation}
 \frac{\delta\Omega(s)}{\delta V(s)} = \frac{k_m}{\tau_m\,s + 1}, \qquad
@@ -154,7 +157,7 @@ estados e deseja um modelo de projeto reduzido. Como as tensões atuam apenas
 sobre as correntes, as linhas e as colunas dos motores na matriz linearizada
 contêm todo o caminho da entrada até as forças; truncá-las anula a matriz de
 entrada do modelo reduzido. A redução correta é a residualização dos estados
-rápidos, por perturbação singular: impõe-se $\dot I_i = \dot\Omega_i = 0$ e
+rápidos, por perturbação singular~\cite{kokotovic1999}: impõe-se $\dot I_i = \dot\Omega_i = 0$ e
 substituem-se as relações estáticas resultantes, como se fez acima para a
 corrente.
 
@@ -268,8 +271,17 @@ interna da bateria, que o monitor de bateria do firmware estima em voo a
 partir das variações de tensão e de corrente~\cite{ardupilot2026}. A
 compensação depende, portanto, de uma estimativa, e não da tensão
 verdadeira, o que tem consequência no ponto de equilíbrio
-(Seção~\ref{sec:modelo-linear}). A segunda transformação é a inversa da curva
-de empuxo~\eqref{eq:linearizacao-empuxo}. A terceira é o mapeamento na faixa
+(Seção~\ref{sec:modelo-linear}). A segunda é a inversa da curva de empuxo,
+que no código inclui o próprio $L_{\max}$ e a razão de tensão
+$v = \hat V_r/\codigo{MOT\_BAT\_VOLT\_MAX}$,
+\begin{equation}
+c = \frac{-(1-e) + \sqrt{(1-e)^2 + 4\,e\,L_{\max}\,t}}{2\,e\,v},
+\label{eq:inversa-empuxo-codigo}
+\end{equation}
+e se reduz à Equação~\eqref{eq:linearizacao-empuxo} quando $L_{\max} = v = 1$;
+como $g_c$ já divide $t$ por $L_{\max}$, os dois fatores se cancelam, e a
+compensação de tensão que resta é o fator $1/v$ sobre o comando. A terceira é
+o mapeamento na faixa
 útil do motor e a conversão em PWM. Como o firmware e o simulador usam o mesmo
 expoente da curva ($e = 0{,}65$) e a mesma faixa útil, a inversa do firmware
 cancela a curva do SITL, e o empuxo de cada motor fica, com ótima aproximação,
@@ -501,8 +513,10 @@ Eficácia de controle em guinada                    & $b_z$      & \SI{14.37}{\r
 \end{tabular}
 
 \fonte{Calculados por \codigo{modelagem/modelo\_sitl.py} a partir dos
-parâmetros gravados em um ensaio, do $\hat V_r$ do registro do mesmo voo
-(\codigo{BAT.VoltR}) e do código-fonte~\cite{ardupilot2026}.}
+parâmetros gravados no ensaio \codigo{vento/rajada/nativo/2026-10-27\_214349},
+o mesmo de que parte o projeto (Capítulo~\ref{cap:projeto}), do $\hat V_r$ do
+registro do mesmo voo (\codigo{BAT.VoltR}) e do
+código-fonte~\cite{ardupilot2026}.}
 \nota{\raggedright Coeficientes por linearização numérica; $k_t$ e $\kappa'$
 pelas Equações~\eqref{eq:empuxo-linear} e~\eqref{eq:kappa-incremental} com o
 $t_h$ previsto. Com a tensão sem carga da bateria simulada no lugar de
@@ -534,8 +548,8 @@ a eficácia é 30 vezes menor. A perturbação $d$ entra exatamente na escala em
 que o injetor de perturbações dos ensaios a aplica, em
 \si{\radian\per\second\squared}.
 
-Discretizado com segurador de ordem zero no período $T_s$ do laço de
-controle, o modelo~\eqref{eq:modelo-eixo} fica
+Discretizado com segurador de ordem zero~\cite{franklin1998} no período $T_s$
+do laço de controle, o modelo~\eqref{eq:modelo-eixo} fica
 \begin{equation}
 \vetor{x}_{\phi,k+1} =
 \begin{bmatrix} 1 & \beta \\ 0 & \mathrm{e}^{-aT_s} \end{bmatrix} \vetor{x}_{\phi,k} +
@@ -553,27 +567,35 @@ discretizado~\eqref{eq:discreto} apenas na terceira casa decimal.
 
 O controlador não recebe $\vetor{\omega}$, e sim a velocidade angular medida
 pelo giroscópio e filtrada por um passa-baixas de segunda ordem do tipo
-Butterworth, com frequência de corte de \SI{20}{\hertz}
-(\codigo{INS\_GYRO\_FILTER}). Na frequência $f$, o filtro atrasa a fase em
+Butterworth~\cite{butterworth1930}, com frequência de corte de
+\SI{20}{\hertz} (\codigo{INS\_GYRO\_FILTER}). Na frequência $f < f_c$, o
+filtro atrasa a fase em
 $\arctan\!\left[\sqrt{2}\,(f/f_c)\big/\left(1 - (f/f_c)^2\right)\right]$:
 \ang{24} a \SI{5.7}{\hertz}, a ordem da banda passante da malha de
-velocidade angular, e \ang{43} a \SI{10}{\hertz}. No SITL usado nos ensaios,
-o giroscópio simulado não tem ruído (\codigo{SIM\_GYR1\_RND} nulo), condição
-mais favorável que a de uma aeronave real, sobretudo para observadores de
-perturbação.
+velocidade angular, e \ang{43} a \SI{10}{\hertz}. Nos ensaios-base, o ruído
+do giroscópio proporcional ao acelerador está desligado
+(\codigo{SIM\_GYR1\_RND} nulo), e resta só o ruído mínimo fixo do simulador,
+da ordem de \SI{0.01}{\degree\per\second} (Seção~\ref{sec:sensores-sitl}),
+condição mais favorável que a de uma aeronave real, sobretudo para
+observadores de perturbação; os cenários de ruído do
+Capítulo~\ref{cap:resultados} o ligam em quatro níveis.
 
 Entre a amostra do giroscópio e o efeito do comando no modelo físico, o modelo
-considera apenas o segurador de ordem zero do laço de controle: o esforço
-calculado em um laço vale durante os três passos seguintes do modelo físico,
-de \SI{1200}{\hertz}, até o próximo laço, de \SI{400}{\hertz}. A validação da
-Seção~\ref{sec:validacao-identificacao} indica que não há atraso apreciável
-além desse. Acrescentando à simulação mais um laço de atraso
-(\SI{2.5}{\milli\second}), a resposta em frequência de rolagem e arfagem
-passa a diferir da do SITL em \SI{0.5}{\decibel} de ganho, na mediana, e em
-até \ang{15} de fase, contra \SI{0.2}{\decibel} e \ang{10} sem o atraso
-adicional. No tempo, os desvios máximos do SITL ficam entre os dois casos,
-cerca de 3\,\% acima do modelo sem atraso e 3\,\% abaixo do modelo com um
-laço, e um atraso efetivo de uma fração de laço não pode ser descartado.
+considera o segurador de ordem zero do laço de controle: o esforço calculado
+em um laço já vale durante os três passos seguintes do modelo físico, de
+\SI{1200}{\hertz}, até o próximo laço, de \SI{400}{\hertz}, porque o SITL
+integra o modelo físico com a última saída dos motores antes de gerar a
+amostra seguinte do giroscópio~\cite{ardupilot2026}. O ângulo, ao contrário,
+chega ao controlador com um laço de atraso, e a validação da
+Seção~\ref{sec:validacao-identificacao} usa essa temporização. Acrescentando
+à simulação mais um laço de atraso na atuação (\SI{2.5}{\milli\second}), a
+resposta em frequência de rolagem e arfagem passa a diferir da do SITL em
+\SI{0.57}{\decibel} de ganho, na mediana, em até
+\pendente{\SI{2.1}{\decibel}: conta de 3/11 com o torque segurado; o
+inventário traz 2,2 com o torque interpolado} e em até \ang{7.7} de fase,
+contra \SI{0.08}{\decibel}, \SI{1.3}{\decibel} e \ang{5.8} sem ele; no tempo, o desvio máximo do modelo passa de 2,3\,\% abaixo
+a 0,3\,\% acima do valor do SITL para 0,8\,\% a 2,6\,\% acima. Não há,
+portanto, atraso de atuação apreciável além do segurador.
 
 % ----------------------------------------------------------------------
 \section{Validação e identificação}
@@ -603,7 +625,9 @@ naquele voo. A entrada é o torque que o injetor registrou no ensaio, e as
 métricas são calculadas pelo mesmo código e na mesma janela da análise dos
 ensaios (Seção~\ref{sec:metricas}); modelo e SITL são comparados, assim,
 número a número. Não há ajuste: nenhum parâmetro do modelo é escolhido para
-aproximar os resultados.
+aproximar os resultados. O ângulo chega ao controlador com um laço de atraso,
+como o firmware o entrega (Seção~\ref{sec:instrumentacao}), e o esforço
+calculado em um laço já age no modelo físico até o laço seguinte.
 
 \begin{table}[htbp]
 \centering
@@ -622,25 +646,26 @@ valor de cada escrita da mensagem \codigo{WND}, segurado até a escrita
 seguinte, no instante registrado. O perfil nominal não serviria, porque o laço
 do injetor roda a cerca de \SI{44}{\hertz}, e não aos \SI{50}{\hertz}
 pedidos, e a duração efetiva do pulso nominal de \SI{0.3}{\second} variou de
-300 a \SI{338}{\milli\second} entre os voos (Seção~\ref{sec:injetor}).
+300 a \SI{338}{\milli\second} entre os voos deste lote (em todos os voos
+válidos, até \SI{344}{\milli\second}; Seção~\ref{sec:injetor}).
 
 A Tabela~\ref{tab:validacao} e a Figura~\ref{fig:validacao-tempo} mostram o
-resultado, em 22 comparações, que incluem os ensaios simultâneos nos três
-eixos. O desvio máximo é reproduzido com diferença de no máximo 3,4\,\%, no
+resultado, em 24 comparações, que incluem os ensaios simultâneos nos três
+eixos. O desvio máximo é reproduzido com diferença de no máximo 2,3\,\%, no
 pulso e no degrau sustentado, e o erro quadrático médio, com no máximo
-2,3\,\%. Em rolagem e arfagem, o desvio máximo do modelo fica
-sistematicamente de 1,4\,\% a 3,4\,\% abaixo do SITL; em guinada, a
-diferença não passa de 1\,\%. O tempo de recuperação concorda com diferença
-de no máximo 8,2\,\% no degrau sustentado; em guinada, a
-recuperação lenta é reproduzida em detalhe, \SI{22.8}{\second} no modelo
-contra \SI{22.2}{\second} no SITL. No pulso de rolagem e arfagem, o modelo
-recupera de 5\,\% a 10\,\% mais devagar. A recuperação do pulso é, de todas,
-a métrica mais sensível: quando a resposta tem um pequeno sobressinal de
-amplitude próxima ao limiar de 10\,\% do pico, uma diferença mínima decide se
-o erro volta ou não a cruzar o limiar, e a recuperação muda de forma
-descontínua --- é o que ocorre no pulso de guinada do \textit{backend} de
-exemplo, em que ela salta de 0,35 para \SI{0.55}{\second} com um desvio
-máximo idêntico.
+2,2\,\%. Em rolagem e arfagem, o desvio máximo do modelo fica entre 2,3\,\%
+abaixo e 0,3\,\% acima do valor do SITL; em guinada, a diferença não passa de
+0,7\,\%. O tempo de recuperação concorda com diferença de no máximo 9,2\,\%
+no degrau sustentado; em guinada, a recuperação lenta é reproduzida em
+detalhe, \SI{22.8}{\second} no modelo contra \SI{22.2}{\second} no SITL. No
+pulso de rolagem e arfagem, o modelo recupera de 3\,\% a 7\,\% mais devagar.
+A recuperação do pulso é, de todas, a métrica mais sensível: quando a resposta
+tem um pequeno sobressinal de amplitude próxima ao limiar de 10\,\% do pico,
+uma diferença mínima decide se o erro volta ou não a cruzar o limiar, e a
+recuperação muda de forma descontínua --- é o que ocorre no pulso de guinada
+quando se acrescenta à simulação um laço de atraso na atuação: com o desvio
+máximo praticamente igual, a recuperação do modelo salta de 0,35 para cerca
+de \SI{0.55}{\second}.
 
 \begin{figure}[htbp]
 \centering
@@ -659,12 +684,14 @@ s^3 + (a + b\,k_P)\,s^2 + b\,(k_P\,k + k_I)\,s + b\,k_I\,k,
 \label{eq:polinomio-malha}
 \end{equation}
 que, em guinada, tem um polo real lento próximo de $-k_I/k_P$, praticamente
-independente de $a$ e de $b$. Com os ganhos da Tabela~\ref{tab:ganhos}, as
-raízes são $-8{,}19$, $-2{,}42$ e $\SI{-0.101}{\per\second}$, e o polo lento
+independente de $a$ e de $b$. Com os ganhos gravados no voo, que a
+Tabela~\ref{tab:ganhos} traz arredondados, as raízes são $-8{,}20$,
+$-2{,}42$ e $\SI{-0.101}{\per\second}$, e o polo lento
 tem constante de tempo de \SI{9.9}{\second}, para $k_P/k_I = \SI{10}{\second}$.
 Uma exponencial com essa constante leva $\tau\ln 10 = \SI{22.8}{\second}$ para
 cair a 10\,\% do pico, exatamente o tempo de recuperação do modelo e,
-com 3\,\% de diferença, o do SITL. A recuperação lenta não é, portanto, uma
+com 3\,\% de diferença no nativo e 3,4\,\% no \textit{backend} de exemplo, o
+do SITL. A recuperação lenta não é, portanto, uma
 limitação da planta, e sim consequência direta da razão $k_I = k_P/10$ que o
 AutoTune impõe em guinada (Seção~\ref{sec:autotune}). Para o torque aplicado
 como perturbação, o zero do PI em $-k_I/k_P$ não cancela esse polo, ao
@@ -675,13 +702,15 @@ contrário do que ocorre para um degrau de referência.
 
 Nas varreduras de torque, a resposta em frequência da perturbação para o
 ângulo foi estimada pela Equação~\eqref{eq:frf}, no SITL e na simulação
-alimentada pelo mesmo torque, com o mesmo método. Nos pontos em que a
+alimentada pelo mesmo torque, com o mesmo método; nos dois casos, a entrada é
+o torque registrado na mensagem \codigo{WND}, segurado entre as escritas do
+injetor. Nos pontos em que a
 coerência do SITL é de pelo menos 0,8 --- de 0,4 a \SI{9.6}{\hertz} em
 rolagem e arfagem e de 0,2 a \SI{4.8}{\hertz} em guinada, praticamente toda
 a faixa das varreduras ---, o modelo reproduz o ganho com diferença mediana
-de \SI{0.2}{\decibel} e máxima de \SI{1.9}{\decibel}, e a fase com
-diferença máxima de \ang{10}, em rolagem e arfagem; em guinada, as
-diferenças são de \SI{0.06}{\decibel}, \SI{0.7}{\decibel} e \ang{2.5}
+de no máximo \SI{0.08}{\decibel} e máxima de \SI{1.3}{\decibel}, e a fase
+com diferença máxima de \ang{5.8}, em rolagem e arfagem; em guinada, as
+diferenças são de \SI{0.05}{\decibel}, \SI{0.9}{\decibel} e \ang{3.2}
 (Figura~\ref{fig:validacao-freq}), nos dois controladores.
 
 \begin{figure}[htbp]
@@ -695,8 +724,8 @@ SITL (pontos com coerência de pelo menos 0,8) e no modelo linear.}
 
 As mesmas varreduras permitem identificar a planta, como prevê a
 Seção~\ref{sec:identificacao}, apesar de a malha estar fechada. O torque
-injetado $d$ é externo à malha e, com o giroscópio sem ruído, não se
-correlaciona com nenhuma outra entrada. Dividindo a transformada de
+injetado $d$ é externo à malha e, como o ruído do giroscópio simulado é
+mínimo e independente dele, não se correlaciona com nenhuma outra entrada. Dividindo a transformada de
 $\dot\omega = -a\,\omega + b\,u + d$ pela de $d$, obtém-se
 \begin{equation}
 \mathrm{j}2\pi f\;\hat T_{d\omega}(f) - 1 = -a\,\hat T_{d\omega}(f) + b\,\hat T_{du}(f),
@@ -716,7 +745,7 @@ Nas quatro varreduras de rolagem e arfagem, com os dois controladores, a
 faixa útil vai de 0,4 a cerca de \SI{9.5}{\hertz}, com 23 ou 24 pontos. Com
 $a$ e $b$ livres, $b$ sai entre 440 e \SI{446}{\radian\per\second\squared},
 de 2,4\,\% a 3,6\,\% acima do previsto, mas $a$ sai negativo, entre $-1{,}5$
-e $\SI{-0.1}{\per\second}$, sem significado físico. Na faixa em que a coerência
+e $\SI{-0.06}{\per\second}$, sem significado físico. Na faixa em que a coerência
 é alta, o termo $a\,\hat T_{d\omega}$ é pequeno diante de
 $\mathrm{j}2\pi f\,\hat T_{d\omega}$, e os dois parâmetros se compensam: as
 varreduras não identificam $a$. Fixando $a$ no valor do modelo,
