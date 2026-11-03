@@ -1,21 +1,610 @@
 % ======================================================================
 %  CAPÍTULO 5 — PROJETO E IMPLEMENTAÇÃO DO CONTROLADOR
 %
-%  Ainda não escrito. Existe para que a numeração dos capítulos seguintes
-%  bata com a Seção "Organização do trabalho" e com as referências cruzadas.
+%  Projeto: modelagem/projeto.py (tabelas e figuras projeto_*, de 1º/11,
+%  depois da correção de temporização). Implementação: firmware/
+%  (AC_CustomControl_LQR e _LQG, ardupilot.patch, instalar.sh).
+%  Verificação: modelagem/validacao.py (validacao_proposto e
+%  validacao_tempo_cc_*). Conferência da teoria no SITL:
+%  monografia/verificacao/relatorio.md, seção 2e.
 % ======================================================================
 \chapter{Projeto e implementação do controlador}
 \label{cap:projeto}
 
-\pendente{Projeto do controlador de atitude sobre o modelo da
-Seção~\ref{sec:modelo-linear}: LQR com ação integral, com a alocação de polos
-como alternativa, margens de estabilidade e discretização a
-\SI{400}{\hertz}; observador de estado estendido para estimação e
-compensação da perturbação; implementação como novo \textit{backend} do
-\codigo{AC\_CustomControl} (as quatro edições do \textit{framework} já
-estão localizadas e listadas no modelo de configuração
-\codigo{cc\_lqr.yaml.exemplo}), com ganhos expostos
-como parâmetros, registro dos sinais internos e reinicialização na
-comutação; e a decisão sobre como tratar erros grandes, já que o
-\textit{backend} não herda o controlador de raiz quadrada do nativo
-(Seção~\ref{sec:res-integracao}).}
+Este capítulo projeta os controladores de atitude sobre o modelo linear do
+Capítulo~\ref{cap:modelagem} e descreve a sua implementação no firmware. São
+três controladores baseados em modelo, com a mesma alimentação direta e o
+mesmo critério de sintonia: o LQI, regulador linear quadrático com ação
+integral (Seção~\ref{sec:projeto-lqi}); o LQR com observador de estado
+estendido, que estima a perturbação em vez de integrá-la
+(Seção~\ref{sec:projeto-eso}); e o LQG, que estima a perturbação e o caminho
+de medida por um filtro de Kalman (Seção~\ref{sec:projeto-lqg}). O projeto é
+feito por um programa em Python (\codigo{modelagem/projeto.py}), que produz
+os ganhos aplicados pelos arquivos de configuração do
+Capítulo~\ref{cap:metodos}; o firmware não projeta nada. A
+Seção~\ref{sec:projeto-margens} reúne as margens, as previsões e os
+compromissos do projeto, a Seção~\ref{sec:implementacao} descreve os dois
+\textit{backends} e a Seção~\ref{sec:verificacao-implementacao} confere o
+código embarcado contra o modelo.
+
+% ----------------------------------------------------------------------
+\section{Modelo e critério de projeto}
+\label{sec:projeto-modelo}
+
+O projeto parte do modelo de um eixo da Seção~\ref{sec:modelo-linear},
+$\dot\omega = -a\,\omega + b\,u + d$, com o ângulo como integral de $\omega$,
+discretizado com segurador de ordem zero na taxa do
+laço~\eqref{eq:modelo-eixo-discreto}. Os parâmetros são os do voo
+\codigo{vento/rajada/nativo/2026-10-27\_214349}, com a tensão de repouso que o
+firmware estimou nele, \SI{12.44}{\volt}: $a = \SI{1.988}{\per\second}$ e
+$b = 430$, 430 e \SI{14.37}{\radian\per\second\squared} em rolagem, arfagem e
+guinada (Tabela~\ref{tab:modelo-linear}). O voo é fixo, e não o mais recente,
+porque cada voo tem a sua tensão de bateria, e com ela $b$ muda o bastante
+para que ganhos regerados deixassem de ser os que voaram.
+
+O projeto é feito diretamente em tempo discreto sobre esse modelo nominal,
+mas cada controlador é verificado numa planta mais completa, a do SITL
+conferida no Capítulo~\ref{cap:modelagem}: com o filtro de \SI{20}{\hertz}
+do giroscópio, o ângulo do AHRS integrado do giroscópio sem o filtro e
+entregue com um laço de atraso, e o ruído do giroscópio
+(Seção~\ref{sec:sensores-sitl}). Para um nível \codigo{SIM\_GYR\_RND} e um
+acelerador $t$, o ruído entregue ao firmware tem desvio-padrão
+$\mathrm{RND}\cdot t/\sqrt{3\cdot 8}$ por amostra --- uniforme em cada
+sub-amostra e médio sobre oito delas.
+
+Para que a comparação com o nativo seja justa, todos os controladores são
+sintonizados pela mesma regra (função \codigo{sintonizar}): a mesma
+frequência de cruzamento do nativo, margem de fase não menor que a dele e
+amortecimento dominante de ao menos 0,7; entre os pontos que passam, o de modo
+mais lento mais rápido, que é o que governa a recuperação de uma perturbação
+sustentada. Cada família tem um parâmetro varrido --- o peso do integrador
+no LQI, a banda do observador no LQR com ESO e a intensidade da perturbação
+no LQG ---, e as demais ponderações são as mesmas. As variantes ``mesmo
+ruído'' trocam a frequência de cruzamento pelo ganho de ruído do nativo, que
+mede quanto do ruído do giroscópio chega ao esforço de controle.
+
+As métricas do projeto são as dos ensaios (Seção~\ref{sec:metricas}),
+calculadas sobre o modelo. No projeto, que simula o modelo sem ruído de
+giroscópio, o tempo de recuperação usa só o limiar de 10\,\% do pico; nesses
+casos, a regra dos ensaios dá exatamente os mesmos tempos, com diferença de
+\SI{0}{\second} em todos os eixos, controladores e ensaios do projeto.
+
+% ----------------------------------------------------------------------
+\section{LQI}
+\label{sec:projeto-lqi}
+
+O LQI aumenta o estado de cada eixo com a integral do erro de ângulo,
+$\vetor{z}_k = [x_{I,k}\ \ e_{\theta,k}\ \ e_{\omega,k}]^{\mathsf{T}}$, com
+$x_{I,k+1} = x_{I,k} + T_s\,e_{\theta,k}$~\cite{young1972}, e projeta o LQR
+discreto, Equações~\eqref{eq:ganho-lqr} e~\eqref{eq:riccati}, sobre o
+sistema aumentado~\cite{kalman1960a}~\cite[seção~9.3]{anderson1989}. A
+equação de Riccati é resolvida pela função \codigo{solve\_discrete\_are} da
+biblioteca SciPy, que usa o algoritmo de \citeonline{vandooren1981}. A lei de controle é
+\begin{equation}
+u_k = u_{ff,k} + k_i\,x_{I,k} + k_\theta\,e_{\theta,k} + k_\omega\,e_{\omega,k},
+\label{eq:lei-lqi}
+\end{equation}
+em que $e_\theta$ e $e_\omega$ são os erros de ângulo e de velocidade angular
+e $u_{ff}$ é a alimentação direta da Seção~\ref{sec:implementacao}. As
+ponderações iniciais seguem a regra de Bryson: em rolagem, \ang{1} de erro de
+ângulo e \SI{30}{\degree\per\second} de erro de velocidade
+angular~\cite{hespanha2009}. O peso do integrador é o parâmetro varrido, e o
+ponto escolhido aparece na Tabela~\ref{tab:projeto-ganhos} pelo tempo $T_I$
+da regra de Bryson para o estado integral, cujo peso é
+$1/(\theta_{\max} T_I)^2$.
+
+\begin{table}[htbp]
+\centering
+\caption{Ganhos dos controladores propostos com estrutura fixa.}
+\label{tab:projeto-ganhos}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\input{tabelas/projeto_ganhos}
+
+\fonte{Elaborada pelo autor, por \codigo{modelagem/projeto.py}.}
+\nota{\raggedright $T_I$ é o tempo da regra de Bryson para o estado
+integral do LQI, cujo peso é $1/(\theta_{\max} T_I)^2$, e $\omega_o$, a banda
+do observador. Os ganhos do LQG (realimentação e filtro
+de Kalman de oito estados) estão nos arquivos de configuração
+\codigo{cc\_lqg.yaml} e \codigo{cc\_lqg\_mesmo\_ruido.yaml}.}
+\end{table}
+
+Em rolagem e arfagem, o LQI tem a mesma estrutura da cascata nativa sem
+filtros nem derivativo. Com o erro de taxa $e_r = K_a\,e_\theta + e_\omega$ de
+uma cascata de ganho de ângulo $K_a$ e PI de taxa $(P_r, I_r)$, e como a
+integral de $e_\omega$ é $e_\theta$, a cascata dá
+\begin{equation}
+u = (I_r K_a)\,x_I + (P_r K_a + I_r)\,e_\theta + P_r\,e_\omega,
+\label{eq:cascata-lqi}
+\end{equation}
+um LQI com ganhos particulares. Dados $k_i$, $k_\theta$ e $k_\omega$, a
+cascata equivalente existe quando $K_a$ tem solução real em
+$k_\omega K_a^2 - k_\theta K_a + k_i = 0$, isto é, quando
+$k_\theta^2 \ge 4\,k_\omega k_i$. Com os ganhos da
+Tabela~\ref{tab:projeto-ganhos}, a condição vale em rolagem e arfagem e não
+vale em guinada. A configuração \codigo{nativo\_lqi} voa a cascata nativa com
+os ganhos que reproduzem o LQI nos dois primeiros eixos, e o
+Capítulo~\ref{cap:resultados} compara os dois. Em guinada, a variante de
+mesmo ruído do LQI troca a frequência de cruzamento pelo ganho de ruído do
+nativo.
+
+% ----------------------------------------------------------------------
+\section{LQR com observador de estado estendido}
+\label{sec:projeto-eso}
+
+O LQR com observador de estado estendido projeta o LQR só sobre
+$[e_\theta\ \ e_\omega]^{\mathsf{T}}$, sem integrador, com as mesmas
+ponderações, e cancela a perturbação pela sua estimativa:
+\begin{equation}
+u_k = u_{ff,k} + k_\theta\,e_{\theta,k} + k_\omega\,e_{\omega,k}
+      - \hat d_k/b.
+\label{eq:lei-eso}
+\end{equation}
+O observador estima $\omega$ e $d$ a partir do giroscópio, com o modelo
+discretizado pelo mesmo segurador, na forma preditora:
+\begin{equation}
+\hat\omega_{k+1} = \varphi\,\hat\omega_k + \beta\,(b\,u_k + \hat d_k)
+                 + l_1\,(\omega_k - \hat\omega_k), \qquad
+\hat d_{k+1} = \hat d_k + l_2\,(\omega_k - \hat\omega_k),
+\label{eq:eso-discreto}
+\end{equation}
+com $\varphi = \mathrm{e}^{-aT_s}$ e $\beta = (1 - \varphi)/a$. Os ganhos $l_1$
+e $l_2$ põem os dois polos do erro de estimação em
+$\mathrm{e}^{-\omega_o T_s}$, pela fórmula de
+\citeonline{ackermann1972} em forma fechada; é a parametrização por uma única
+banda $\omega_o$ de \citeonline{gao2003}, e $\omega_o$ é o parâmetro varrido
+(Tabela~\ref{tab:projeto-ganhos}). O observador mede $\omega$ pelo giroscópio
+filtrado e não modela o filtro de \SI{20}{\hertz}, cerca de dez vezes mais
+rápido que ele.
+
+A Figura~\ref{fig:projeto-eso} mostra, no modelo, a perturbação injetada e a
+sua estimativa. No SITL, a estimativa segue a teoria do observador a 1 a
+2\,\%: depois de um degrau de torque, $\hat d$ chega a 50\,\% e 90\,\% do
+torque em 0,185 e \SI{0.425}{\second} em rolagem, contra 0,188 e
+\SI{0.430}{\second} previstos pelos polos do erro de estimação, e o valor
+final fica entre 0,997 e 1,001 do torque aplicado.
+
+\begin{figure}[htbp]
+\centering
+\caption{Perturbação injetada e estimativa do observador de estado estendido,
+simuladas no modelo, no pulso de rolagem e no degrau de guinada.}
+\label{fig:projeto-eso}
+\includegraphics[width=\textwidth]{figuras/projeto_eso}
+\fonte{Elaborada pelo autor, por \codigo{modelagem/projeto.py}.}
+\end{figure}
+
+% ----------------------------------------------------------------------
+\section{LQG}
+\label{sec:projeto-lqg}
+
+O LQG aplica a lei do LQR com ESO~\eqref{eq:lei-eso}, com os mesmos pesos, ao
+estado estimado por um filtro de Kalman em regime de oito estados por eixo,
+que modela o caminho de medida do firmware:
+\begin{equation}
+\vetor{x} = [e_\theta\ \ e_\omega\ \ f_1\ \ f_2\ \ d\ \ \eta\ \ b_g\ \
+z]^{\mathsf{T}},
+\label{eq:estados-lqg}
+\end{equation}
+com os erros de ângulo e de velocidade angular; os dois estados do filtro
+Butterworth do giroscópio, $f_1$ e $f_2$; a perturbação $d$ e a polarização
+do giroscópio $b_g$, como passeios aleatórios; o erro do ângulo do AHRS,
+$\eta$, que decai com constante de tempo $\tau_c$; e o ângulo lido um laço
+depois, $z_{k+1} = e_{\theta,k} - \eta_k$. As medidas são o ângulo do AHRS,
+comparado a $z$, e o giroscópio filtrado, comparado à saída do filtro menos
+a polarização. O ganho $\matriz{L}$, de dimensão $8 \times 2$, é o do filtro
+de Kalman em regime, na forma corrente, pela equação de Riccati dual
+(Seção~\ref{sec:lqg})~\cite{kalman1960b}; a covariância do ruído de processo
+é discretizada pelo método de \citeonline{vanloan1978} sobre o modelo
+contínuo. Os ruídos são o do giroscópio, de intensidade $q_n$ dada pelo nível
+de ruído (Seção~\ref{sec:projeto-modelo}), e o da perturbação, de intensidade
+$q_d$, o parâmetro de projeto. Pelo princípio da separação, a realimentação e
+o filtro são projetados à
+parte~\cite{joseph1961,athans1971}~\cite[seção~8.2]{anderson1989}.
+
+O estimador desconta o ângulo do AHRS com $\tau_c = \SI{0.3}{\second}$ em
+rolagem e arfagem e \SI{2.0}{\second} em guinada: em guinada, o ganho do LQG
+só existe se o estimador descontar o ângulo do AHRS por cerca de
+\SI{1.5}{\second} ou mais. Também em guinada, um segundo estimador, rápido,
+assume durante as manobras. Com o indicador
+$m_k = \max\left(|\omega_t|/\omega_{\mathrm{man}},\ \mathrm{e}^{-T_s/T_{\mathrm{man}}}\,m_{k-1}\right)$,
+em que $\omega_t$ é o alvo de velocidade angular, o peso
+$\alpha = \min(m, 1)$ mistura os dois estimadores, e a lei usa
+$\alpha\,\hat{\vetor{x}}_{\text{rápido}} + (1-\alpha)\,\hat{\vetor{x}}_{\text{lento}}$;
+nos ensaios, $\omega_{\mathrm{man}} = \SI{5}{\degree\per\second}$ e
+$T_{\mathrm{man}} = \SI{1}{\second}$. Com $\alpha$ fixo entre 0 e 1, os polos
+de malha fechada não mudam (até $2\cdot10^{-5}$), e só as margens mudam, com
+margem de fase de \ang{43.6} a \ang{48.1}; o argumento de estabilidade vale
+no modelo linear sem saturação.
+
+Como $d$ entra no mesmo canal que $b\,u$, subir $q_d$ é a recuperação da
+malha de \citeonline{doyle1979} na entrada da planta
+(Seção~\ref{sec:lqg}). A Figura~\ref{fig:projeto-ltr} mostra o caminho: com
+$q_d$, a margem de fase e o ganho de ruído sobem juntos, e o LQG escolhido é
+o ponto em que o ganho de ruído iguala o do nativo. A recuperação exige
+planta de fase mínima e, aqui, com o estimador discreto e um laço de atraso
+no ângulo, pode ser incompleta~\cite{doyle1981}. Como o LQG não tem margens
+garantidas~\cite{doyle1978}, elas são verificadas em cada ponto.
+
+\begin{figure}[htbp]
+\centering
+\caption{Margem de fase e ganho de ruído do LQG ao longo da intensidade da
+perturbação $q_d$: o caminho da recuperação da malha. Os círculos marcam o
+LQG escolhido, e as linhas pontilhadas, o nativo.}
+\label{fig:projeto-ltr}
+\includegraphics[width=\textwidth]{figuras/projeto_ltr}
+\fonte{Elaborada pelo autor, por \codigo{modelagem/projeto.py}.}
+\end{figure}
+
+O LQG foi aceito por um portão de decisão definido antes de voar (função
+\codigo{portao}). No primeiro critério, de ganho real, o melhor LQG com ruído
+no esforço não maior que o do nativo, margens de fase nominal e robusta não
+menores e nada pior que o nativo nas métricas de torque tem de ser ao menos
+10\,\% melhor que a referência na métrica primária do eixo. No segundo, de
+atribuição, ele tem de ser ao menos 5\,\% melhor que o melhor ponto de cada
+família de estrutura fixa sob as mesmas restrições. No terceiro, de margens,
+algum ponto do LQG tem de cumprir o primeiro. A
+Tabela~\ref{tab:projeto-portao} mostra o resultado na planta completa: em
+rolagem, o LQG desvia \ang{0.806} no pulso de torque, contra \ang{0.900} do
+nativo, e, em guinada, \ang{1.877} no degrau sustentado, contra
+\ang{2.584}, com ruído e margens dentro das restrições. A mesma tabela mostra
+que o AutoTune já está no ótimo da família PID quanto ao pico do pulso de
+rolagem: o melhor PID de ganhos livres é o próprio nativo. O LQG do portão é
+a configuração \codigo{cc\_lqg\_mesmo\_ruido}; o \codigo{cc\_lqg} segue a
+regra de sintonia comum.
+
+\begin{table}[htbp]
+\centering
+\caption{Portão de decisão: o nativo, o melhor ponto de cada família de
+estrutura fixa e o LQG, na planta completa.}
+\label{tab:projeto-portao}
+\resizebox{\textwidth}{!}{\input{tabelas/projeto_portao}}
+
+\fonte{Elaborada pelo autor, por \codigo{modelagem/projeto.py}.}
+\nota{\raggedright Ruído: ganho de ruído relativo ao do nativo. Os
+``melhores'' de cada família são escolhidos sob as mesmas restrições de
+ruído e de margens do LQG.}
+\end{table}
+
+% ----------------------------------------------------------------------
+\section{Margens, previsões e compromissos}
+\label{sec:projeto-margens}
+
+A Tabela~\ref{tab:projeto-margens} reúne as margens dos controladores de
+estrutura fixa na planta completa. Pela regra de sintonia, todos têm a
+frequência de cruzamento do nativo --- 48,5, 47,9 e
+\SI{6.3}{\radian\per\second} --- e, em rolagem e arfagem, praticamente a
+mesma margem de fase, de 40 a \ang{41}. O que muda é o modo mais lento: em
+rolagem, de \SI{-1.00}{\per\second} no nativo para \SI{-6.30}{\per\second}
+no LQI e \SI{-8.73}{\per\second} no LQR com ESO. Em guinada, com a mesma
+frequência de cruzamento, o LQI e o ESO chegam a \ang{64.9} e \ang{56.7} de
+margem de fase e a modos lentos de $-2{,}71$ e
+\SI{-3.64}{\per\second}, contra \ang{37.5} e \SI{-0.10}{\per\second} do
+nativo, mas com 2,4 e 2,0 vezes o seu ganho de ruído (0,136 e 0,114, contra
+0,057); a variante de mesmo ruído do LQI fica com frequência de cruzamento de
+\SI{2.7}{\radian\per\second}. Com $b$ 20\,\% menor ou maior e com um laço a
+mais de atraso, as margens de fase continuam acima de \ang{33} em todos.
+
+\begin{table}[htbp]
+\centering
+\caption{Margens dos controladores de estrutura fixa na planta completa.}
+\label{tab:projeto-margens}
+\resizebox{\textwidth}{!}{\input{tabelas/projeto_margens}}
+
+\fonte{Elaborada pelo autor, por \codigo{modelagem/projeto.py}.}
+\nota{\raggedright Malha aberta quebrada na entrada da planta, com o filtro
+do giroscópio, o segurador e o atraso do ângulo. Ruído: ganho de ruído. As
+três últimas colunas repetem a margem de fase com a eficácia $b$ alterada e
+com um laço a mais de atraso.}
+\end{table}
+
+As margens garantidas do LQR não sobrevivem ao sensor. A malha ideal do LQR,
+com realimentação de todos os estados, sem filtro nem atraso, tem margem de
+fase de 65 a \ang{73} em rolagem e arfagem; com o filtro de \SI{20}{\hertz}
+e o atraso de um laço, a margem prevista cai para 38 a \ang{41}, e a medida
+no SITL, pela varredura de torque, fica em 37 a \ang{40}, com frequência de
+cruzamento de 45 a \SI{48}{\radian\per\second}, contra 46 a 47 previstos. Só
+o filtro custa cerca de \ang{33} de fase no cruzamento da rolagem. No LQG em
+guinada, a queda é maior, de 80--\ang{85} na malha ideal para 41--\ang{44}
+medidos, o efeito do estimador na malha que \citeonline{doyle1978} descreve.
+O ganho do LQI e do ESO em margem de fase em guinada vem, portanto, do
+projeto, e não de uma garantia. As Figuras~\ref{fig:projeto-malha}
+e~\ref{fig:projeto-polos} mostram a malha aberta e os polos de malha fechada.
+
+\begin{figure}[htbp]
+\centering
+\caption{Diagrama de Bode da malha aberta na entrada da planta, com o filtro
+do giroscópio e o segurador, em rolagem e em guinada.}
+\label{fig:projeto-malha}
+\includegraphics[width=\textwidth]{figuras/projeto_malha}
+\fonte{Elaborada pelo autor, por \codigo{modelagem/projeto.py}.}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\caption{Polos de malha fechada: taxa de decaimento contra frequência
+amortecida, em rolagem e em guinada.}
+\label{fig:projeto-polos}
+\includegraphics[width=\textwidth]{figuras/projeto_polos}
+\fonte{Elaborada pelo autor, por \codigo{modelagem/projeto.py}.}
+\end{figure}
+
+A ação integral, ou a estimativa da perturbação, é o que anula o erro sob
+torque constante. Sem a parcela integral, a realimentação de estados dos
+ganhos que voaram deixaria, sob torque constante, erro em regime de 0,78 a
+\ang{2.4} em rolagem e arfagem e de 2,3 a \ang{11} em guinada, acima do
+próprio pico; com ela, ou com a estimativa da perturbação, o erro final fica
+dentro de $\pm1{,}1$\,\% do pico, o piso de ruído, em todos os controladores.
+A Figura~\ref{fig:projeto-sensibilidade} mostra a sensibilidade à
+perturbação na entrada da planta, $|\Theta/D|$, e a
+Figura~\ref{fig:projeto-tempo-torque}, as respostas a torque simuladas.
+
+\begin{figure}[htbp]
+\centering
+\caption{Sensibilidade à perturbação na entrada da planta, $|\Theta/D|$:
+quanto um torque de cada frequência desvia a atitude, em rolagem e em
+guinada.}
+\label{fig:projeto-sensibilidade}
+\includegraphics[width=\textwidth]{figuras/projeto_sensibilidade}
+\fonte{Elaborada pelo autor, por \codigo{modelagem/projeto.py}.}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\caption{Erro de atitude no pulso e no degrau de torque, simulados no modelo,
+em rolagem e em guinada.}
+\label{fig:projeto-tempo-torque}
+\includegraphics[width=\textwidth]{figuras/projeto_tempo_torque}
+\fonte{Elaborada pelo autor, por \codigo{modelagem/projeto.py}.}
+\end{figure}
+
+As métricas previstas antes de voar estão na
+Tabela~\ref{tab:projeto-previsao} e ficam perto das medidas no SITL
+(Capítulo~\ref{cap:resultados}): no pulso de rolagem, por exemplo, o
+modelo previa \ang{0.95} para o LQI e \ang{0.97} para o LQR com ESO. O
+degrau de atitude, simulado com o alvo registrado no voo nominal do nativo
+(Figura~\ref{fig:projeto-degrau}), mostra a outra diferença de projeto: a
+alimentação direta. A Tabela~\ref{tab:projeto-rastreio} separa o seu efeito:
+o PID com a mesma alimentação direta do LQI chega a 4,0\,\% de sobressinal e
+\ang{0.688} de erro máximo em rolagem, contra 4,9\,\% e \ang{0.485} do LQI e
+22,8\,\% e \ang{3.219} do nativo. Em guinada, o LQG com o estimador de
+manobra reduz o erro máximo de \ang{0.355}, com um estimador só, para
+\ang{0.111}.
+
+\begin{table}[htbp]
+\centering
+\caption{Métricas previstas pelo modelo antes dos voos.}
+\label{tab:projeto-previsao}
+\resizebox{\textwidth}{!}{\input{tabelas/projeto_previsao}}
+
+\fonte{Elaborada pelo autor, por \codigo{modelagem/projeto.py}.}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Rastreamento do degrau de atitude no modelo: o nativo, o PID com a
+alimentação direta do LQI, o LQI e o LQG com um e com dois estimadores.}
+\label{tab:projeto-rastreio}
+\small
+\input{tabelas/projeto_rastreio}
+
+\fonte{Elaborada pelo autor, por \codigo{modelagem/projeto.py}.}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\caption{Degrau de atitude simulado com o alvo registrado no voo nominal do
+nativo, em rolagem e em guinada.}
+\label{fig:projeto-degrau}
+\includegraphics[width=\textwidth]{figuras/projeto_degrau}
+\fonte{Elaborada pelo autor, por \codigo{modelagem/projeto.py}.}
+\end{figure}
+
+Os compromissos do projeto aparecem nas três últimas figuras. A
+Figura~\ref{fig:projeto-compromisso} mostra, ao longo das varreduras do LQI
+e do LQR com ESO, a rapidez do modo mais lento contra a margem de fase e
+contra o ganho de ruído; a Figura~\ref{fig:projeto-robustez}, as respostas a
+torque com a planta alterada; e a Figura~\ref{fig:projeto-fronteira}, a
+frente de Pareto entre a métrica primária e o ganho de ruído de cada
+família. Atenuar mais a perturbação exige mais ganho na banda, e o ruído do
+giroscópio chega ao esforço na mesma medida; a integral de Bode
+(Seção~\ref{sec:bode}) acrescenta que a atenuação numa faixa é paga com
+amplificação em outra.
+
+\begin{figure}[htbp]
+\centering
+\caption{Rapidez do modo mais lento contra margem de fase e contra ganho de
+ruído, ao longo das varreduras de projeto.}
+\label{fig:projeto-compromisso}
+\includegraphics[width=\textwidth]{figuras/projeto_compromisso}
+\fonte{Elaborada pelo autor, por \codigo{modelagem/projeto.py}.}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\caption{Respostas a torque com a planta alterada ($b$ $\pm$20\,\% e um laço a
+mais de atraso): faixa e caso nominal.}
+\label{fig:projeto-robustez}
+\includegraphics[width=\textwidth]{figuras/projeto_robustez}
+\fonte{Elaborada pelo autor, por \codigo{modelagem/projeto.py}.}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\caption{Frentes de Pareto entre a métrica primária e o ganho de ruído de cada
+família de controladores, na planta completa.}
+\label{fig:projeto-fronteira}
+\includegraphics[width=\textwidth]{figuras/projeto_fronteira}
+\fonte{Elaborada pelo autor, por \codigo{modelagem/projeto.py}.}
+\end{figure}
+
+% ----------------------------------------------------------------------
+\section{Implementação no firmware}
+\label{sec:implementacao}
+
+Os controladores propostos são dois novos \textit{backends} do
+\codigo{AC\_CustomControl}: o \codigo{AC\_CustomControl\_LQR}
+(\codigo{CC\_TYPE} = 3, parâmetros \codigo{CC3\_*}), com o LQI
+(\codigo{CC3\_MODO} = 0) e o LQR com ESO (\codigo{CC3\_MODO} = 1), e o
+\codigo{AC\_CustomControl\_LQG} (\codigo{CC\_TYPE} = 4, \codigo{CC4\_*}). Os
+arquivos ficam em \codigo{firmware/}, e \codigo{firmware/instalar.sh} os liga
+ao firmware e aplica \codigo{firmware/ardupilot.patch}, que faz sete edições
+no \textit{frontend}: \codigo{CUSTOMCONTROL\_MAX\_TYPES} de 2 para 4, os
+valores \codigo{CONT\_LQR} e \codigo{CONT\_LQG}, as inclusões dos dois
+\textit{backends}, a documentação dos valores de \codigo{CC\_TYPE}, os grupos
+de parâmetros \codigo{3\_} e \codigo{4\_}, os dois casos de inicialização e as
+macros de habilitação, que, como as do \textit{backend} PID, valem só no
+SITL. O \textit{patch} acrescenta ainda ao \textit{backend} PID de exemplo a
+alimentação direta opcional \codigo{CC2\_FF}, usada pela configuração
+\codigo{cc\_pid\_ff}. O resto do \textit{framework} fica como no repositório
+oficial.
+
+\paragraph{Entradas e temporização.} O \textit{backend} roda no laço rápido,
+depois do PID de velocidade angular nativo e antes da saída para os motores e
+da atualização do estimador de atitude (Figura~\ref{fig:cascata}), com
+período fixo de \SI{2.5}{\milli\second}, o nominal do laço. Por isso a
+atitude que ele lê é a do laço anterior: um laço de atraso no ângulo, o mesmo
+do nativo, cujo alvo de velocidade angular só é usado no laço seguinte. O
+giroscópio é o do laço corrente, filtrado a \SI{20}{\hertz} e corrigido pela
+polarização estimada. O erro de ângulo vem da mesma decomposição em empuxo e
+rumo do nativo, e o erro de velocidade angular é o alvo de velocidade angular,
+filtrado como o giroscópio (\codigo{CC3\_FLTW}), menos a medida. O LQI e o ESO
+não modelam nenhum dos quatro efeitos do caminho de medida --- o atraso do
+ângulo, o filtro do giroscópio, o erro do AHRS e a polarização ---, e o LQG
+modela todos.
+
+\paragraph{Alimentação direta.} Nos três controladores, a alimentação direta
+inverte o modelo de primeira ordem,
+\begin{equation}
+u_{ff} = \frac{\dot\omega_t + a\,\omega_t}{b},
+\label{eq:ff-modelo}
+\end{equation}
+com $\omega_t$ o alvo de velocidade angular do modelador de referência e
+$\dot\omega_t$ a sua derivada, por diferença finita. Ela é ligada por \codigo{CC3\_FF} e
+\codigo{CC4\_FF}, e é diferente do termo de alimentação direta do
+\codigo{AC\_PID}, desligado nos ensaios.
+
+\paragraph{Saturação.} Nenhum \textit{backend} limita a própria saída; o corte
+fica com a alocação. O LQI usa integração condicional: a integral não avança
+quando a alocação sinalizou saturação no eixo e o erro empurraria o esforço
+ainda mais na direção saturada. O ESO e o LQG recebem, no lugar de $u$, o
+esforço limitado a $\pm1$, para que a estimativa da perturbação não absorva
+um esforço que não foi aplicado.
+
+\paragraph{Erros grandes.} Em vez do controlador de raiz quadrada do nativo,
+os \textit{backends} têm um limite opcional do erro de ângulo
+(\codigo{CC3\_EMAX\_*} e \codigo{CC4\_EMAX\_*}), desligado em todos os
+ensaios. Em guinada, vale ainda o limite do erro que a decomposição herda do
+nativo, calculado com os ganhos do PID nativo e, nos ensaios, efetivamente
+de \ang{45}; a atenuação da guinada acima de \ang{30} de inclinação não se
+aplica. Os ensaios de ângulo grande do Capítulo~\ref{cap:resultados} mostram
+o efeito dessa escolha.
+
+\paragraph{Comutação.} Ao assumir, o \textit{backend} parte do integrador do
+PID nativo, $i_n$, para uma transição sem salto: o LQI faz
+$x_I = i_n/k_i$, e o ESO e o LQG fazem $\hat d = -b\,i_n$, porque, em regime,
+o integrador nativo segura $-d/b$. Enquanto ele está ativo, o
+\textit{framework} zera o integrador nativo a cada laço; em solo, o
+\textit{backend} é reiniciado a cada laço.
+
+\paragraph{LQG a bordo.} O LQG calcula a bordo as matrizes $\Phi$ e $\Gamma$
+do modelo de oito estados, pela exponencial da matriz aumentada em série de
+Taylor com escala e quadratura, e só as recalcula quando um parâmetro do
+modelo muda; os ganhos $\matriz{K}$ e $\matriz{L}$ vêm do projeto. A cada
+laço, o estimador prediz o estado com o esforço de realimentação efetivamente
+aplicado no laço anterior, corrige-o pelas inovações do ângulo e da
+velocidade angular e entrega à lei~\eqref{eq:lei-eso} o estado estimado.
+
+\paragraph{Registro.} Os \textit{backends} gravam, a cada laço e por eixo, as
+mensagens \codigo{CCLR}, \codigo{CCLP} e \codigo{CCLY}, com os erros, a
+integral, a alimentação direta, o esforço e as estimativas de velocidade
+angular e de perturbação; o LQG grava ainda \codigo{CCKR}, \codigo{CCKP} e
+\codigo{CCKY}, com os estados do estimador, as inovações e o peso $\alpha$.
+As mensagens \codigo{PIDR}, \codigo{PIDP} e \codigo{PIDY} continuam a mostrar
+o PID nativo, que roda com a saída descartada (Seção~\ref{sec:metricas}).
+
+% ----------------------------------------------------------------------
+\section{Verificação da implementação}
+\label{sec:verificacao-implementacao}
+
+O código embarcado foi conferido contra o seu espelho em Python, que é o
+modelo usado no projeto, pelo mesmo procedimento da
+Seção~\ref{sec:validacao-tempo}: cada ensaio de torque é simulado no modelo
+com os ganhos lidos do próprio voo e com o torque registrado, e as métricas
+são comparadas número a número (Tabela~\ref{tab:validacao-proposto}). O
+desvio máximo do LQI e do LQR com ESO é reproduzido a $\pm1{,}9$\,\%, e o do
+LQG, de $-1{,}6$\,\% a $+4{,}9$\,\% em rolagem e arfagem; o erro quadrático
+médio e a recuperação concordam no mesmo nível. As exceções são as
+recuperações do LQG no pulso de rolagem --- \SI{0.51}{\second} no SITL contra
+\SI{0.17}{\second} no modelo e, com o mesmo ruído, \SI{0.22}{\second} contra
+\SI{0.55}{\second} ---, o mesmo salto descontínuo da
+Seção~\ref{sec:validacao-tempo}: um pequeno sobressinal próximo do limiar de
+10\,\% do pico decide se o erro volta a cruzá-lo. As
+Figuras~\ref{fig:validacao-tempo-lqi} a~\ref{fig:validacao-tempo-lqg}
+mostram as respostas.
+
+\begin{table}[htbp]
+\centering
+\caption{Métricas de rejeição de torque no SITL e no modelo, para os
+controladores propostos e para o nativo com os ganhos do LQI.}
+\label{tab:validacao-proposto}
+\resizebox*{!}{0.8\textheight}{\input{tabelas/validacao_proposto}}
+
+\fonte{Elaborada pelo autor, por \codigo{modelagem/validacao.py}.}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\caption{Erro de atitude no SITL e no modelo, com o LQI, nos ensaios de
+torque em pulso e em degrau.}
+\label{fig:validacao-tempo-lqi}
+\includegraphics[width=\textwidth]{figuras/validacao_tempo_cc_lqi}
+\fonte{Elaborada pelo autor, por \codigo{modelagem/validacao.py}.}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\caption{Erro de atitude no SITL e no modelo, com o LQR com observador de
+estado estendido, nos ensaios de torque em pulso e em degrau.}
+\label{fig:validacao-tempo-eso}
+\includegraphics[width=\textwidth]{figuras/validacao_tempo_cc_eso}
+\fonte{Elaborada pelo autor, por \codigo{modelagem/validacao.py}.}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\caption{Erro de atitude no SITL e no modelo, com o LQG de mesmo ruído, nos
+ensaios de torque em pulso e em degrau.}
+\label{fig:validacao-tempo-lqg}
+\includegraphics[width=\textwidth]{figuras/validacao_tempo_cc_lqg_mesmo_ruido}
+\fonte{Elaborada pelo autor, por \codigo{modelagem/validacao.py}.}
+\end{figure}
+
+O modelo reproduz também o caminho do ruído
+(Figura~\ref{fig:validacao-ruido-ahrs}). Num voo do nativo com
+\codigo{SIM\_GYR\_RND} = 20, a densidade espectral do giroscópio filtrado cai
+acima de \SI{20}{\hertz}, como o filtro determina, mas a da derivada do ângulo
+do AHRS não cai: o ângulo integra o giroscópio sem o filtro
+(Seção~\ref{sec:sensores-sitl}). O modelo só reproduz essa segunda curva
+quando o seu ângulo integra o mesmo ruído; com o ângulo sem ruído, ele a
+subestima em alta frequência. É esse caminho que o estimador do LQG modela.
+
+\begin{figure}[htbp]
+\centering
+\caption{Caminho do ruído: densidade espectral do giroscópio filtrado e da
+derivada do ângulo do AHRS, no SITL e no modelo, num voo do nativo com ruído
+de giroscópio.}
+\label{fig:validacao-ruido-ahrs}
+\includegraphics[width=\textwidth]{figuras/validacao_ruido_ahrs}
+\fonte{Elaborada pelo autor, por \codigo{modelagem/validacao.py}.}
+\end{figure}
+
+A teoria do estimador também se confirma no SITL. A estimativa da
+perturbação do filtro de Kalman chega a 50\,\% e 90\,\% de um degrau de
+torque a 0 a \SI{8}{\milli\second} dos tempos previstos pelo erro de
+estimação --- 0,028 e \SI{0.045}{\second} em rolagem e arfagem e 0,200 e
+\SI{0.310}{\second} em guinada ---, com valor final entre 0,996 e 0,999 do
+torque. E o princípio da separação vale no LQG com os parâmetros que voaram: os
+polos de malha fechada coincidem com a união dos polos da realimentação de estados e dos do
+erro de estimação a $2{,}5\cdot10^{-5}$ até $3{,}6\cdot10^{-4}$ em rolagem e
+arfagem; em guinada, a $1{,}7\cdot10^{-3}$, e a diferença é o único polo que
+sobra, o da memória da mistura dos dois estimadores.
