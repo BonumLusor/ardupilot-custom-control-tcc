@@ -1,29 +1,36 @@
 % ======================================================================
 %  CAPÍTULO 6 — RESULTADOS E DISCUSSÃO
 %
-%  Lote de 27/10/2026 (ganhos do AutoTune, análise com ANG a 400 Hz). As
-%  tabelas saem de ensaios/tabelas_monografia.py --desde 2026-10-27; os
-%  números do texto, das mesmas pastas de resultado.
+%  Lotes de 27, 29 e 31/10/2026 (análise com ANG a 400 Hz, reanalisados em
+%  1º e 2/11). As tabelas saem de ensaios/tabelas_monografia.py --desde
+%  2026-10-27 (voo mais recente de cada par); os números do texto, das
+%  mesmas pastas de resultado e de monografia/verificacao/.
 % ======================================================================
 \chapter{Resultados e discussão}
 \label{cap:resultados}
 
-Este capítulo apresenta os resultados do lote de ensaios descrito no
-Capítulo~\ref{cap:metodos}, com os dezesseis cenários e os dois controladores
-da Seção~\ref{sec:controladores}, todos com os ganhos da
-Tabela~\ref{tab:ganhos}. Nesta etapa, os resultados têm duas funções:
-verificar que o caminho de integração pelo \codigo{AC\_CustomControl}
-reproduz o controlador nativo, condição para que a comparação com o
-controlador proposto seja válida, e caracterizar o PID nativo como linha de
-base quantitativa. A comparação com o controlador proposto é tema da
-Seção~\ref{sec:res-proposto}.
+Este capítulo apresenta os resultados dos ensaios descritos no
+Capítulo~\ref{cap:metodos}: os 49 cenários e as 14 configurações de
+controlador da Seção~\ref{sec:controladores}, em 398 pares cenário ×
+controlador, voados em 27, 29 e 31/10/2026; vale, para cada par, o voo mais
+recente. As Seções~\ref{sec:res-integracao} a~\ref{sec:res-vento} discutem o
+PID nativo, com os ganhos da Tabela~\ref{tab:ganhos}, e o \textit{backend} de
+exemplo, com os mesmos ganhos, e têm duas funções: verificar que o caminho de
+integração pelo \codigo{AC\_CustomControl} reproduz o controlador nativo,
+condição para que a comparação com os controladores propostos seja válida, e
+caracterizar o PID nativo como linha de base quantitativa. As tabelas dessas
+seções já trazem as linhas dos controladores propostos, que a
+Seção~\ref{sec:res-proposto} discute.
 
-Cada cenário foi voado uma vez com cada controlador. A repetição de dois
-ensaios com doze dias de intervalo, com os mesmos ganhos, dá a medida da
-repetibilidade: no torque em degrau de guinada, o desvio máximo, o tempo de
-recuperação e o erro quadrático médio se repetiram com diferença de no
-máximo 0,2\,\%; no degrau de rolagem, o sobressinal e o erro de rastreamento
-se repetiram dentro de 2,5\,\% e 4\,\%, respectivamente. A única fonte de
+Cada cenário foi voado ao menos uma vez com cada controlador da sua lista;
+quando houve repetição, vale o voo mais recente. Ensaios repetidos depois dos
+lotes, com os mesmos ganhos, dão a medida da repetibilidade: em dois ensaios
+do LQG repetidos em 1º/11 --- o degrau de torque com o braço encurtado e o
+degrau de torque com \codigo{SIM\_GYR1\_RND} = 20 ---, o desvio máximo e o
+erro quadrático médio se reproduziram a menos de 5\,\%, com desvios de
+\ang{0.433} e \ang{0.413} no primeiro e de \ang{0.522} e \ang{0.525} no
+segundo. Com o ruído de giroscópio mais alto, a variação entre voos idênticos
+cresce, e a Seção~\ref{sec:res-proposto} a quantifica. A única fonte de
 variação entre voos identificada na entrada é a duração efetiva do pulso de
 torque, discutida na Seção~\ref{sec:res-torque}.
 
@@ -52,20 +59,22 @@ erros de até \ang{1.0}; o do \textit{backend} é puramente proporcional. No
 degrau, o erro de ângulo chega a \ang{3.3}, e, nesse erro, o nativo pede uma
 velocidade angular 28\,\% menor que a do proporcional, o que reduz o
 sobressinal. Em guinada, o limite linear é de \ang{10.9}, o erro do degrau
-não passa de \ang{8.1}, e os dois controladores coincidem. A segunda é o
-desvio no pulso de guinada, 6\,\% menor no \textit{backend}. Ela não vem do
-controlador: simulados com a mesma entrada, os dois dão o mesmo desvio, e a
-diferença está no impulso aplicado, 9\,\% menor no voo do \textit{backend}
-(Seção~\ref{sec:res-torque}). Por unidade de impulso, os desvios são de
-6,2 e \SI{6.3}{\degree} por \si{\radian\per\second}.
+não passa de \ang{7.9}, e os dois controladores coincidem. A segunda é o
+desvio no pulso de guinada: medido, é 6\,\% menor no \textit{backend}, mas o
+impulso aplicado no voo dele foi 7\,\% menor (Seção~\ref{sec:res-torque}).
+A diferença não vem do controlador: simulados com a mesma entrada, os dois
+dão o mesmo desvio, e, normalizados pelo impulso, os desvios são de
+\ang{5.55} e \ang{5.64} (Tabela~\ref{tab:res-torque}), 1,6\,\% de
+diferença.
 
 O caminho de integração está, portanto, verificado: um controlador executado
 dentro do \codigo{AC\_CustomControl} enfrenta a mesma planta, a mesma
 perturbação e a mesma análise que o nativo, e as diferenças medidas entre os
-dois correspondem às diferenças de código. Para a comparação com o controlador
-proposto, fica a lição de que o \textit{backend} não herda o controlador de
-raiz quadrada do nativo: o que o controlador proposto fizer com erros
-grandes é escolha de projeto, e não um detalhe de implementação.
+dois correspondem às diferenças de código. Para a comparação com os
+controladores propostos, fica a lição de que o \textit{backend} não herda o
+controlador de raiz quadrada do nativo: o que os controladores propostos
+fizerem com erros grandes é escolha de projeto
+(Capítulo~\ref{cap:projeto}), e não um detalhe de implementação.
 
 % ----------------------------------------------------------------------
 \section{Resposta ao degrau}
@@ -82,7 +91,8 @@ grandes é escolha de projeto, e não um detalhe de implementação.
 \fonte{Elaborada pelo autor.}
 \end{table}
 
-A Tabela~\ref{tab:res-degrau} reúne as métricas dos degraus. Em rolagem e
+A Tabela~\ref{tab:res-degrau} reúne as métricas dos degraus. Com o nativo e o
+\textit{backend} de exemplo, em rolagem e
 arfagem, o degrau de \ang{10} sobe em 40 a \SI{48}{\milli\second}, com
 sobressinal de 20\,\% a 27\,\% e acomodação em 0,18 a \SI{0.23}{\second}; a
 aeronave chega a ficar \ang{3.3} atrás do alvo modelado. Os ganhos de ângulo
@@ -104,7 +114,8 @@ a eficácia de controle em guinada é 30 vezes menor que em rolagem.
 \centering
 \caption{Rejeição de torque: pulso de \SI{15}{\radian\per\second\squared}
 (rolagem e arfagem) e \SI{3}{\radian\per\second\squared} (guinada) por
-\SI{0.3}{\second}, e degrau de 10 e \SI{1}{\radian\per\second\squared}.}
+\SI{0.3}{\second}, e degrau de 10 e \SI{1}{\radian\per\second\squared}; no
+pulso de guinada, desvio normalizado ao impulso nominal ($\dagger$).}
 \label{tab:res-torque}
 \small
 \input{tabelas/resultados_torque}
@@ -112,16 +123,19 @@ a eficácia de controle em guinada é 30 vezes menor que em rolagem.
 \fonte{Elaborada pelo autor.}
 \end{table}
 
-A Tabela~\ref{tab:res-torque} mostra a rejeição de torque. Em rolagem e
+A Tabela~\ref{tab:res-torque} mostra a rejeição de torque. Com o nativo e o
+\textit{backend} de exemplo, em rolagem e
 arfagem, o pulso desvia a atitude em 0,90 a \ang{0.94}, e o erro volta a
 10\,\% do pico em 1,2 a \SI{1.3}{\second}; o degrau sustentado de
 \SI{10}{\radian\per\second\squared} desvia \ang{0.6} e é compensado pelo
 integrador em 2,1 a \SI{2.3}{\second}. O esforço de controle é pequeno: o
-pulso pede no máximo 5\,\% da faixa de esforço normalizado, e o degrau,
+pulso pede cerca de 5\,\% da faixa de esforço normalizado, e o degrau,
 3,4\,\%. Em guinada, o quadro muda. Um torque sustentado dez vezes menor,
 \SI{1}{\radian\per\second\squared}, desvia o rumo em \ang{2.56}, quatro vezes
 mais que o de rolagem, e a recuperação leva \SI{22}{\second}, dez vezes mais.
-A Seção~\ref{sec:validacao-tempo} mostrou que essa recuperação é governada
+No pulso de guinada, a recuperação de \SI{0.35}{\second} é medida até
+10\,\% do pico, mas resta um desvio de cerca de 4\,\% do pico, que o
+integrador lento só elimina em dezenas de segundos. A Seção~\ref{sec:validacao-tempo} mostrou que essa recuperação é governada
 pelo polo em $-k_I/k_P$, imposto pela razão $k_I = k_P/10$ que o AutoTune
 adota em guinada, e não pela planta. É nesse eixo, com a menor eficácia de
 controle e a ação integral mais lenta, que a rejeição de perturbação do PID
@@ -131,14 +145,19 @@ perturbação tem mais a oferecer.
 O pulso de torque exige uma ressalva. O laço do injetor roda a cerca de
 \SI{44}{\hertz}, e não aos \SI{50}{\hertz} pedidos, e a duração efetiva do
 pulso nominal de \SI{0.3}{\second} variou de 300 a \SI{338}{\milli\second}
-entre os voos; o impulso aplicado variou, assim, em até 9\,\%. Em rolagem e
+nos voos de 27/10 do nativo e do \textit{backend} de exemplo (de 300 a
+\SI{344}{\milli\second} em todos os voos válidos), e o impulso aplicado, em
+até 10\,\% entre dois voos. Em rolagem e
 arfagem, a malha fechada é rápida o bastante para que o pico do desvio ocorra
 durante o próprio pulso, e ele depende pouco da duração: dois voos com
-impulsos 8\,\% diferentes desviaram 0,90 e \ang{0.91}. Em guinada, a resposta
-é lenta, e o desvio acompanha o impulso. Nas comparações em guinada, o desvio
-deve ser normalizado pelo impulso registrado, ou o injetor deve passar a
-temporizar o pulso pelo próprio simulador, que é capaz de aplicar o torque
-por uma duração exata (\codigo{SIM\_TWIST\_TIME}).
+impulsos 7\,\% diferentes desviaram 0,90 e \ang{0.91}. Em guinada, a resposta
+é lenta, e o desvio acompanha o impulso. Por isso, nas tabelas deste
+capítulo, o desvio do pulso de guinada é normalizado ao impulso nominal do
+cenário, $\delta_{\max}\,I_{\mathrm{nom}}/I_{\mathrm{reg}}$ (marca
+$\dagger$); em rolagem e arfagem, em que o pico precede o fim do pulso, vale o
+desvio medido. A alternativa seria o injetor temporizar o pulso pelo próprio
+simulador, que é capaz de aplicar o torque por uma duração exata
+(\codigo{SIM\_TWIST\_TIME}).
 
 \begin{table}[htbp]
 \centering
@@ -152,7 +171,11 @@ ensaio simultâneo dos três eixos.}
 \end{table}
 
 Os ensaios simultâneos nos três eixos (Tabela~\ref{tab:res-simultaneo})
-mostram que o acoplamento entre os eixos é desprezível no SITL. Com rolagem,
+mostram que o acoplamento entre os eixos é desprezível no SITL --- em parte
+porque o simulador não modela o termo giroscópico
+$\vetor{\omega}\times\matriz{J}\,\vetor{\omega}$ (Seção~\ref{sec:sitl}),
+que numa aeronave real acoplaria rolagem e arfagem em velocidades angulares
+altas. Com rolagem,
 arfagem e guinada perturbadas ao mesmo tempo, e com os motores M3 e M4
 trabalhando o dobro do que trabalham num ensaio de um eixo, cada eixo desvia
 o mesmo que no ensaio isolado, com diferença de no máximo 1,1\,\%, e
@@ -161,7 +184,7 @@ diagonal da Seção~\ref{sec:modelo-linear}, e justifica projetar o
 controlador eixo a eixo.
 
 % ----------------------------------------------------------------------
-\section{Sensibilidade à perturbação em frequência}
+\section{Sensibilidade à perturbação na entrada da planta}
 \label{sec:res-frequencia}
 
 \begin{table}[htbp]
@@ -179,18 +202,20 @@ ganho máximo, acima da frequência do máximo; coerência mediana na faixa da
 varredura.}
 \end{table}
 
-As varreduras (Tabela~\ref{tab:res-frequencia}) mostram em que frequências a
-malha fechada é mais sensível à perturbação de torque. Em rolagem e arfagem,
-o ganho é máximo em \SI{3.6}{\hertz}, com 0,062 a
-\SI{0.066}{\degree} por \si{\radian\per\second\squared}, e cai
+As varreduras (Tabela~\ref{tab:res-frequencia}) estimam a resposta do ângulo
+ao torque de perturbação, $P\,S$, a sensibilidade à perturbação na entrada da
+planta (Seção~\ref{sec:bode}), e mostram em que frequências a malha fechada é
+mais sensível a ela. Com o nativo e o \textit{backend} de exemplo, em rolagem
+e arfagem, o ganho é máximo em \SI{3.6}{\hertz}, com 0,061 a
+\SI{0.065}{\degree} por \si{\radian\per\second\squared}, e cai
 \SI{3}{\decibel} entre 6,4 e \SI{7.6}{\hertz}; abaixo do máximo, o integrador
-atenua a perturbação lenta, e acima dele, a própria inércia da aeronave. Em
-guinada, o ganho é máximo na menor frequência da varredura,
-\SI{0.2}{\hertz}, com \SI{2.55}{\degree} por
+atenua a perturbação lenta, e acima dele, a própria inércia da
+aeronave~\cite[seção~11.3]{astrom2008}. Em guinada, o ganho é máximo na menor
+frequência da varredura, \SI{0.2}{\hertz}, com \SI{2.56}{\degree} por
 \si{\radian\per\second\squared} --- quarenta vezes o máximo de rolagem ---, e
 cai \SI{3}{\decibel} em \SI{1.2}{\hertz}. A guinada é sensível justamente às
 perturbações lentas, que o integrador fraco demora a compensar, coerente com
-o degrau sustentado. A coerência mediana é de 0,98 ou mais em todas as
+o degrau sustentado. A coerência mediana é de 0,97 ou mais em todas as
 varreduras, e o modelo linear reproduz essas respostas
 (Seção~\ref{sec:validacao-frequencia}).
 
@@ -203,15 +228,16 @@ famílias de perturbação (Seção~\ref{sec:injetor}). Sob uma rajada lateral d
 \SI{10}{\metre\per\second}, a aeronave, com a atitude comandada e sem
 controle de posição, chegou a \SI{4.2}{\metre\per\second} e derivou
 \SI{18.6}{\metre}, mas o erro de rolagem não passou de \ang{0.017}, contra
-\ang{0.013} no trecho calmo do mesmo voo antes da rajada, e o de arfagem
+\ang{0.013} a \ang{0.015} no trecho calmo antes da rajada, e o de arfagem
 ficou em \ang{0.015}. O pulso de torque de rolagem desvia a atitude 50 vezes
 mais. A guinada é a única exceção visível: o erro de rumo passou de
 \ang{0.03} para \ang{0.30} durante a rajada, ainda vinte vezes menos que no
-pulso de torque de guinada. Os dois controladores dão os mesmos números. No
-modelo de multirrotor do SITL, o vento é, assim, uma perturbação de posição,
-e a malha de atitude só o sente por meio das malhas externas, quando elas
-estão ativas; os ensaios de rejeição de perturbação da malha de atitude
-usam, por isso, torque.
+pulso de torque de guinada. O nativo e o \textit{backend} de exemplo dão os
+mesmos números. No modelo de multirrotor do SITL, o vento é, assim,
+sobretudo uma perturbação de posição: o arrasto de corpo age no centro de
+massa, e o arrasto de momento nos rotores só produz momento na medida em que
+os empuxos diferem, o que explica o pequeno efeito em guinada; os ensaios de
+rejeição de perturbação da malha de atitude usam, por isso, torque.
 
 % ----------------------------------------------------------------------
 \section{Comparação com o controlador proposto}
