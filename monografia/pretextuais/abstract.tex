@@ -8,27 +8,39 @@ plants whose in-flight behaviour depends entirely on an attitude control
 loop running in real time. In open-source autopilots this loop is
 traditionally implemented by cascaded proportional-integral-derivative (PID)
 controllers, tuned empirically or automatically rather than from an explicit
-dynamic model of the vehicle. This work designs an attitude controller with
-modern control methods, implements it inside the ArduPilot firmware through
-the \codigo{AC\_CustomControl} framework and compares it with the native PID
-controller in software-in-the-loop (SITL) simulation, in which the compiled
-firmware runs against a flight dynamics model. The vehicle model is derived
-from the Newton-Euler equations, linearised around hover and checked against
-the frequency response identified in the simulator itself. The control law
-is designed as a linear quadratic regulator with integral action and is
-complemented by an extended state observer for disturbance estimation and
-compensation. The comparative tests comprise reference steps in roll, pitch
-and yaw, isolated and simultaneous, and reproducible torque disturbances
-shaped as pulses, sustained steps and frequency sweeps, applied under
-identical conditions to both controllers and evaluated through transient
-performance, tracking error, disturbance rejection and control effort
-metrics.
-\pendente{Main results and conclusion, to be written after the tests.}
+dynamic model of the vehicle. This work designs three model-based attitude
+controllers --- LQI, LQR with an extended state observer and LQG ---,
+implements them inside the ArduPilot firmware through the
+\codigo{AC\_CustomControl} framework and compares them with the native PID
+controller, tuned by AutoTune, in software-in-the-loop (SITL) simulation, in
+which the compiled firmware runs against a flight dynamics model. The vehicle
+model is derived from the Newton-Euler equations, linearised around hover and
+checked against the simulator itself, in the time and frequency domains. The
+control laws are designed as a linear quadratic regulator, with integral
+action (LQI) or with an extended state observer, and as an LQG, with a Kalman
+filter that models the firmware's measurement path. The comparative tests
+comprise reference steps in roll, pitch and yaw, isolated and simultaneous;
+reproducible torque disturbances shaped as pulses, sustained steps,
+frequency sweeps and stochastic processes; and robustness scenarios with
+gyroscope noise, model error, motor failure, saturation and large angles,
+applied under identical conditions to all controllers and evaluated through
+transient performance, tracking error, disturbance rejection and control
+effort metrics. In roll and pitch, with the same bandwidth and noise as the
+native controller, the LQI and the LQR with observer do not outperform it in
+peak disturbance rejection --- the LQI is equivalent to the native cascade
+with different gains ---, and the LQG, which models the gyroscope filter and
+the angle delay, is the only one that reduces the peak, by 7\,\% to 15\,\%.
+In yaw, all proposed controllers remove the native controller's slow
+recovery, from 22~s to 1 to 2.3~s, at the cost of more bandwidth or more
+noise in the control effort. The advantage in attitude step tracking comes
+from feedforward by model inversion, which the PID itself could use. The
+limits found stem from the available information --- the gyroscope filter
+and noise and the low yaw authority --- more than from the control law.
 
 \vspace{\onelineskip}
 
 \noindent
 \textbf{Keywords}: quadrotor. attitude control. ArduPilot. linear quadratic
-regulator. software-in-the-loop simulation.
+regulator. Kalman filter. software-in-the-loop simulation.
 \end{otherlanguage*}
 \end{resumo}
