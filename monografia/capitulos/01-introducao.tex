@@ -214,12 +214,19 @@ Este trabalho está organizado em sete capítulos. O
 Capítulo~\ref{cap:fundamentacao} apresenta a fundamentação teórica: a
 representação da atitude, o modelo dinâmico do quadrirrotor e sua
 linearização, a arquitetura de estimação e de controle de atitude do
-ArduPilot, as técnicas de controle empregadas, os modelos de perturbação, a
+ArduPilot, as técnicas de controle empregadas --- PID, LQR, observador de
+estado estendido e LQG ---, a integral de Bode, os modelos de perturbação, a
 identificação de sistemas no domínio da frequência e o simulador SITL. O
-Capítulo~3 descreve os materiais e métodos: o ambiente de simulação, o
-injetor de perturbações, os cenários de ensaio e as métricas de comparação. O
-Capítulo~4 trata da modelagem e da identificação da aeronave simulada; o
-Capítulo~5, do projeto do controlador e de sua implementação no firmware. O
-Capítulo~6 apresenta e discute os resultados dos ensaios comparativos, e o
-Capítulo~7 reúne as conclusões e as sugestões de trabalhos futuros.
-\pendente{Ajustar esta seção quando os capítulos 3 a 7 estiverem escritos.}
+Capítulo~\ref{cap:metodos} descreve os materiais e métodos: o ambiente de
+simulação, o injetor de perturbações, as catorze configurações de
+controlador, os 49 cenários de ensaio, as métricas de comparação e a
+automação. O Capítulo~\ref{cap:modelagem} trata da modelagem e da
+identificação da aeronave simulada e valida o modelo linear contra o SITL. O
+Capítulo~\ref{cap:projeto} projeta o LQI, o LQR com observador de estado
+estendido e o LQG, descreve a sua implementação no firmware e confere o
+código embarcado contra o modelo. O Capítulo~\ref{cap:resultados} verifica o
+caminho de integração, caracteriza o PID nativo e compara com ele os
+controladores propostos em todos os grupos de cenários. O
+Capítulo~\ref{cap:conclusoes} responde à pergunta de pesquisa, discute os
+limites encontrados e as limitações do simulador, situa outras técnicas de
+controle e propõe trabalhos futuros.
