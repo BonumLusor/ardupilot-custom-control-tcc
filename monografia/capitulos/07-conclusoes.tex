@@ -1,0 +1,257 @@
+% ======================================================================
+%  CAPÍTULO 7 — CONCLUSÕES
+%
+%  Roteiro: monografia/verificacao/anotacoes/cap07.md. Números das tabelas
+%  de monografia/tabelas/ e da verificação (relatorio.md, seção 2e).
+% ======================================================================
+\chapter{Conclusões}
+\label{cap:conclusoes}
+
+Este trabalho projetou três controladores de atitude baseados em modelo ---
+LQI, LQR com observador de estado estendido e LQG ---, embarcou-os no
+firmware ArduPilot como \textit{backends} do \codigo{AC\_CustomControl} e os
+comparou ao PID nativo, sintonizado pelo AutoTune, em SITL, sob as mesmas
+referências e as mesmas perturbações reprodutíveis. Este capítulo responde à
+pergunta de pesquisa, discute os limites que nenhuma lei de controle rompe e
+as limitações do simulador, situa outras técnicas em relação a esses limites
+e termina com uma recomendação para uma aeronave real e com sugestões de
+trabalhos futuros.
+
+% ----------------------------------------------------------------------
+\section{Resposta à pergunta de pesquisa}
+\label{sec:resposta}
+
+A pergunta do Capítulo~\ref{cap:introducao} era se um controlador projetado
+por métodos de controle moderno, a partir de um modelo da aeronave, é capaz
+de igualar ou superar o PID nativo quando embarcado no firmware e submetido
+às mesmas condições. A resposta depende do eixo e do controlador.
+
+Em rolagem e arfagem, com a mesma frequência de cruzamento e a mesma margem
+de fase do nativo, o LQI e o LQR com ESO \emph{não} o superam na rejeição de
+torque: o pico do pulso de rolagem é de \ang{0.98} e \ang{0.99}, contra
+\ang{0.90} do nativo, e o do degrau sustentado, de \ang{0.65} e \ang{0.66},
+contra \ang{0.60}. Eles recuperam mais depressa --- \SI{0.44}{\second} e
+\SI{0.41}{\second} no degrau sustentado, contra \SI{2.25}{\second} ---, mas
+o LQI é, nesses eixos, a própria cascata nativa com outros ganhos: o nativo
+voado com os ganhos do LQI o reproduz (\ang{0.99} contra \ang{0.98} no pulso;
+\ang{0.66} contra \ang{0.65} no degrau). O que o projeto muda é a sintonia, e
+não a estrutura. O AutoTune, por sua vez, já está no ótimo da família PID
+quanto ao pico do pulso de rolagem (Tabela~\ref{tab:projeto-portao}).
+
+O LQG é o único que melhora o pico em rolagem e arfagem: \ang{0.81} e
+\ang{0.79} no pulso de rolagem (10\,\% e 12\,\% abaixo do nativo) e de
+\ang{0.51} a \ang{0.57} no degrau sustentado (7\,\% a 15\,\% abaixo), com
+recuperação de 0,17 a \SI{0.20}{\second}. Com cinco voos por par e ruído de
+giroscópio alto, a vantagem no pulso se confirma: 10\,\% em rolagem e 8\,\%
+em arfagem, com 2,4 e 2,7 erros-padrão. Ela se mantém com o filtro do
+giroscópio de \SI{10}{\hertz} e o nativo ressintonizado (\ang{1.93} contra
+\ang{2.13}, 9\,\% abaixo), com erro de modelo, com falha de motor e sob torque
+estocástico, em que o LQG tem o menor erro quadrático médio em rolagem (5\,\%
+abaixo do nativo), enquanto o LQI e o ESO ficam 18\,\% a 23\,\% acima. A
+diferença entre o LQG e os outros dois propostos é que ele modela o caminho de
+medida do firmware --- o filtro do giroscópio, o atraso do ângulo, o erro do
+AHRS e a polarização ---, e não a lei de realimentação, que é a mesma do LQR
+com ESO.
+
+Em guinada, todos os propostos eliminam a recuperação lenta que a razão
+$k_I = k_P/10$ do AutoTune impõe ao nativo: 1,0 a \SI{2.3}{\second}, contra
+\SI{22}{\second}, no degrau sustentado. O LQI e o ESO também reduzem o pico
+--- \ang{1.87} e \ang{1.77}, contra \ang{2.56} ---, mas com 2,4 e 2,0 vezes o
+ganho de ruído do nativo; com o ruído do nativo, o LQI piora para \ang{6.16}.
+O LQG de mesmo ruído chega a \ang{1.90} (26\,\% abaixo) e, no pulso
+normalizado, a 16\,\% abaixo; com cinco voos por par e ruído alto, porém, a
+diferença no pulso de guinada desaparece (+1\,\%, 0,3 erro-padrão), e o
+ruído no esforço do LQG medido em guinada ficou de 5 a 8 vezes o do nativo,
+acima do que o projeto previa.
+
+Por fim, a vantagem mais visível dos propostos, no rastreamento do degrau de
+atitude --- sobressinal de 3\,\% a 6\,\%, contra 20\,\% a 27\,\%, em rolagem e
+arfagem ---, vem da alimentação direta pela inversão do modelo, e não da
+realimentação: o PID com a mesma alimentação direta chega a 5,2\,\% de
+sobressinal em rolagem, contra 5,6\,\% do LQI.
+
+Em resumo, um controlador baseado em modelo, embarcado no firmware, iguala o
+PID nativo na rejeição de perturbações em rolagem e arfagem e só o supera
+quando modela o caminho de medida (LQG); supera-o claramente na recuperação
+em guinada, à custa de banda ou de ruído; e o supera no rastreamento por uma
+alimentação direta que o próprio PID poderia usar.
+
+% ----------------------------------------------------------------------
+\section{Limites que nenhuma lei de controle rompe}
+\label{sec:limites}
+
+Os resultados mostram limites que vêm da informação disponível ao controlador
+e da planta, e não da lei de controle.
+
+\paragraph{A integral de Bode.} Para qualquer controlador linear e invariante
+no tempo, atenuar a perturbação numa faixa de frequências aumenta a
+sensibilidade em outra (Seção~\ref{sec:bode}). O que as varreduras medem é
+$P\,S$, e não $S$; como a planta $P$ é a mesma para todos os controladores, a
+diferença entre os $\ln|P\,S|$ de dois deles é a diferença entre os seus
+$\ln|S|$, e o argumento vale para a comparação. No modelo, a integral
+discreta de $\ln|S|$ é nula em todos os controladores, com as áreas negativa
+e positiva iguais~\cite{iglesias2001}; o LQG tem as maiores áreas em rolagem
+e arfagem, 0,052 contra 0,049 do nativo: atenua mais em baixa frequência,
+o que dá a recuperação rápida, e paga com um máximo maior perto do
+cruzamento.
+
+\paragraph{O ruído do giroscópio contra a autoridade em guinada.} A
+eficácia de controle em guinada é de \SI{14.37}{\radian\per\second\squared},
+30 vezes menor que em rolagem (Tabela~\ref{tab:modelo-linear}). Mais banda
+em guinada custa ruído no esforço na mesma proporção, como mostram as
+fronteiras de projeto e medida (Figuras~\ref{fig:projeto-fronteira}
+e~\ref{fig:comparacao-fronteira}).
+
+\paragraph{O filtro do giroscópio e o atraso do laço.} O filtro de
+\SI{20}{\hertz} custa cerca de \ang{33} de fase no cruzamento da rolagem, em
+\SI{48.5}{\radian\per\second}, e o ângulo do AHRS chega com um laço de atraso,
+cerca de \ang{7} na mesma frequência. As margens garantidas do LQR, de 65 a
+\ang{73} na malha ideal, caem por isso para 37 a \ang{40} medidos no SITL;
+elas não sobrevivem ao sensor (Seção~\ref{sec:projeto-margens}).
+
+O LQG já é o ótimo do critério quadrático dada essa informação. Ganhos maiores
+viriam da cadeia de sinal e de atuação, e beneficiariam também o PID: um
+filtro \textit{notch} dinâmico no lugar do passa-baixas; a telemetria de rotação dos controladores dos motores; ou um
+giroscópio menos ruidoso ou mais bem isolado da vibração.
+
+% ----------------------------------------------------------------------
+\section{Limitações do simulador e do estudo}
+\label{sec:limitacoes}
+
+O SITL é um cenário otimista para o controle baseado em modelo:
+\begin{alineas}
+    \item não tem dinâmica de motor, só um limitador de taxa do comando
+          (\codigo{SIM\_FRM\_SLEW\_MAX}), que não atua na regulação
+          (Seção~\ref{sec:motor-sitl}); numa aeronave real, cada motor
+          acrescentaria um polo entre o comando e o empuxo;
+    \item não modela o termo giroscópico
+          $\vetor{\omega}\times\matriz{J}\,\vetor{\omega}$ nem o efeito
+          giroscópico dos rotores (Seção~\ref{sec:sitl}), e por isso o
+          acoplamento entre os eixos foi desprezível;
+    \item aplica a carga suspensa e o cabo (\codigo{SIM\_SLUP\_*} e
+          \codigo{SIM\_TETH\_*}) só como força sobre o centro de massa, sem
+          momento;
+    \item trata o vento quase só como perturbação de posição: o arrasto de
+          momento dos rotores só produz momento quando os empuxos diferem, e
+          uma rajada de \SI{10}{\metre\per\second} desviou a rolagem em
+          \ang{0.017} (Seção~\ref{sec:res-vento});
+    \item nos ensaios-base, entrega um giroscópio praticamente sem ruído,
+          só com o ruído mínimo do simulador (Seção~\ref{sec:sensores-sitl});
+    \item tem a dinâmica angular quase independente da massa, porque a
+          propulsão é refeita a partir dela e a inércia escala junto; o erro
+          de modelo dos ensaios foi criado pelo empuxo de pairado e pelo
+          tamanho do quadro.
+\end{alineas}
+
+O estudo tem também limitações próprias. Com ruído de giroscópio alto, um voo
+por par não basta para diferenças menores que cerca de 10\,\%
+(Seção~\ref{sec:res-proposto}). O pulso de torque, temporizado pelo
+\textit{script} do injetor, varia de duração entre voos, o que obrigou a
+normalizar o pulso de guinada pelo impulso. No LQG em guinada, resta depois
+do degrau sustentado um erro de cerca de \ang{0.06} que decai com constante
+de tempo de cerca de \SI{8}{\second}, e o ruído no esforço medido em guinada
+ficou de 5 a 8 vezes o do nativo, acima do que o projeto previa; as duas
+coisas pedem investigação antes de um voo real.
+
+% ----------------------------------------------------------------------
+\section{Outras técnicas de controle}
+\label{sec:outras-tecnicas}
+
+Os limites da Seção~\ref{sec:limites} valem para toda lei linear e invariante
+no tempo com a mesma informação. Outras técnicas atacariam pontos diferentes,
+e cada uma teria ganho num grupo específico dos ensaios deste trabalho.
+
+\paragraph{Inversão dinâmica não linear incremental (INDI).} A INDI controla
+o incremento de esforço a partir da aceleração angular medida, e com isso
+depende pouco do modelo da aeronave e absorve momentos não
+modelados~\cite{sieberling2010}; foi aplicada à atitude de multirrotores com
+estimação adaptativa da eficácia de controle~\cite{smeur2016}. Ganharia nos
+ensaios de erro de modelo e de falha de motor, sobretudo com a realimentação
+da rotação dos motores. Em rejeição pura no SITL, ficaria próxima do ESO e do
+LQG, que também estimam a perturbação, e, em guinada, limitada pelo ruído do
+mesmo modo, porque depende da derivada do giroscópio. É a alternativa mais
+relevante para uma aeronave real.
+
+\paragraph{Controle $H_\infty$ e \textit{loop shaping}.} O projeto
+$H_\infty$ trata o pior caso da sensibilidade~\cite{zames1981}, e o
+\textit{loop shaping} $H_\infty$ dá margens de robustez por
+construção~\cite{mcfarlane1992}; foi aplicado à atitude de um quadricóptero
+real sobre um modelo identificado com incerteza
+multiplicativa~\cite{noormohammadiasl2020}. Teria ganho onde o critério
+quadrático do LQG não olha: poderia limitar por construção o máximo de
+$|P\,S|$ do LQG perto do cruzamento e garantiria margens, que o LQG não
+tem~\cite{doyle1978}, provavelmente com algum custo no pico do pulso.
+
+\paragraph{Controle adaptativo.} O controle adaptativo por modelo de
+referência~\cite{astrom1995} e o controle adaptativo
+$\mathcal{L}_1$~\cite{hovakimyan2010} ajustam o controlador em voo; o
+primeiro foi avaliado em voo num quadricóptero com perda de
+empuxo~\cite{dydek2013}, e o segundo, como complemento de um controle
+geométrico~\cite{wu2022}. Ganhariam quando a eficácia de controle varia ---
+com a bateria, a carga ou o desgaste ---, o que, no SITL, aparece só nos
+ensaios de erro de modelo e de falha de motor.
+
+\paragraph{Controle preditivo (MPC).} O MPC trata restrições
+explicitamente~\cite{mayne2000} e foi aplicado ao rastreamento de trajetória
+de multirrotores, com vento~\cite{kamel2017}. Sem restrições ativas, a lei
+coincide com a do LQR, e o ganho ficaria nos ensaios de saturação e de
+ângulos grandes, em que a folga de guinada da alocação e a saturação dos
+motores pesam, e na antecipação do alvo. A \SI{400}{\hertz}, porém, o custo
+de calcular a lei a cada laço é alto para a controladora de voo.
+
+\paragraph{Modos deslizantes.} O controle por modos
+deslizantes~\cite{utkin1977} e o algoritmo \textit{super-twisting}, de
+segunda ordem~\cite{levant1993}, rejeitam em tempo finito as perturbações
+que entram no canal do controle e foram aplicados à atitude de um
+quadricóptero real~\cite{derafa2012}. São, porém, sensíveis ao ruído de
+medida: seriam piores que os propostos em guinada, onde o ruído já limita a
+banda, e produzem oscilação de alta frequência no esforço
+(\textit{chattering}).
+
+\paragraph{Controle geométrico em $SO(3)$.} O controle formulado no grupo das
+rotações~\cite{bullo1999}, aplicado ao quadricóptero em
+$SE(3)$~\cite{lee2010}, evita as singularidades e as aproximações de ângulos
+pequenos. Perto do pairado, equivale a um controle proporcional-derivativo, e
+só teria ganho em manobras grandes, como as dos ensaios de \ang{30} e
+\ang{45} (Tabela~\ref{tab:res-grande}).
+
+% ----------------------------------------------------------------------
+\section{Recomendação para uma aeronave real}
+\label{sec:recomendacao}
+
+Os resultados permitem uma recomendação de engenharia, que é uma opinião
+baseada nos ensaios em SITL, e não um resultado deles. Para melhorar o
+controle de atitude de uma aeronave real com o ArduPilot, nesta ordem:
+\begin{alineas}
+    \item acrescentar ao PID nativo a alimentação direta pela inversão do
+          modelo, que dá quase toda a vantagem dos propostos no rastreamento
+          (Tabela~\ref{tab:res-ff});
+    \item reforçar a ação integral em guinada, ou usar nela um observador de
+          estado estendido: um PID com ganhos livres alcança recuperação de
+          cerca de \SI{2}{\second} (\SI{1.91}{\second} na
+          Tabela~\ref{tab:projeto-portao}), mas não reduz o pico do degrau de
+          torque;
+    \item considerar o LQG só depois de identificar a dinâmica dos motores e
+          o ruído real de vibração na aeronave, porque o SITL é um cenário
+          otimista para o controle baseado em modelo, e investigar antes o
+          ruído no esforço que ele produziu em guinada.
+\end{alineas}
+
+% ----------------------------------------------------------------------
+\section{Trabalhos futuros}
+\label{sec:trabalhos-futuros}
+
+Ficam como continuidade natural deste trabalho:
+\begin{alineas}
+    \item voar os controladores numa aeronave real, começando pela
+          alimentação direta no PID nativo;
+    \item investigar o ruído no esforço do LQG em guinada e o erro residual
+          que ele deixa depois do degrau sustentado;
+    \item repetir os ensaios com ruído de giroscópio alto, com vários voos por
+          par, e temporizar o pulso de torque pelo próprio simulador
+          (\codigo{SIM\_TWIST\_TIME});
+    \item avaliar o filtro \textit{notch} dinâmico e a INDI no mesmo
+          procedimento de ensaio;
+    \item estender o procedimento às malhas externas e aos ensaios de vento
+          com momento, num simulador que modele a aerodinâmica dos rotores.
+\end{alineas}
