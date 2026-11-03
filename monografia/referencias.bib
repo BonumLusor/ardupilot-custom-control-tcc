@@ -7,6 +7,7 @@
 %       (o comentário acima de cada uma diz onde)
 %    3. referências dos métodos usados nos ensaios
 %    4. software e documentação
+%    5. fontes acrescentadas na verificação de nov. 2026
 % ======================================================================
 
 % ----------------------------------------------------------------------
@@ -18,6 +19,8 @@
   title   = {Design and control of quadrotors with application to autonomous flying},
   school  = {École Polytechnique Fédérale de Lausanne},
   address = {Lausanne},
+  note    = {Th{\`e}se n\textsuperscript{o} 3727},
+  doi     = {10.5075/epfl-thesis-3727},
   year    = {2007}
 }
 
@@ -25,7 +28,7 @@
   author  = {Francesco Sabatino},
   title   = {Quadrotor control: modeling, nonlinear control design, and simulation},
   school  = {KTH Royal Institute of Technology},
-  address = {Estocolmo},
+  address = {Stockholm},
   year    = {2015}
 }
 
@@ -34,6 +37,7 @@
   title       = {Quadrotor dynamics and control},
   institution = {Brigham Young University},
   address     = {Provo},
+  note        = {Brigham Young University. Rev.~0.1},
   year        = {2008}
 }
 
@@ -43,6 +47,7 @@
   subtitle  = {an introduction for scientists and engineers},
   publisher = {Princeton University Press},
   address   = {Princeton},
+  isbn      = {978-0-691-13576-2},
   year      = {2008}
 }
 
@@ -61,6 +66,7 @@
   edition   = {3},
   publisher = {Addison-Wesley},
   address   = {Menlo Park},
+  isbn      = {0-201-82054-4},
   year      = {1998}
 }
 
@@ -69,8 +75,9 @@
   title     = {System identification},
   subtitle  = {theory for the user},
   edition   = {2},
-  publisher = {Prentice Hall},
+  publisher = {Prentice Hall PTR},
   address   = {Upper Saddle River},
+  isbn      = {0-13-656695-2},
   year      = {1999}
 }
 
@@ -80,6 +87,7 @@
   subtitle  = {theory and practice},
   publisher = {Princeton University Press},
   address   = {Princeton},
+  isbn      = {978-0-691-14921-9},
   year      = {2012}
 }
 
@@ -88,6 +96,7 @@
   title        = {{MIL-F-8785C}},
   subtitle     = {military specification: flying qualities of piloted airplanes},
   address      = {Washington, D.C.},
+  note         = {Datada de 5 nov. 1980},
   year         = {1980}
 }
 
@@ -98,6 +107,7 @@
   volume  = {56},
   number  = {3},
   pages   = {900--906},
+  doi     = {10.1109/TIE.2008.2011621},
   year    = {2009}
 }
 
@@ -108,6 +118,7 @@
   volume  = {19},
   number  = {3},
   pages   = {20--32},
+  doi     = {10.1109/MRA.2012.2206474},
   year    = {2012}
 }
 
@@ -118,6 +129,7 @@
   volume  = {22},
   number  = {2},
   pages   = {173--179},
+  doi     = {10.1109/TAC.1977.1101470},
   year    = {1977}
 }
 
@@ -156,6 +168,7 @@
   volume  = {26},
   number  = {6},
   pages   = {855--860},
+  doi     = {10.2514/2.6929},
   year    = {2003}
 }
 
@@ -163,12 +176,13 @@
 % AP_TECS. O código cita o número do artigo AIAA (78-1307R); volume,
 % número e páginas são os da publicação no periódico.
 @article{widnall1980,
-  author  = {W. S. Widnall and P. K. Sinha},
+  author  = {William S. Widnall and Prasun K. Sinha},
   title   = {Optimizing the gains of the baro-inertial vertical channel},
   journal = {Journal of Guidance and Control},
   volume  = {3},
   number  = {2},
   pages   = {172--178},
+  doi     = {10.2514/3.55966},
   year    = {1980}
 }
 
@@ -193,11 +207,14 @@
   volume  = {5},
   number  = {3},
   pages   = {72},
+  doi     = {10.3390/aerospace5030072},
   year    = {2018}
 }
 
 % libraries/SITL/SIM_Aircraft.cpp (~l. 350): ruído gaussiano dos
 % acelerômetros simulados. Também usado pelo injetor ensaios/lua/vento.lua.
+% O injetor usa a forma trigonométrica deste artigo; o código do SITL usa a
+% forma polar, que é de Marsaglia e Bray (1964) -- ver marsaglia1964.
 @article{box1958,
   author  = {G. E. P. Box and Mervin E. Muller},
   title   = {A note on the generation of random normal deviates},
@@ -205,6 +222,7 @@
   volume  = {29},
   number  = {2},
   pages   = {610--611},
+  doi     = {10.1214/aoms/1177706645},
   year    = {1958}
 }
 
@@ -220,6 +238,7 @@
   volume  = {31},
   number  = {10},
   pages   = {1192--1201},
+  doi     = {10.1145/63039.63042},
   year    = {1988}
 }
 
@@ -231,6 +250,7 @@
   volume  = {15},
   number  = {2},
   pages   = {70--73},
+  doi     = {10.1109/TAU.1967.1161901},
   year    = {1967}
 }
 
@@ -241,6 +261,9 @@
   edition   = {2},
   publisher = {American Institute of Aeronautics and Astronautics},
   address   = {Reston},
+  series    = {AIAA Education Series},
+  isbn      = {978-1-60086-820-7},
+  doi       = {10.2514/4.868207},
   year      = {2012}
 }
 
@@ -265,4 +288,251 @@
   url           = {https://ardupilot.org/dev/},
   urlaccessdate = {6 out. 2026},
   year          = {2026}
+}
+
+% ----------------------------------------------------------------------
+%  5. Fontes acrescentadas na verificação de nov. 2026
+%     Copiadas de verificacao/referencias_propostas.bib com o comentário
+%     de conferência; o que ele marca como não confirmado continua a
+%     conferir.
+% ----------------------------------------------------------------------
+
+% --- Cap. 2 ---
+
+% Conferido em https://doi.org/10.48550/arxiv.1711.02508 (autor, título,
+% arXiv:1711.02508, 8 nov. 2017). Só o resumo foi lido:
+% a equação q' = (1/2) q (x) [0 w] na convenção de Hamilton NÃO foi lida
+% na fonte; conferir a seção da derivada do quatérnio antes de citar.
+@misc{sola2017,
+  author       = {Joan Sol{\`a}},
+  title        = {Quaternion kinematics for the error-state {Kalman} filter},
+  howpublished = {Preprint arXiv:1711.02508},
+  doi          = {10.48550/arXiv.1711.02508},
+  year         = {2017}
+}
+
+% Conferido em https://doi.org/10.1137/1006063 (autores, título, SIAM
+% Review, jul. 1964; o texto descreve o "modified polar method") e nas
+% referências de https://doi.org/10.1007/978-1-4613-8643-8 (Devroye):
+% "SIAM Review, vol. 6, pp. 260-264, 1964". Número do fascículo (3) NÃO
+% confirmado; omitido. Nome completo do segundo autor não confirmado.
+@article{marsaglia1964,
+  author  = {George Marsaglia and T. A. Bray},
+  title   = {A convenient method for generating normal variables},
+  journal = {SIAM Review},
+  volume  = {6},
+  pages   = {260--264},
+  doi     = {10.1137/1006063},
+  year    = {1964}
+}
+
+% Conferido em https://doi.org/10.1109/37.954521 (título, IEEE Control
+% Systems, out. 2001, DOI) e em
+% https://websites.umich.edu/~dsbaero/others/25-DoubleIntegrator.pdf
+% (autores: Venkatesh G. Rao e Dennis S. Bernstein). Volume, número e
+% páginas NÃO confirmados; omitidos.
+@article{rao2001,
+  author  = {Venkatesh G. Rao and Dennis S. Bernstein},
+  title   = {Naive control of the double integrator},
+  journal = {IEEE Control Systems Magazine},
+  doi     = {10.1109/37.954521},
+  year    = {2001}
+}
+
+% Conferido em https://doi.org/10.1016/0005-1098(76)90006-6 (autores,
+% título, Automatica, set. 1976) e em
+% https://www.researchgate.net/publication/223996193_The_Internal_Model_Principle_of_Control_Theory
+% ("Automatica 12(5):457-465"). Prenomes dos autores não confirmados.
+@article{francis1976,
+  author  = {B. A. Francis and W. M. Wonham},
+  title   = {The internal model principle of control theory},
+  journal = {Automatica},
+  volume  = {12},
+  number  = {5},
+  pages   = {457--465},
+  doi     = {10.1016/0005-1098(76)90006-6},
+  year    = {1976}
+}
+
+% Conferido em https://doi.org/10.1080/00207177208932211 (autores, título,
+% International Journal of Control, maio 1972) e em
+% https://www.kiphub.com/paper/61e50079b0d102ae69f62486 (v. 15, n. 5,
+% p. 961-979). Prenomes dos autores não confirmados.
+@article{young1972,
+  author  = {P. C. Young and J. C. Willems},
+  title   = {An approach to the linear multivariable servomechanism problem},
+  journal = {International Journal of Control},
+  volume  = {15},
+  number  = {5},
+  pages   = {961--979},
+  doi     = {10.1080/00207177208932211},
+  year    = {1972}
+}
+
+% Conferido em isbn://0691140219 (autor, título, Princeton University
+% Press, 2009, ISBN 9780691140216; a Nota 11 enuncia a regra de Bryson).
+% Cidade NÃO confirmada na fonte (Princeton é a sede da editora; conferir
+% na folha de rosto).
+@book{hespanha2009,
+  author    = {Jo{\~a}o P. Hespanha},
+  title     = {Linear systems theory},
+  publisher = {Princeton University Press},
+  address   = {Princeton},
+  isbn      = {978-0-691-14021-6},
+  year      = {2009}
+}
+
+% Conferido em https://doi.org/10.1109/acc.2003.1242516 e em
+% https://engagedscholarship.csuohio.edu/enece_facpub/528/ (autor, título,
+% Proceedings of the 2003 American Control Conference, jul. 2003). A
+% parametrização do ESO pela banda foi lida em patente do mesmo autor
+% (uspto://08571691), não no artigo. Páginas e cidade do evento NÃO
+% confirmadas; omitidas.
+@inproceedings{gao2003,
+  author    = {Zhiqiang Gao},
+  title     = {Scaling and bandwidth-parameterization based controller tuning},
+  booktitle = {Proceedings of the 2003 American Control Conference},
+  publisher = {IEEE},
+  doi       = {10.1109/ACC.2003.1242516},
+  year      = {2003}
+}
+
+% Conferido em https://journals.aps.org/pre/export/10.1103/PhysRevE.54.2084?download=true&type=bibtex
+% (autor, título, Phys. Rev. E, v. 54, n. 2, p. 2084-2091, ago. 1996, DOI).
+% Nada ficou sem confirmação.
+@article{gillespie1996,
+  author  = {Daniel T. Gillespie},
+  title   = {Exact numerical simulation of the {Ornstein-Uhlenbeck} process and its integral},
+  journal = {Physical Review E},
+  volume  = {54},
+  number  = {2},
+  pages   = {2084--2091},
+  doi     = {10.1103/PhysRevE.54.2084},
+  year    = {1996}
+}
+
+% Conferido em https://doi.org/10.1049/ji-2a.1947.0020 e em
+% https://digital-library.theiet.org/doi/10.1049/ji-2a.1947.0020 (autor
+% "A. Tustin", título, periódico, v. 94, n. 1, maio 1947) e em
+% https://www.kiphub.com/paper/61e50ccdea1e5a0f78f62d31 (p. 130-142).
+% Prenome do autor não confirmado. A substituição bilinear não foi
+% localizada no trecho indexado.
+@article{tustin1947,
+  author  = {A. Tustin},
+  title   = {A method of analysing the behaviour of linear systems in terms of time series},
+  journal = {Journal of the Institution of Electrical Engineers -- Part IIA: Automatic Regulators and Servo Mechanisms},
+  volume  = {94},
+  number  = {1},
+  pages   = {130--142},
+  doi     = {10.1049/ji-2a.1947.0020},
+  year    = {1947}
+}
+
+% Conferido em https://doi.org/10.1109/tau.1973.1162496 (autores como
+% "G. Carter, C. Knapp, A. Nuttall", título, IEEE Transactions on Audio
+% and Electroacoustics, ago. 1973). Volume, número e páginas NÃO
+% confirmados; omitidos.
+@article{carter1973,
+  author  = {G. Carter and C. Knapp and A. Nuttall},
+  title   = {Estimation of the magnitude-squared coherence function via overlapped fast {F}ourier transform processing},
+  journal = {IEEE Transactions on Audio and Electroacoustics},
+  doi     = {10.1109/TAU.1973.1162496},
+  year    = {1973}
+}
+
+% URI: https://ieeexplore.ieee.org/document/1101812 (v. 23, n. 4, p. 756-757)
+%      e https://doi.org/10.1109/tac.1978.1101812
+% USO: Cap. 5, o LQG não tem margens garantidas.
+% FALTA: nada.
+@article{doyle1978,
+  author  = {John C. Doyle},
+  title   = {Guaranteed margins for {LQG} regulators},
+  journal = {IEEE Transactions on Automatic Control},
+  volume  = {23},
+  number  = {4},
+  pages   = {756--757},
+  year    = {1978},
+  doi     = {10.1109/TAC.1978.1101812}
+}
+
+% URI: isbn://0122035909 e isbn://008053788X (texto indexado). Lido: "If (A, B)
+%      is discrete-stabilizable and (A, Q) is discrete-detectable, then the above
+%      Riccati equation (DARE) has a unique symmetric positive semidefinite
+%      solution X [...] X is a discrete-stabilizing solution"; a DARE e o ganho
+%      K = (R + B'XB)^(-1) B'XA coincidem com as Eqs. riccati e ganho-lqr; e as
+%      margens do LQR contínuo ("upward and downward gain margins are [...]
+%      infinity and 0.5. The phase margin is at least ±60°").
+% USO: Cap. 2, C02-073 (DARE e ganho), C02-120 (solução estabilizante
+%      semidefinida) e a frase das margens garantidas, junto de safonov1977.
+% FALTA: cidade da editora.
+@book{datta2003,
+  author    = {Biswa Nath Datta},
+  title     = {Numerical methods for linear control systems},
+  subtitle  = {design and analysis},
+  publisher = {Academic Press},
+  year      = {2003},
+  isbn      = {0-12-203590-9}
+}
+
+% URI: https://doi.org/10.1016/b978-0-12-374498-2.00009-6 (texto indexado). Lido:
+%      "theorem 9.1: State Feedback. If the pair (A, B) is controllable, then
+%      there exists a feedback gain matrix K that arbitrarily assigns the system
+%      poles [...] controllability is a necessary condition for arbitrary pole
+%      assignment", em tempo discreto, com a fórmula de Ackermann.
+% USO: Cap. 2, C02-072 (alocação de polos) e C02-021 (teste de posto).
+% FALTA: título do livro (o registro só traz o do capítulo); conferir pelo DOI.
+@incollection{fadali2009,
+  author    = {M. Sami Fadali and Antonio Visioli},
+  title     = {State feedback control},
+  publisher = {Elsevier},
+  year      = {2009},
+  doi       = {10.1016/B978-0-12-374498-2.00009-6}
+}
+
+% URI: https://doi.org/10.1002/9781118287422 (2. ed., texto indexado): o ajuste
+%      linear por mínimos quadrados de Levy (1959) a uma resposta em frequência
+%      medida. A definição da coerência (0 <= gamma^2 <= 1, "how much of the
+%      output power is coherent (linearly related) with the input power") foi
+%      lida na 1. ed., https://doi.org/10.1002/0471723134 (Wiley, 2001).
+% USO: Cap. 2, C02-088 (estimativa da resposta em frequência e coerência) e
+%      C02-095 (ajuste da função de transferência).
+% FALTA: cidade.
+@book{pintelon2012,
+  author    = {Rik Pintelon and Johan Schoukens},
+  title     = {System identification},
+  subtitle  = {a frequency domain approach},
+  edition   = {2},
+  publisher = {Wiley-IEEE Press},
+  year      = {2012},
+  isbn      = {978-0-470-64037-1},
+  doi       = {10.1002/9781118287422}
+}
+
+% URI: https://doi.org/10.1002/9781119469414 (texto indexado). Lido: "Sampling
+%      rate 1/Delta t is typically chosen to be 5 to 10 times the closed-loop
+%      bandwidth", e capítulo de implementação com anti-windup.
+% USO: Cap. 2, C02-071 (taxa de amostragem e windup), no lugar ou ao lado de
+%      franklin1998, que não é conferível aqui.
+% FALTA: cidade.
+@book{wang2020,
+  author    = {Liuping Wang},
+  title     = {{PID} control system design and automatic tuning using {MATLAB}/{Simulink}},
+  publisher = {Wiley},
+  year      = {2020},
+  isbn      = {978-1-119-46934-6},
+  doi       = {10.1002/9781119469414}
+}
+
+% URI: https://doi.org/10.48550/arxiv.2607.03211 (texto indexado). Lido:
+%      "q_nb' = 1/2 q_nb (x) q(w_nb^b), where q(w) = [0, w']' is the pure
+%      quaternion associated with w, and (x) denotes the Hamilton product".
+% USO: alternativa conferível a sola2017 para a Eq. cinematica-quaternio (C02-005),
+%      enquanto a equação de sola2017 não for lida no PDF. É preprint de 2026.
+% FALTA: nada (preprint).
+@misc{hager2026,
+  author       = {Antonia Hager and Torleiv H. Bryne},
+  title        = {Derivations of error-state {Kalman} filter kinematics for globally applicable aided inertial navigation systems},
+  howpublished = {Preprint arXiv:2607.03211},
+  year         = {2026},
+  doi          = {10.48550/arXiv.2607.03211}
 }

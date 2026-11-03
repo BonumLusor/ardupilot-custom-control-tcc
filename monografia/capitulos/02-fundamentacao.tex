@@ -27,7 +27,7 @@ Adotam-se dois referenciais, ambos dextrógiros e consistentes com a convenção
 do ArduPilot. O referencial inercial local $\{\mathcal{N}\}$ é o NED
 (\textit{North-East-Down}), com origem fixa na superfície e eixos apontando
 para o norte, para o leste e para baixo; a hipótese de Terra plana e sem
-rotação é adequada às distâncias e às durações envolvidas~\cite{beard2012}. O
+rotação é adequada às distâncias e às durações envolvidas~\cite[Cap.~3]{beard2012}. O
 referencial do corpo $\{\mathcal{B}\}$ é o FRD (\textit{Forward-Right-Down}),
 com origem no centro de massa e eixos $x_b$ para a frente, $y_b$ para a
 direita e $z_b$ para baixo (Figura~\ref{fig:quadx}).
@@ -38,7 +38,7 @@ A orientação de $\{\mathcal{B}\}$ em relação a $\{\mathcal{N}\}$ pode ser
 descrita pelos ângulos de Euler na sequência $Z$-$Y$-$X$: guinada $\psi$ em
 torno de $z$, arfagem $\theta$ em torno do $y$ intermediário e rolagem $\phi$
 em torno de $x_b$. A matriz de rotação que leva vetores do corpo para o
-referencial inercial é~\cite{beard2008,sabatino2015}
+referencial inercial é~\cite{beard2008,sabatino2015,beard2012}
 \begin{equation}
 \matriz{R} = \matriz{R}_z(\psi)\,\matriz{R}_y(\theta)\,\matriz{R}_x(\phi) =
 \begin{bmatrix}
@@ -51,7 +51,7 @@ c_\theta s_\psi & s_\phi s_\theta s_\psi + c_\phi c_\psi & c_\phi s_\theta s_\ps
 em que $c_\alpha = \cos\alpha$ e $s_\alpha = \sin\alpha$. A velocidade
 angular do corpo, $\vetor{\omega} = [p\ q\ r]^{\mathsf{T}}$, é a grandeza
 medida pelos giroscópios e não coincide com as derivadas dos ângulos de Euler.
-A relação entre ambas é
+A relação entre ambas é~\cite{beard2012}
 \begin{equation}
 \begin{bmatrix} \dot\phi \\ \dot\theta \\ \dot\psi \end{bmatrix} =
 \begin{bmatrix}
@@ -77,9 +77,11 @@ descrevem uma rotação de ângulo $\alpha$ em torno do eixo unitário
 $\vetor{e}$, sem singularidades. A biblioteca matemática do firmware segue a
 convenção de Hamilton para o produto de quatérnios, e seus testes unitários
 conferem a conversão de quatérnio para matriz de rotação contra o exemplo
-publicado por \citeonline{sommer2018}, que discutem as inconsistências
-causadas pela convenção alternativa. Nessa convenção, a cinemática de atitude
-é
+publicado por \citeonline{sommer2018}\footnote{O código do ArduPilot cita a
+versão do artigo publicada no arXiv,
+\url{https://doi.org/10.48550/arXiv.1801.07478}.}, que discutem as
+inconsistências causadas pela convenção alternativa. Nessa convenção, a
+cinemática de atitude é~\cite{sola2017,hager2026}
 \begin{equation}
 \dot{\vetor{q}} = \frac{1}{2}\,\vetor{q} \otimes
 \begin{bmatrix} 0 \\ \vetor{\omega} \end{bmatrix},
@@ -104,7 +106,9 @@ consequência prática. O firmware modela a referência de atitude como uma
 rotação suave em quatérnio; quando os três eixos são comandados ao mesmo
 tempo, os ângulos de Euler dessa referência deixam de evoluir de forma
 independente, e a referência expressa em rolagem e arfagem pode ultrapassar
-transitoriamente o valor final comandado, sem que o controlador tenha
+transitoriamente o valor final comandado --- no ensaio com os três eixos,
+com degraus de \ang{10}, \ang{10} e \ang{30}, o alvo de arfagem chega a
+\ang{13.6} antes de assentar em \ang{10} ---, sem que o controlador tenha
 participação nisso. Por esse motivo, nos ensaios com os três eixos
 simultâneos, a comparação entre controladores se faz pelo erro de
 rastreamento em relação à referência efetivamente modelada, e não apenas pelo
@@ -205,7 +209,7 @@ em que $\vetor{p}$ e $\vetor{v}$ são a posição e a velocidade do centro de
 massa, $\vetor{e}_3 = [0\ 0\ 1]^{\mathsf{T}}$, $T$ é o empuxo total, que atua
 ao longo de $-z_b$, e $\vetor{f}_d$ reúne as forças de perturbação, entre elas
 a força aerodinâmica devida ao vento. A dinâmica de rotação, escrita no
-referencial do corpo, é dada pela equação de Euler~\cite{beard2008}:
+referencial do corpo, é dada pela equação de Euler~\cite{beard2008,beard2012}:
 \begin{equation}
 \matriz{J}\,\dot{\vetor{\omega}} =
 -\vetor{\omega}\times\matriz{J}\,\vetor{\omega} + \vetor{\tau} + \vetor{\tau}_d,
@@ -254,8 +258,11 @@ A matriz $\matriz{M}$ é invertível, e $\matriz{M}^{-1}$ fornece os empuxos
 individuais que realizam um par empuxo--torque desejado, desde que nenhum
 deles saia da faixa disponível. A comparação entre a segunda e a quarta linhas
 explica a fraca autoridade em guinada: um mesmo padrão de diferença de empuxo
-produz torques na razão $\ell_{xy}/\kappa$ entre rolagem e guinada, razão que,
-na aeronave simulada, é da ordem de 15 (Seção~\ref{sec:forcas-momentos}).
+produz torques na razão $\ell_{xy}/\kappa$ entre rolagem e guinada, da ordem
+de 25 na aeronave simulada; como o torque de reação do SITL cresce com o
+comando, a razão que vale para variações de empuxo é $\ell_{xy}/\kappa'$, com
+$\kappa' = \mathrm{d}Q_i/\mathrm{d}T_i$, cerca de 15
+(Seção~\ref{sec:forcas-momentos}).
 
 % ----------------------------------------------------------------------
 \section{Linearização em torno do voo pairado}
@@ -282,7 +289,8 @@ posição horizontal, este último alimentado pela atitude. Essa estrutura
 fundamenta tanto a arquitetura em cascata do firmware quanto o projeto do
 controlador por eixo.
 
-Cada eixo de atitude é, em primeira aproximação, um duplo integrador. Para a
+Cada eixo de atitude é, em primeira aproximação, um duplo
+integrador~\cite{rao2001}. Para a
 rolagem, com estado $\vetor{x}_\phi = [\phi\ \ p]^{\mathsf{T}}$,
 \begin{equation}
 \dot{\vetor{x}}_\phi =
@@ -296,12 +304,17 @@ rolagem, com estado $\vetor{x}_\phi = [\phi\ \ p]^{\mathsf{T}}$,
 \end{equation}
 e analogamente para arfagem e guinada. O par $(\matriz{A}, \matriz{B})$ é
 controlável, pois $[\matriz{B}\ \ \matriz{A}\matriz{B}]$ tem posto 2, e o par
-$(\matriz{A}, \matriz{C})$ é observável já com $\matriz{C} = [1\ \ 0]$; na
+$(\matriz{A}, \matriz{C})$ é observável já com
+$\matriz{C} = [1\ \ 0]$~\cite{ogata2010}; na
 prática, os dois estados são disponíveis, o ângulo pelo estimador e a
-velocidade angular pelo giroscópio. Os dois autovalores na origem tornam o
-sistema não assintoticamente estável: um torque de perturbação constante faz
-o ângulo divergir quadraticamente no tempo, o que torna a ação integral, ou
-uma estimativa da perturbação, indispensável para erro nulo em regime.
+velocidade angular pelo giroscópio. Os dois autovalores na origem, num bloco
+de Jordan, tornam o sistema instável em malha aberta. Em malha fechada, os
+integradores da planta não ajudam a rejeitar um torque de perturbação
+constante, porque ele entra antes deles: com realimentação proporcional dos
+estados, $\tau_x = -J_{xx}\,(k_\theta\,\phi + k_\omega\,p)$, o ângulo se
+acomoda num erro $\tau_{d,x}/(J_{xx}k_\theta)$. Erro nulo em regime exige um
+integrador no controlador ou uma estimativa da perturbação, como prevê o
+princípio do modelo interno~\cite{francis1976}.
 
 Como o controlador é executado a cada $T_s$ segundos e o torque comandado é
 mantido constante entre execuções, o modelo de projeto é a discretização por
@@ -314,8 +327,9 @@ segurador de ordem zero (ZOH)~\cite{franklin1998}:
 \end{equation}
 com $T_s = \SI{2.5}{\milli\second}$ para a taxa de \SI{400}{\hertz} usada
 neste trabalho. O duplo integrador é o modelo \emph{nominal}; a planta efetiva
-vista pelo controlador inclui ainda a dinâmica dos motores, o filtro passa-baixas
-dos giroscópios, os atrasos de amostragem e a saturação da alocação, que
+vista pelo controlador inclui ainda o filtro passa-baixas dos giroscópios, os
+atrasos de amostragem e a saturação da alocação e, numa aeronave real, a
+dinâmica dos motores, ausente no SITL (Seção~\ref{sec:motor-sitl}), que
 acrescentam atraso de fase e limitam a banda passante alcançável. É essa
 diferença que a identificação da Seção~\ref{sec:identificacao} quantifica.
 
@@ -382,16 +396,18 @@ Os sensores inerciais são integrados em incrementos de ângulo e de
 velocidade. Como rotações finitas não comutam, a simples soma dos incrementos
 do giroscópio acumula erro quando a aeronave oscila em mais de um eixo ao
 mesmo tempo (efeito de \textit{coning}); o firmware aplica a correção de
-\textit{coning} descrita por \citeonline{tian2010} antes de entregar os
+\textit{coning} descrita por \citeonline[p.~26]{tian2010} antes de entregar os
 incrementos ao estimador.
 
 O estimador padrão é o EKF3, um filtro de Kalman estendido que funde os
 sensores inerciais com GPS, barômetro e magnetômetro e estende o vetor de
 estados com as polarizações dos sensores inerciais, o campo magnético e o
-vento~\cite{ardupilotdev}. A altura e a velocidade vertical entregues aos
-controladores passam ainda por um filtro complementar de terceira ordem
-baseado em \citeonline{widnall1980}, que combina a aceleração vertical com a
-saída do filtro. Como alternativa de contingência, o firmware mantém o
+vento~\cite{ardupilotdev,ardupilot2026}. O EKF3 calcula ainda, por um filtro
+complementar de terceira ordem baseado em \citeonline{widnall1980}, que
+combina a aceleração vertical com a altura estimada, uma derivada da altura
+cinematicamente consistente com ela; as malhas de altitude só a usam no lugar
+da velocidade vertical do EKF quando esta não está disponível ou sob vibração
+elevada. Como alternativa de contingência, o firmware mantém o
 estimador \codigo{AP\_AHRS\_DCM}, um filtro complementar sobre a matriz de
 cossenos diretores~\cite{premerlani2009}. Em todos os casos, a malha de
 atitude recebe a atitude estimada $\hat{\vetor{q}}$ e a velocidade angular
@@ -407,13 +423,14 @@ $\vetor{q}^*$ cinematicamente consistente, com aceleração angular limitada
 pelos parâmetros \codigo{ATC\_ACC\_R\_MAX}, \codigo{ATC\_ACC\_P\_MAX} e
 \codigo{ATC\_ACC\_Y\_MAX} e suavizada por uma constante de tempo
 (\codigo{ATC\_INPUT\_TC} em rolagem e arfagem e \codigo{PILOT\_Y\_RATE\_TC}
-em guinada). O modelador produz também a velocidade angular correspondente à
-trajetória do alvo, $\vetor{\omega}_{ff}$, que é somada à saída do
-controlador de ângulo como alimentação direta quando
-\codigo{ATC\_RATE\_FF\_ENAB} está habilitado~\cite{ardupilot2026}. Um degrau
+em guinada). O modelador, habilitado por \codigo{ATC\_RATE\_FF\_ENAB} (padrão
+1; com 0, a atitude alvo recebe a referência sem limitação de aceleração),
+produz também a velocidade angular correspondente à trajetória do alvo,
+$\vetor{\omega}_{ff}$, que é somada à saída do controlador de ângulo como
+alimentação direta~\cite{ardupilot2026}. Um degrau
 comandado ao firmware, portanto, não chega ao controlador como degrau, e sim
 como uma transição de aceleração limitada; os ensaios deste trabalho medem a
-resposta a essa referência modelada, que é a mesma para os dois
+resposta a essa referência modelada, que é a mesma para todos os
 controladores.
 
 \subsection{Controlador de ângulo}
@@ -439,8 +456,10 @@ k\,e, & |e| \le e_{\mathrm{lin}}, \\[2pt]
 \qquad e_{\mathrm{lin}} = \frac{a_{\max}}{k^2},
 \label{eq:sqrt-controller}
 \end{equation}
-em que $k$ é o ganho \codigo{ATC\_ANG\_*\_P} e $a_{\max}$ é a aceleração
-angular admitida no eixo. Para erros pequenos, a lei é linear; para erros
+em que $k$ é o ganho \codigo{ATC\_ANG\_*\_P} e $a_{\max}$ é metade da
+aceleração máxima do eixo, \codigo{ATC\_ACC\_*\_MAX}/2, limitada à faixa de
+40 a \SI{720}{\degree\per\second\squared} em rolagem e arfagem e à de 10 a
+\SI{120}{\degree\per\second\squared} em guinada. Para erros pequenos, a lei é linear; para erros
 grandes, a velocidade angular cresce com a raiz do erro, o que garante que a
 aeronave consiga desacelerar até o alvo sem exceder $a_{\max}$. As duas
 expressões e suas derivadas coincidem em $|e| = e_{\mathrm{lin}}$. O resultado
@@ -463,12 +482,13 @@ em que $F_T$ e $F_E$ são filtros passa-baixas de primeira ordem sobre o alvo e
 sobre o erro (\codigo{FLTT} e \codigo{FLTE}), e o termo derivativo tem o seu
 próprio filtro (\codigo{FLTD}). O integrador é limitado a \codigo{IMAX} e,
 quando a biblioteca de motores sinaliza saturação no eixo, só pode diminuir
-em módulo, como proteção contra \textit{windup}~\cite{astrom2008}. A Tabela~\ref{tab:ganhos}
+em módulo, como proteção contra \textit{windup}~\cite[Cap.~10]{astrom2008}. A Tabela~\ref{tab:ganhos}
 reúne os ganhos usados neste trabalho.
 
 \begin{table}[htbp]
 \centering
-\caption{Ganhos do controlador de atitude nativo nos ensaios deste trabalho.}
+\caption{Ganhos do controlador de atitude nativo na linha de base
+(\codigo{nativo.yaml}).}
 \label{tab:ganhos}
 \begin{tabular}{lccc}
 \toprule
@@ -492,7 +512,9 @@ Aceleração máxima (\si{\degree\per\second\squared}) & 5857 & 5703 & 115 \\
 obtidos pelo AutoTune do ArduPilot na própria aeronave simulada
 (Seção~\ref{sec:autotune}); filtros do alvo e do derivativo e limite do
 integrador, que o AutoTune não ajusta, nos padrões compilados. ``---'' indica
-filtro desabilitado.}
+filtro desabilitado. As variantes \codigo{nativo\_lqi} e
+\codigo{nativo\_filtro10} voam o mesmo controlador com outros ganhos
+(Seção~\ref{sec:controladores}).}
 \end{table}
 
 \subsection{Alocação de empuxo}
@@ -536,13 +558,20 @@ parâmetros próprios de prefixo \codigo{CC2\_} --- e \codigo{CC\_AXIS\_MASK}
 escolhe, por máscara de bits, em quais eixos a saída do controlador
 customizado substitui a do nativo. A ativação em voo é feita por uma chave do
 rádio configurada com a função 109. Na volta ao controlador nativo, o
-\textit{framework} reinicializa os filtros e os integradores do nativo a
-partir do estado atual da aeronave, para uma transição sem degrau. O
-\textit{backend} de exemplo é, ele próprio, uma segunda instância da
-estrutura nativa de ângulo e velocidade angular, com ganhos padrão iguais a
-90\,\% dos padrões compilados do nativo; por isso serve como verificação do
-procedimento de ensaio, e não como controlador alternativo. O controlador
-proposto neste trabalho é implementado como um novo \textit{backend}.
+\textit{framework} zera os integradores do PID nativo e, com
+\codigo{ATC\_RATE\_FF\_ENAB} habilitado, leva a atitude alvo e o alvo de
+velocidade angular ao estado atual da aeronave e reinicializa os filtros dos
+PIDs, para suavizar a transição; enquanto o \textit{backend} está ativo, os
+integradores do nativo são zerados a cada laço nos eixos que ele controla. O
+\textit{backend} de exemplo reproduz a arquitetura nativa de ângulo e
+velocidade angular sem as suas proteções: o controlador de ângulo é só
+proporcional, sem o controlador de raiz quadrada e sem a atenuação da guinada
+acima de \ang{30}, e o PID de velocidade angular não recebe o sinal de
+saturação da alocação. Os ganhos padrão são 90\,\% dos padrões compilados do
+nativo; por isso serve como verificação do procedimento de ensaio, e não como
+controlador alternativo. Os controladores propostos neste trabalho são
+implementados como dois novos
+\textit{backends} (Capítulo~\ref{cap:projeto}).
 
 % ----------------------------------------------------------------------
 \section{Técnicas de controle}
@@ -558,7 +587,7 @@ filtrada, porque a diferenciação amplifica o ruído de medição; o integrador
 deve ser protegido contra \textit{windup} quando o atuador satura; e a
 discretização deve preservar o comportamento contínuo na faixa de frequências
 de interesse, o que exige taxa de amostragem bem acima da banda passante da
-malha~\cite{franklin1998}. A Equação~\eqref{eq:pid-taxa} mostra como o
+malha~\cite{franklin1998,wang2020}. A Equação~\eqref{eq:pid-taxa} mostra como o
 ArduPilot trata esses três pontos, e acrescenta um termo de alimentação
 direta que reduz a carga sobre a realimentação no rastreamento.
 
@@ -566,7 +595,8 @@ direta que reduz a carga sobre a realimentação no rastreamento.
 
 Na realimentação de estados, a lei de controle $\vetor{u} = -\matriz{K}\vetor{x}$
 aloca os autovalores de malha fechada $\matriz{A} - \matriz{B}\matriz{K}$
-sempre que o par $(\matriz{A}, \matriz{B})$ é controlável~\cite{ogata2010}.
+sempre que o par $(\matriz{A}, \matriz{B})$ é
+controlável~\cite{ogata2010,fadali2009}.
 No regulador linear quadrático (LQR), em vez de especificar os autovalores, o
 projetista especifica o compromisso entre desvio dos estados e esforço de
 controle por meio do custo
@@ -579,14 +609,14 @@ controle por meio do custo
 \end{equation}
 cujo mínimo, para o sistema discreto
 $\vetor{x}_{k+1} = \matriz{A}_d\vetor{x}_k + \matriz{B}_d\vetor{u}_k$, é
-atingido pelo ganho~\cite{franklin1998}
+atingido pelo ganho~\cite{franklin1998,datta2003}
 \begin{equation}
 \matriz{K} = \left(\matriz{R}_u + \matriz{B}_d^{\mathsf{T}}\matriz{P}\matriz{B}_d\right)^{-1}
              \matriz{B}_d^{\mathsf{T}}\matriz{P}\matriz{A}_d,
 \label{eq:ganho-lqr}
 \end{equation}
-em que $\matriz{P}$ é a solução definida positiva da equação algébrica de
-Riccati discreta
+em que $\matriz{P}$ é a solução estabilizante, simétrica e semidefinida
+positiva, da equação algébrica de Riccati discreta
 \begin{equation}
 \matriz{P} = \matriz{A}_d^{\mathsf{T}}\matriz{P}\matriz{A}_d
  - \matriz{A}_d^{\mathsf{T}}\matriz{P}\matriz{B}_d
@@ -594,18 +624,23 @@ Riccati discreta
    \matriz{B}_d^{\mathsf{T}}\matriz{P}\matriz{A}_d + \matriz{Q}.
 \label{eq:riccati}
 \end{equation}
-Uma escolha inicial usual para as ponderações é normalizar cada estado e cada
-entrada pelo seu valor máximo admissível, refinando-as a seguir pela resposta
+Essa solução existe e é única quando o par $(\matriz{A}_d, \matriz{B}_d)$ é
+estabilizável e o par $(\matriz{A}_d, \matriz{Q}^{1/2})$ é
+detectável~\cite{datta2003}; nos eixos deste trabalho, as duas condições
+valem, porque a planta é controlável e $\matriz{Q}$ é diagonal positiva. Uma
+escolha inicial usual para as ponderações é normalizar cada estado e cada
+entrada pelo seu valor máximo admissível (regra de Bryson; ver
+\citeonline{hespanha2009}), refinando-as a seguir pela resposta
 de malha fechada. Com realimentação de todos os estados, o LQR de tempo
 contínuo tem margens de estabilidade garantidas em cada canal de entrada:
 tolera aumento ilimitado ou redução de até 50\,\% do ganho e tem margem de
 fase de ao menos \ang{60}~\cite{safonov1977}. Na versão discreta, com
-estimador e com os atrasos da planta real, essas garantias deixam de valer, e
-as margens devem ser verificadas.
+estimador e com os atrasos da planta real, essas garantias deixam de
+valer~\cite{doyle1978}, e as margens devem ser verificadas.
 
 A realimentação de estados pura não anula o erro em regime diante de uma
 perturbação constante, que é o caso de $\vetor{\tau}_d$ em degrau. A solução
-clássica é aumentar o vetor de estados com a integral do erro de
+clássica~\cite{young1972} é aumentar o vetor de estados com a integral do erro de
 rastreamento, $x_{I,k+1} = x_{I,k} + T_s\,(r_k - y_k)$, e projetar o LQR sobre
 o sistema aumentado, o que preserva a formulação de projeto ao custo de um
 estado a mais por eixo e da necessidade de proteção contra \textit{windup}.
@@ -613,14 +648,14 @@ estado a mais por eixo e da necessidade de proteção contra \textit{windup}.
 \subsection{Observador de estado estendido}
 
 Uma alternativa à ação integral é estimar a perturbação e cancelá-la. No
-controle por rejeição ativa de perturbações (ADRC), proposto por
-\citeonline{han2009}, todo o efeito que separa a planta de um modelo nominal
+controle por rejeição ativa de perturbações (ADRC), sistematizado em inglês
+por \citeonline{han2009}, todo o efeito que separa a planta de um modelo nominal
 simples --- perturbações externas, erros de modelo e acoplamentos --- é
 agrupado em uma \emph{perturbação total} $f$, tratada como estado adicional e
 estimada por um observador de estado estendido (ESO). Para um eixo de atitude
 com a velocidade angular medida, a dinâmica se escreve
 $\dot p = b_0\,u + f$, com $b_0$ a estimativa do ganho de controle, e um ESO
-linear de segunda ordem é
+linear de segunda ordem é~\cite{gao2003}
 \begin{equation}
 \dot{\hat p} = \hat f + b_0\,u + l_1\,(p - \hat p), \qquad
 \dot{\hat f} = l_2\,(p - \hat p),
@@ -638,21 +673,27 @@ perturbação e maior a sensibilidade ao ruído do giroscópio.
 
 \subsection{Vento médio, rajada e turbulência}
 
-O vento que atua sobre a aeronave é usualmente decomposto em três
-parcelas~\cite{beard2012}. O \emph{vento médio} é um vetor constante no
-referencial inercial; exige do controlador ação integral ou compensação
-explícita. A \emph{rajada} discreta é modelada pelo perfil de meio ciclo de
-cosseno~\cite{mil8785c},
+O vento que atua sobre a aeronave é usualmente decomposto em uma parcela
+constante e uma parcela de rajadas, modelada como processo
+estocástico~\cite{beard2012}; a rajada discreta da norma
+MIL-F-8785C~\cite{mil8785c} é acrescentada aqui como terceira parcela. O
+\emph{vento médio} é um vetor constante no referencial inercial; exige do
+controlador ação integral ou compensação explícita. A \emph{rajada} discreta
+é modelada por um perfil do tipo ``1~$-$~cosseno'', adaptado da
+norma~\cite{mil8785c},
 \begin{equation}
 v_g(t) = \frac{A_g}{2}\left[1 - \cos\left(\frac{2\pi\,(t - t_0)}{T_g}\right)\right],
 \qquad t_0 \le t \le t_0 + T_g,
 \label{eq:rajada}
 \end{equation}
-de amplitude $A_g$ e duração $T_g$ conhecidas. A \emph{turbulência} é um
+de amplitude $A_g$ e duração $T_g$ conhecidas. Na norma, a rajada sobe ao
+longo de uma distância $d_m$ e se mantém; aqui ela sobe em $T_g/2$ e volta a
+zero, o que equivale a $d_m = V\,T_g/2$ para uma aeronave à velocidade $V$.
+A \emph{turbulência} é um
 processo estocástico obtido pela filtragem de ruído branco por funções de
 conformação espectral. No modelo de Dryden, as densidades espectrais das
 componentes longitudinal e lateral, em função da frequência espacial
-$\Omega$, são~\cite{mil8785c}
+$\Omega$, são~\cite[seção~3.7.1.2]{mil8785c}
 \begin{equation}
 \Phi_u(\Omega) = \sigma_u^2\,\frac{2L_u}{\pi}\,\frac{1}{1 + (L_u\Omega)^2},
 \qquad
@@ -664,7 +705,7 @@ em que $\sigma$ é a intensidade e $L$ a escala de comprimento da turbulência,
 tabeladas em função da altitude e da severidade. Para uma aeronave à
 velocidade $V$, a frequência temporal é $\omega = \Omega V$. A componente
 longitudinal é um processo de Gauss-Markov de primeira ordem, de constante de
-tempo $L_u/V$, que admite discretização exata:
+tempo $L_u/V$, que admite discretização exata~\cite{gillespie1996}:
 \begin{equation}
 u_{k+1} = \mathrm{e}^{-V\Delta t/L_u}\,u_k
         + \sigma_u\sqrt{1 - \mathrm{e}^{-2V\Delta t/L_u}}\;w_k,
@@ -672,8 +713,8 @@ u_{k+1} = \mathrm{e}^{-V\Delta t/L_u}\,u_k
 \label{eq:dryden-discreto}
 \end{equation}
 que preserva a variância $\sigma_u^2$ para qualquer passo $\Delta t$. A
-componente lateral exige um filtro de segunda ordem, discretizado por um
-método aproximado.
+componente lateral exige um filtro de segunda ordem~\cite{beard2012},
+discretizado pela transformação de Tustin~\cite{tustin1947}.
 
 Para que os ensaios sejam reprodutíveis, o ruído branco $w_k$ deve ser gerado
 de forma determinística a partir de uma semente. Neste trabalho, ele é
@@ -681,8 +722,10 @@ obtido de um gerador congruencial linear multiplicativo,
 $x_{k+1} = 16807\,x_k \bmod (2^{31}-1)$, o padrão mínimo de
 \citeonline{park1988}, cujas amostras uniformes são convertidas em amostras
 gaussianas pela transformação de \citeonline{box1958}. A mesma transformação,
-na forma polar, é a que o SITL usa para gerar o ruído dos acelerômetros
-simulados.
+na variante polar de \citeonline{marsaglia1964}, que dispensa seno e cosseno,
+é a que o SITL usa (\codigo{Aircraft::rand\_normal}) na turbulência nativa do
+vento e no ruído dos sensores do modelo de avião; no multirrotor, o ruído dos
+sensores inerciais simulados é uniforme.
 
 \subsection{Perturbações de torque}
 
@@ -706,7 +749,7 @@ faixa de frequências.
 
 A identificação no domínio da frequência estima a resposta em frequência de
 um sistema a partir de registros de entrada e saída obtidos sob uma excitação
-de banda larga~\cite{ljung1999,tischler2012}. A excitação mais usada em
+de banda larga~\cite{ljung1999,pintelon2012,tischler2012}. A excitação mais usada em
 aeronaves é a varredura senoidal de frequência crescente (\textit{chirp}). O
 modo \textit{System Identification} do ArduCopter (modo 25) gera uma
 varredura exponencial, implementada em
@@ -724,7 +767,8 @@ A varredura exponencial dedica o mesmo tempo a cada década, o que favorece as
 baixas frequências.
 
 A resposta em frequência é estimada pela razão entre a densidade espectral
-cruzada da entrada $u$ com a saída $y$ e a densidade espectral da entrada,
+cruzada da entrada $u$ com a saída $y$ e a densidade espectral da
+entrada~\cite{carter1973,tischler2012},
 \begin{equation}
 \hat H(f) = \frac{\hat G_{uy}(f)}{\hat G_{uu}(f)},
 \qquad
@@ -741,7 +785,7 @@ não linearidade ou excitação insuficiente naquela frequência, e
 elevada (da ordem de 0,6 ou mais) no ajuste de modelos paramétricos. O ajuste
 de uma função de transferência a $\hat H(f)$ por mínimos quadrados fornece o
 modelo identificado, comparado ao modelo analítico
-\eqref{eq:duplo-integrador}~\cite{ljung1999}.
+\eqref{eq:duplo-integrador}~\cite{ljung1999,pintelon2012}.
 
 % ----------------------------------------------------------------------
 \section{Simulação \textit{software-in-the-loop}}
@@ -797,7 +841,10 @@ arfagem, por meio do produto de duas velocidades angulares, e é desprezível
 perto do pairado; a consequência é que a planta simulada está mais próxima do
 modelo linear \eqref{eq:duplo-integrador} do que uma aeronave real estaria. O
 vento (\codigo{SIM\_WIND\_*}) entra no modelo pela velocidade relativa do ar,
-como força de arrasto no centro de massa, sem braço e, portanto, sem momento:
+por dois caminhos: o arrasto de corpo, aplicado no centro de massa e sem
+momento, e o arrasto de momento de cada rotor, aplicado na posição do rotor e
+proporcional à raiz do seu empuxo. Com empuxos iguais, os momentos deste
+último se cancelam, e com empuxos diferentes sobra um momento pequeno: o vento
 move a aeronave, mas praticamente não perturba a atitude. Essa é a razão pela
 qual os ensaios de rejeição de perturbação na malha de atitude usam
 perturbações de torque.
@@ -807,7 +854,8 @@ perturbações de torque.
 Os ensaios usam o modelo de quadrirrotor X padrão do SITL, cujos parâmetros
 estão na Tabela~\ref{tab:aeronave}. Com eles, a alavanca de rolagem e arfagem
 é $\ell_{xy} = \SI{0.247}{\metre}$, enquanto a razão entre torque de reação e
-empuxo no pairado é $\kappa = \SI{0.0096}{\metre}$. Como o torque de reação
+empuxo no pairado é $\kappa = \SI{0.0096}{\metre}$, nas condições de
+referência do modelo. Como o torque de reação
 cresce com o comando, a razão que vale para \emph{variações} de empuxo é
 maior, cerca de \SI{0.0165}{\metre} (Seção~\ref{sec:motor-sitl}); ainda
 assim, um mesmo padrão de diferença de empuxo produz um torque de guinada
