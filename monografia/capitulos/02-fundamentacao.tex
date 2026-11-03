@@ -13,7 +13,7 @@ Seção~\ref{sec:atitude} define os referenciais e as representações de atitud
 as Seções~\ref{sec:modelo} e~\ref{sec:linearizacao} derivam o modelo dinâmico
 do quadrirrotor e sua aproximação linear em torno do voo pairado. A
 Seção~\ref{sec:ardupilot} descreve como o ArduPilot estima a atitude e a
-controla, e onde o controlador proposto se insere nessa cadeia. As
+controla, e onde os controladores propostos se inserem nessa cadeia. As
 Seções~\ref{sec:tecnicas} a~\ref{sec:identificacao} tratam das técnicas de
 controle, dos modelos de perturbação e da identificação no domínio da
 frequência, e a Seção~\ref{sec:sitl} descreve o simulador em que os ensaios
@@ -642,7 +642,8 @@ A realimentação de estados pura não anula o erro em regime diante de uma
 perturbação constante, que é o caso de $\vetor{\tau}_d$ em degrau. A solução
 clássica~\cite{young1972} é aumentar o vetor de estados com a integral do erro de
 rastreamento, $x_{I,k+1} = x_{I,k} + T_s\,(r_k - y_k)$, e projetar o LQR sobre
-o sistema aumentado, o que preserva a formulação de projeto ao custo de um
+o sistema aumentado, chamado LQI (\textit{linear quadratic integral}), o que
+preserva a formulação de projeto ao custo de um
 estado a mais por eixo e da necessidade de proteção contra \textit{windup}.
 
 \subsection{Observador de estado estendido}
@@ -666,6 +667,91 @@ controle $u = (u_0 - \hat f)/b_0$ reduz o eixo, dentro da banda do observador,
 ao duplo integrador nominal, sobre o qual $u_0$ é projetado. O compromisso
 central está na banda do observador: quanto maior, mais rápida a estimativa da
 perturbação e maior a sensibilidade ao ruído do giroscópio.
+
+\subsection{Filtro de Kalman e controle LQG}
+\label{sec:lqg}
+
+A lei $\vetor{u} = -\matriz{K}\vetor{x}$ supõe todos os estados medidos sem
+erro. Quando parte deles não é medida, ou é medida com ruído e por um caminho
+com dinâmica própria, o estado é estimado a partir de um modelo. Seja o
+sistema discreto
+\begin{equation}
+\vetor{x}_{k+1} = \matriz{A}_d\vetor{x}_k + \matriz{B}_d\vetor{u}_k
+                + \matriz{G}\,\vetor{w}_k,
+\qquad
+\vetor{y}_k = \matriz{C}\vetor{x}_k + \vetor{v}_k,
+\label{eq:modelo-estocastico}
+\end{equation}
+com $\vetor{w}_k$ e $\vetor{v}_k$ ruídos brancos independentes, de
+covariâncias $\matriz{W}$ e $\matriz{V}$. O filtro de
+Kalman~\cite{kalman1960b} corrige a predição do modelo pela inovação, a
+diferença entre a medida e a sua predição:
+\begin{equation}
+\hat{\vetor{x}}_{k|k} = \hat{\vetor{x}}_{k|k-1}
+    + \matriz{L}\left(\vetor{y}_k - \matriz{C}\,\hat{\vetor{x}}_{k|k-1}\right),
+\qquad
+\hat{\vetor{x}}_{k+1|k} = \matriz{A}_d\hat{\vetor{x}}_{k|k} + \matriz{B}_d\vetor{u}_k.
+\label{eq:kalman}
+\end{equation}
+Em regime, o ganho $\matriz{L}$ é constante e sai de uma equação de Riccati
+com a forma de~\eqref{eq:riccati}, com $\matriz{A}_d^{\mathsf{T}}$ e
+$\matriz{C}^{\mathsf{T}}$ no lugar de $\matriz{A}_d$ e $\matriz{B}_d$ e com as
+covariâncias $\matriz{G}\matriz{W}\matriz{G}^{\mathsf{T}}$ e $\matriz{V}$ no
+lugar das ponderações: é a dualidade entre o filtro e o
+regulador~\cite{kalman1960b}. Como no ESO, o vetor de estados pode ser
+estendido com a perturbação, modelada como passeio aleatório, que o filtro
+passa a estimar; e pode ser estendido também com a dinâmica do caminho de
+medida --- filtros, atrasos e polarizações dos sensores ---, que o ESO
+de~\eqref{eq:eso} ignora. É o que faz o controlador LQG deste trabalho
+(Capítulo~\ref{cap:projeto}).
+
+O controlador LQG (\textit{linear quadratic Gaussian}) aplica o ganho do LQR
+ao estado estimado, $\vetor{u}_k = -\matriz{K}\hat{\vetor{x}}_{k|k}$, e trata
+o projeto como um problema estocástico de regulação~\cite{athans1971}. Pelo
+princípio da separação~\cite{joseph1961}~\cite[seção~8.2]{anderson1989}, os
+autovalores da malha fechada são a união dos autovalores da realimentação de
+estados, $\matriz{A}_d - \matriz{B}_d\matriz{K}$, com os do erro de
+estimação, e $\matriz{K}$ e $\matriz{L}$ podem ser projetados separadamente.
+A separação vale para a estabilidade nominal, mas não para a robustez: as
+margens garantidas do LQR com realimentação de todos os estados não se
+transferem ao LQG, cujas margens dependem do projeto e precisam ser
+verificadas~\cite{doyle1978}. Uma forma de recuperá-las é a recuperação da
+malha (LTR, \textit{loop transfer recovery}): aumentando a intensidade do
+ruído fictício de processo na entrada da planta, a função de transferência de
+malha na entrada da planta tende à do LQR com realimentação de todos os
+estados~\cite{doyle1979,doyle1981}~\cite[seção~8.4]{anderson1989}. A
+recuperação exige planta de fase mínima e, em tempo discreto e com atraso na
+medida, pode ser incompleta; o seu preço é um estimador mais rápido, que deixa
+passar mais ruído de medida para o esforço de controle
+(Capítulo~\ref{cap:projeto}).
+
+\subsection{Limite de desempenho: a integral de Bode}
+\label{sec:bode}
+
+Seja $L(z)$ o ganho de malha aberta de um eixo, que inclui o controlador e a
+planta $P(z)$, e $S(z) = 1/[1 + L(z)]$ a função de sensibilidade. Um torque
+de perturbação que entra na planta chega ao ângulo por $P(z)\,S(z)$, a
+sensibilidade à perturbação na entrada da planta~\cite{landau2011}, e não por
+$S(z)$: é essa a grandeza que as varreduras de torque deste trabalho estimam
+(Seção~\ref{sec:identificacao}). Para $L(z)$ estritamente própria e sem polos
+fora do círculo unitário, como nos eixos deste trabalho, a sensibilidade em
+tempo discreto obedece a~\cite{iglesias2001}
+\begin{equation}
+\frac{1}{\pi}\int_0^{\pi}\ln\left|S\!\left(\mathrm{e}^{\mathrm{j}\vartheta}\right)\right|
+\mathrm{d}\vartheta = 0,
+\qquad \vartheta = \omega\,T_s,
+\label{eq:bode}
+\end{equation}
+versão discreta da integral de sensibilidade de
+\citeonline{bode1945}; com polos instáveis em malha aberta, o lado direito
+passa a ser positivo~\cite{freudenberg1985}. A atenuação da perturbação numa
+faixa de frequências ($|S| < 1$) é paga com amplificação em outra
+($|S| > 1$), em áreas iguais de $\ln|S|$: é o efeito conhecido como colchão
+d'água, que nenhuma lei de controle linear e invariante no tempo contorna.
+Como a planta $P$ é a mesma para todos os controladores, a diferença entre os
+$\ln|P\,S|$ medidos com dois controladores é a diferença entre os seus
+$\ln|S|$, e a comparação das varreduras de torque herda a
+restrição~\eqref{eq:bode}.
 
 % ----------------------------------------------------------------------
 \section{Modelos de perturbação}
@@ -720,7 +806,8 @@ Para que os ensaios sejam reprodutíveis, o ruído branco $w_k$ deve ser gerado
 de forma determinística a partir de uma semente. Neste trabalho, ele é
 obtido de um gerador congruencial linear multiplicativo,
 $x_{k+1} = 16807\,x_k \bmod (2^{31}-1)$, o padrão mínimo de
-\citeonline{park1988}, cujas amostras uniformes são convertidas em amostras
+\citeonline{park1988}, calculado sem estouro em aritmética de 32 bits pelo
+método de \citeonline{schrage1979}, cujas amostras uniformes são convertidas em amostras
 gaussianas pela transformação de \citeonline{box1958}. A mesma transformação,
 na variante polar de \citeonline{marsaglia1964}, que dispensa seno e cosseno,
 é a que o SITL usa (\codigo{Aircraft::rand\_normal}) na turbulência nativa do
@@ -736,12 +823,18 @@ centro de massa, pelo \textit{blade flapping} e pela incidência desigual nos
 rotores --- e são esses momentos que exercitam a malha de atitude. Para
 avaliar a malha de atitude de forma direta e controlada, empregam-se
 perturbações aditivas de torque, isto é, o termo $\vetor{\tau}_d$ de
-\eqref{eq:rotacao-euler}, em três formas: o \emph{pulso retangular}, cujo
+\eqref{eq:rotacao-euler}, em quatro formas: o \emph{pulso retangular}, cujo
 impulso angular é conhecido de antemão e que mede a recuperação após um
 deslocamento; o \emph{degrau sustentado}, que expõe o erro em regime e a
-suficiência da ação integral; e a \emph{varredura em frequência}, que
-caracteriza a sensibilidade da malha fechada à perturbação ao longo de uma
-faixa de frequências.
+suficiência da ação integral; a \emph{varredura em frequência}, que
+caracteriza, ao longo de uma faixa de frequências, a resposta do ângulo ao
+torque de perturbação, isto é, a sensibilidade à perturbação na entrada da
+planta (Seção~\ref{sec:bode}); e o \emph{torque estocástico}, um processo de
+Gauss-Markov de primeira ordem em cada eixo --- o processo de
+Ornstein-Uhlenbeck~\cite{uhlenbeck1930} ---, discretizado exatamente como
+em~\eqref{eq:dryden-discreto}~\cite{gillespie1996}, que representa uma
+perturbação contínua de banda limitada e é avaliado pelo erro quadrático
+médio.
 
 % ----------------------------------------------------------------------
 \section{Identificação de sistemas no domínio da frequência}
@@ -848,6 +941,33 @@ proporcional à raiz do seu empuxo. Com empuxos iguais, os momentos deste
 move a aeronave, mas praticamente não perturba a atitude. Essa é a razão pela
 qual os ensaios de rejeição de perturbação na malha de atitude usam
 perturbações de torque.
+
+\subsection{Sensores inerciais simulados}
+\label{sec:sensores-sitl}
+
+Com \codigo{INS\_FAST\_SAMPLE} ligado, como nos ensaios, o giroscópio
+simulado é amostrado oito vezes por leitura, e a leitura entregue ao firmware
+é a média das oito sub-amostras (\codigo{AP\_InertialSensor\_SITL.cpp}). A
+cada sub-amostra, o SITL soma à velocidade angular verdadeira um ruído
+uniforme de $\pm\SI{0.04}{\degree\per\second}$, sempre presente, e, com os
+motores ligados, um segundo ruído uniforme, de amplitude igual a
+\codigo{SIM\_GYR1\_RND} vezes o acelerador. Com a média, um ruído uniforme de
+amplitude $A$ por sub-amostra chega ao firmware com desvio-padrão
+$A/\sqrt{3 \cdot 8}$: o ruído mínimo fica da ordem de
+\SI{0.01}{\degree\per\second}, e o giroscópio dos ensaios com
+\codigo{SIM\_GYR1\_RND} nulo é, assim, praticamente sem ruído. Há ainda uma
+deriva lenta, de \SI{0.05}{\degree\per\second} por minuto
+(\codigo{SIM\_DRIFT\_SPEED}), que o EKF3 estima como polarização.
+
+O filtro passa-baixas de \SI{20}{\hertz} (\codigo{INS\_GYRO\_FILTER}) só se
+aplica à velocidade angular entregue aos controladores. Os incrementos de
+ângulo que alimentam o estimador de atitude são integrados do giroscópio
+antes do filtro (\codigo{AP\_InertialSensor\_Backend.cpp}): em horizontes
+curtos, o ângulo estimado acompanha a integral do giroscópio sem o atraso do
+filtro, mas com o ruído integrado, e chega ao controlador com um laço de
+atraso (Seção~\ref{sec:instrumentacao}). O ruído, a média das sub-amostras e
+o ângulo calculado sem o filtro definem o caminho de medida que o estimador do
+controlador LQG modela (Capítulo~\ref{cap:projeto}).
 
 \subsection{Aeronave simulada}
 
