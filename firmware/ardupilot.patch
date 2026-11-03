@@ -1,0 +1,184 @@
+diff --git a/libraries/AC_CustomControl/AC_CustomControl.cpp b/libraries/AC_CustomControl/AC_CustomControl.cpp
+index e4c77513b8..c9dba6cd19 100644
+--- a/libraries/AC_CustomControl/AC_CustomControl.cpp
++++ b/libraries/AC_CustomControl/AC_CustomControl.cpp
+@@ -7,6 +7,8 @@
+ #include "AC_CustomControl_Backend.h"
+ // #include "AC_CustomControl_Empty.h"
+ #include "AC_CustomControl_PID.h"
++#include "AC_CustomControl_LQR.h"
++#include "AC_CustomControl_LQG.h"
+ #include <GCS_MAVLink/GCS.h>
+ #include <AP_Logger/AP_Logger.h>
+ #include <AP_Scheduler/AP_Scheduler.h>
+@@ -16,7 +18,7 @@ const AP_Param::GroupInfo AC_CustomControl::var_info[] = {
+     // @Param: _TYPE
+     // @DisplayName: Custom control type
+     // @Description: Custom control type to be used
+-    // @Values: 0:None, 1:Empty, 2:PID
++    // @Values: 0:None, 1:Empty, 2:PID, 3:LQR, 4:LQG
+     // @RebootRequired: True
+     // @User: Advanced
+     AP_GROUPINFO_FLAGS("_TYPE", 1, AC_CustomControl, _controller_type, 0, AP_PARAM_FLAG_ENABLE),
+@@ -35,6 +37,14 @@ const AP_Param::GroupInfo AC_CustomControl::var_info[] = {
+     // @Path: AC_CustomControl_PID.cpp
+     AP_SUBGROUPVARPTR(_backend, "2_", 7, AC_CustomControl, _backend_var_info[1]),
+ 
++    // @Group: 3_
++    // @Path: AC_CustomControl_LQR.cpp
++    AP_SUBGROUPVARPTR(_backend, "3_", 8, AC_CustomControl, _backend_var_info[2]),
++
++    // @Group: 4_
++    // @Path: AC_CustomControl_LQG.cpp
++    AP_SUBGROUPVARPTR(_backend, "4_", 9, AC_CustomControl, _backend_var_info[3]),
++
+     AP_GROUPEND
+ };
+ 
+@@ -65,6 +75,14 @@ void AC_CustomControl::init(void)
+             _backend = NEW_NOTHROW AC_CustomControl_PID(*this, _ahrs, _att_control, _motors, _dt);
+             _backend_var_info[get_type()] = AC_CustomControl_PID::var_info;
+             break;
++        case CustomControlType::CONT_LQR:
++            _backend = NEW_NOTHROW AC_CustomControl_LQR(*this, _ahrs, _att_control, _motors, _dt);
++            _backend_var_info[get_type()] = AC_CustomControl_LQR::var_info;
++            break;
++        case CustomControlType::CONT_LQG:
++            _backend = NEW_NOTHROW AC_CustomControl_LQG(*this, _ahrs, _att_control, _motors, _dt);
++            _backend_var_info[get_type()] = AC_CustomControl_LQG::var_info;
++            break;
+         default:
+             return;
+     }
+diff --git a/libraries/AC_CustomControl/AC_CustomControl.h b/libraries/AC_CustomControl/AC_CustomControl.h
+index 8be2e6cd52..b152bc887e 100644
+--- a/libraries/AC_CustomControl/AC_CustomControl.h
++++ b/libraries/AC_CustomControl/AC_CustomControl.h
+@@ -14,7 +14,7 @@
+ #include <AP_Motors/AP_MotorsMulticopter.h>
+ 
+ #ifndef CUSTOMCONTROL_MAX_TYPES
+-#define CUSTOMCONTROL_MAX_TYPES 2
++#define CUSTOMCONTROL_MAX_TYPES 4
+ #endif
+ 
+ class AC_CustomControl_Backend;
+@@ -49,6 +49,8 @@ protected:
+         CONT_NONE            = 0,
+         CONT_EMPTY           = 1,
+         CONT_PID             = 2,
++        CONT_LQR             = 3,
++        CONT_LQG             = 4,
+     };            // controller that should be used     
+ 
+     enum class  CustomControlOption {
+diff --git a/libraries/AC_CustomControl/AC_CustomControl_PID.cpp b/libraries/AC_CustomControl/AC_CustomControl_PID.cpp
+index a429aa39e8..20175dc26c 100644
+--- a/libraries/AC_CustomControl/AC_CustomControl_PID.cpp
++++ b/libraries/AC_CustomControl/AC_CustomControl_PID.cpp
+@@ -315,6 +315,31 @@ const AP_Param::GroupInfo AC_CustomControl_PID::var_info[] = {
+ 
+     AP_SUBGROUPINFO(_pid_atti_rate_yaw, "RAT_YAW_", 6, AC_CustomControl_PID, AC_PID),
+ 
++    // @Param: FF
++    // @DisplayName: Alimentacao direta pela inversao do modelo
++    // @Description: Soma u_ff = (a_t + FF_A*w_t)/FF_B, calculada so da trajetoria do alvo (velocidade e aceleracao alvo). Diferente do FF/D_FF do AC_PID, que multiplicam o alvo de taxa inteiro
++    // @Values: 0:Desligada, 1:Ligada
++    // @User: Advanced
++    AP_GROUPINFO("FF", 7, AC_CustomControl_PID, _ff, 0),
++
++    // @Param: FF_A
++    // @DisplayName: Polo da planta para a alimentacao direta
++    // @Units: 1/s
++    // @User: Advanced
++    AP_GROUPINFO("FF_A", 8, AC_CustomControl_PID, _ff_a, 0),
++
++    // @Param: FF_B_X
++    // @DisplayName: Eficacia de controle em rolagem para a alimentacao direta
++    // @Units: rad/s/s
++    // @Param: FF_B_Y
++    // @DisplayName: Eficacia de controle em arfagem para a alimentacao direta
++    // @Units: rad/s/s
++    // @Param: FF_B_Z
++    // @DisplayName: Eficacia de controle em guinada para a alimentacao direta
++    // @Units: rad/s/s
++    // @User: Advanced
++    AP_GROUPINFO("FF_B", 9, AC_CustomControl_PID, _ff_b, 0),
++
+     AP_GROUPEND
+ };
+ 
+@@ -329,6 +354,7 @@ AC_CustomControl_PID::AC_CustomControl_PID(AC_CustomControl& frontend, AP_AHRS_V
+ {
+     _dt = dt;
+     AP_Param::setup_object_defaults(this, var_info);
++    _ff_primeiro = true;
+ }
+ 
+ Vector3f AC_CustomControl_PID::update()
+@@ -378,6 +404,22 @@ Vector3f AC_CustomControl_PID::update()
+     motor_out.y = _pid_atti_rate_pitch.update_all(target_rate[1], gyro_latest[1], _dt, false);
+     motor_out.z = _pid_atti_rate_yaw.update_all(target_rate[2], gyro_latest[2], _dt, false);
+ 
++    // alimentacao direta pura (TCC), so da trajetoria do alvo
++    if (_ff > 0) {
++        if (_ff_primeiro) {
++            _w_t_ant = ang_vel_body_feedforward;
++            _ff_primeiro = false;
++        }
++        for (uint8_t i = 0; i < 3; i++) {
++            const float b = _ff_b.get()[i];
++            if (is_positive(b)) {
++                const float a_t = (ang_vel_body_feedforward[i] - _w_t_ant[i]) / _dt;
++                motor_out[i] += (a_t + _ff_a * ang_vel_body_feedforward[i]) / b;
++            }
++        }
++        _w_t_ant = ang_vel_body_feedforward;
++    }
++
+     return motor_out;
+ }
+ 
+@@ -387,6 +429,7 @@ Vector3f AC_CustomControl_PID::update()
+ // This is done intentionally to demonstrate switch over performance of two exact controller with different reset handling.
+ void AC_CustomControl_PID::reset(void)
+ {
++    _ff_primeiro = true;
+     _pid_atti_rate_roll.reset_I();
+     _pid_atti_rate_pitch.reset_I();
+     _pid_atti_rate_yaw.reset_I();
+diff --git a/libraries/AC_CustomControl/AC_CustomControl_PID.h b/libraries/AC_CustomControl/AC_CustomControl_PID.h
+index f9ae4568e0..bb08a556e8 100644
+--- a/libraries/AC_CustomControl/AC_CustomControl_PID.h
++++ b/libraries/AC_CustomControl/AC_CustomControl_PID.h
+@@ -38,6 +38,14 @@ protected:
+     AC_PID _pid_atti_rate_roll;
+     AC_PID _pid_atti_rate_pitch;
+     AC_PID _pid_atti_rate_yaw;
++
++    // alimentacao direta pura (TCC): u_ff = (a_t + a*w_t)/b, calculada so da
++    // trajetoria do alvo, a mesma do AC_CustomControl_LQR. Desligada por padrao.
++    AP_Int8     _ff;
++    AP_Float    _ff_a;
++    AP_Vector3f _ff_b;
++    Vector3f    _w_t_ant;
++    bool        _ff_primeiro;
+ };
+ 
+ #endif  // AP_COPTER_CUSTOMCONTROL_PID_ENABLED
+diff --git a/libraries/AC_CustomControl/AC_CustomControl_config.h b/libraries/AC_CustomControl/AC_CustomControl_config.h
+index a28ebe788e..4f5eed26b9 100644
+--- a/libraries/AC_CustomControl/AC_CustomControl_config.h
++++ b/libraries/AC_CustomControl/AC_CustomControl_config.h
+@@ -17,3 +17,11 @@
+ #ifndef AP_COPTER_CUSTOMCONTROL_PID_ENABLED
+ #define AP_COPTER_CUSTOMCONTROL_PID_ENABLED AP_COPTER_CUSTOMCONTROL_BACKEND_DEFAULT_ENABLED
+ #endif
++
++#ifndef AP_COPTER_CUSTOMCONTROL_LQR_ENABLED
++#define AP_COPTER_CUSTOMCONTROL_LQR_ENABLED AP_COPTER_CUSTOMCONTROL_BACKEND_DEFAULT_ENABLED
++#endif
++
++#ifndef AP_COPTER_CUSTOMCONTROL_LQG_ENABLED
++#define AP_COPTER_CUSTOMCONTROL_LQG_ENABLED AP_COPTER_CUSTOMCONTROL_BACKEND_DEFAULT_ENABLED
++#endif

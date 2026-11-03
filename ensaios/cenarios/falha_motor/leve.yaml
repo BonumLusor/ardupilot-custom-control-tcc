@@ -1,0 +1,42 @@
+# Falha parcial de motor (bit 256 do vento.lua, WND_EVT = 1): em t = 6 s o
+# injetor poe SIM_ENGINE_FAIL = 1 (motor 1, dianteiro direito, CCW) e
+# SIM_ENGINE_MUL = WND_EVK, que escala PWM - 1000 desse motor (SITL_State); e
+# desfaz em t = 46 s, antes do pouso. O efeito e nao linear: menos empuxo nesse
+# motor, logo momento sustentado em rolagem e arfagem, e menos torque de reacao,
+# logo momento em guinada. Os integradores, o ESO e o LQG tem de segura-lo.
+nome: "Falha parcial do motor 1 — SIM_ENGINE_MUL 0,95"
+descricao: >
+  O motor 1 passa a 0,95 do comando (PWM - 1000) em t = 6 s (~-10 % de empuxo no motor 1, ~8 rad/s2 em rolagem e arfagem),
+  por 40 s, com a aeronave nivelada e sem vento.
+
+vento:
+  WND_MODE: 257
+  WND_SPD: 0
+  WND_DIR: 0
+  WND_DIRZ: 0
+  WND_GA: 0
+  WND_GT0: 0
+  WND_GDUR: 3
+  WND_TSIG: 0
+  WND_TLU: 200
+  WND_SEED: 1
+  WND_T0: 8
+  WND_TQX: 0
+  WND_TQY: 0
+  WND_TQZ: 0
+  WND_TQT0: 6
+  WND_TQDUR: 40
+  WND_TQF0: 0.2
+  WND_TQF1: 10.0
+  WND_EVT: 1         # motor fraco
+  WND_EVM: 1         # mascara: motor 1
+  WND_EVK: 0.95      # SIM_ENGINE_MUL
+
+voo:
+  altitude_m: 15
+  espera_apos_decolagem_s: 6
+  degrau_roll_deg: 0
+  degrau_pitch_deg: 0
+  degrau_yaw_deg: 0
+  t_degrau_s: 0
+  duracao_s: 50

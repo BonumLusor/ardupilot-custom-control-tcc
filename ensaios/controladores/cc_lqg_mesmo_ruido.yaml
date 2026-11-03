@@ -1,0 +1,152 @@
+# GERADO por modelagem/projeto.py --escrever-yaml a partir do modelo de
+# ensaios/resultados/vento/rajada/nativo/2026-10-27_214349 (a = 1.988 1/s, b = 430 / 430 / 14.37 rad/s2,
+# BAT.VoltR = 12.44 V). Para mudar os ganhos, mude o projeto e gere de novo.
+nome: AC_CustomControl — LQG, ganho de ruido do nativo
+slug: cc_lqg_mesmo_ruido
+descricao: 'O LQG de cc_lqg.yaml projetado para o ganho real sobre o nativo (o portao do plano):
+  ruido no esforco nao maior que o do nativo, margem de fase e margem com a planta alterada
+  nao menores, nada pior que o nativo nas metricas de torque, e a menor metrica primaria (pico
+  do pulso em rolagem e arfagem, pico do degrau de torque em guinada). Difere do cc_lqg nos
+  tres eixos.'
+params:
+  CC_TYPE: 4
+  CC_AXIS_MASK: 7
+  RC6_OPTION: 109
+reboot_apos_params: true
+
+# O backend so assume com a chave auxiliar em HIGH (RC6_OPTION 109);
+# o run_ensaio.py forca o canal, e espera_cc_tipo confere no log.
+rc_override:
+  6: 2000
+
+# Os CC4_* so existem com o backend instanciado (CC_TYPE 4 + reboot): o
+# run_ensaio.py os aplica depois do reboot. O ATC_ACC_*_MAX e o do nativo.
+ganhos:
+  CC4_FF: 1
+  CC4_A: 1.98813
+  CC4_FLTW: 20.0
+  CC4_TAUC_X: 0.3
+  CC4_TAUR_X: 0.3
+  CC4_WMAN_X: 0.0
+  CC4_B_X: 430.023
+  CC4_KTH_X: 0.554847
+  CC4_KW_X: 0.0584257
+  CC4_L1T_X: 1.95088811
+  CC4_L1W_X: 0.0224612068
+  CC4_L2T_X: 25.9200132
+  CC4_L2W_X: 2.69968865
+  CC4_L3T_X: 0.307794283
+  CC4_L3W_X: 0.996730726
+  CC4_L4T_X: -5875.53806
+  CC4_L4W_X: 550.241411
+  CC4_L5T_X: 1085.93086
+  CC4_L5W_X: -127.731925
+  CC4_L6T_X: 2.15629948
+  CC4_L6W_X: -0.0238342628
+  CC4_L7T_X: 0.307777952
+  CC4_L7W_X: -0.0032687666
+  CC4_L8T_X: 0.999987296
+  CC4_L8W_X: 1.63307761e-07
+  CC4_LR1T_X: 1.95088811
+  CC4_LR1W_X: 0.0224612068
+  CC4_LR2T_X: 25.9200132
+  CC4_LR2W_X: 2.69968865
+  CC4_LR3T_X: 0.307794283
+  CC4_LR3W_X: 0.996730726
+  CC4_LR4T_X: -5875.53806
+  CC4_LR4W_X: 550.241411
+  CC4_LR5T_X: 1085.93086
+  CC4_LR5W_X: -127.731925
+  CC4_LR6T_X: 2.15629948
+  CC4_LR6W_X: -0.0238342628
+  CC4_LR7T_X: 0.307777952
+  CC4_LR7W_X: -0.0032687666
+  CC4_LR8T_X: 0.999987296
+  CC4_LR8W_X: 1.63307761e-07
+  CC4_TAUC_Y: 0.3
+  CC4_TAUR_Y: 0.3
+  CC4_WMAN_Y: 0.0
+  CC4_B_Y: 430.023
+  CC4_KTH_Y: 0.557581
+  CC4_KW_Y: 0.0498315
+  CC4_L1T_Y: 1.95088811
+  CC4_L1W_Y: 0.0224612068
+  CC4_L2T_Y: 25.9200132
+  CC4_L2W_Y: 2.69968865
+  CC4_L3T_Y: 0.307794283
+  CC4_L3W_Y: 0.996730726
+  CC4_L4T_Y: -5875.53806
+  CC4_L4W_Y: 550.241411
+  CC4_L5T_Y: 1085.93086
+  CC4_L5W_Y: -127.731925
+  CC4_L6T_Y: 2.15629948
+  CC4_L6W_Y: -0.0238342628
+  CC4_L7T_Y: 0.307777952
+  CC4_L7W_Y: -0.0032687666
+  CC4_L8T_Y: 0.999987296
+  CC4_L8W_Y: 1.63307761e-07
+  CC4_LR1T_Y: 1.95088811
+  CC4_LR1W_Y: 0.0224612068
+  CC4_LR2T_Y: 25.9200132
+  CC4_LR2W_Y: 2.69968865
+  CC4_LR3T_Y: 0.307794283
+  CC4_LR3W_Y: 0.996730726
+  CC4_LR4T_Y: -5875.53806
+  CC4_LR4W_Y: 550.241411
+  CC4_LR5T_Y: 1085.93086
+  CC4_LR5W_Y: -127.731925
+  CC4_LR6T_Y: 2.15629948
+  CC4_LR6W_Y: -0.0238342628
+  CC4_LR7T_Y: 0.307777952
+  CC4_LR7W_Y: -0.0032687666
+  CC4_LR8T_Y: 0.999987296
+  CC4_LR8W_Y: 1.63307761e-07
+  CC4_TAUC_Z: 2.0
+  CC4_TAUR_Z: 0.3
+  CC4_WMAN_Z: 5.0
+  CC4_B_Z: 14.3669
+  CC4_KTH_Z: 0.361384
+  CC4_KW_Z: 0.151427
+  CC4_L1T_Z: 1.33657789
+  CC4_L1W_Z: 0.00849639342
+  CC4_L2T_Z: 15.0419376
+  CC4_L2W_Z: 0.0854274078
+  CC4_L3T_Z: 0.286763477
+  CC4_L3W_Z: 0.993871271
+  CC4_L4T_Z: -6621.06899
+  CC4_L4W_Z: 529.519509
+  CC4_L5T_Z: -82.5743702
+  CC4_L5W_Z: -1.22359698
+  CC4_L6T_Z: 1.69253244
+  CC4_L6W_Z: -0.0368820022
+  CC4_L7T_Z: 0.286745792
+  CC4_L7W_Z: -0.00612815619
+  CC4_L8T_Z: 0.999985566
+  CC4_L8W_Z: 1.76850511e-07
+  CC4_LR1T_Z: 0.868724295
+  CC4_LR1W_Z: -0.00376574972
+  CC4_LR2T_Z: 14.629279
+  CC4_LR2W_Z: -0.0672451718
+  CC4_LR3T_Z: 0.168034545
+  CC4_LR3W_Z: 0.99345063
+  CC4_LR4T_Z: -6337.90829
+  CC4_LR4W_Z: 525.33466
+  CC4_LR5T_Z: -136.563819
+  CC4_LR5W_Z: 0.342377123
+  CC4_LR6T_Z: 1.16295932
+  CC4_LR6W_Z: -0.0482363559
+  CC4_LR7T_Z: 0.168017603
+  CC4_LR7W_Z: -0.00654880046
+  CC4_LR8T_Z: 0.999986345
+  CC4_LR8W_Z: 1.69424905e-07
+  CC4_TMAN: 1.0
+  ATC_ACC_R_MAX: 5856.644531
+  ATC_ACC_P_MAX: 5703.29248
+  ATC_ACC_Y_MAX: 115.243027
+ganhos_de_interesse:
+- CC4_KTH_Z
+- CC4_KW_Z
+- CC4_L5T_Z
+- CC4_L5W_Z
+msg_pid: PIDR
+espera_cc_tipo: 4

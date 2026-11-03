@@ -1,0 +1,44 @@
+# Ganhos do AutoTune de 2026-10-31_172825, com INS_GYRO_FILTER = 10 (autotune.py --param).
+nome: PID nativo (giroscopio a 10 Hz)
+slug: nativo_filtro10
+descricao: 'A cascata nativa com o giroscopio filtrado a 10 Hz (INS_GYRO_FILTER), ressintonizada
+  pelo AutoTune nesse mesmo veiculo: a referencia justa do teste do filtro (Etapa 2d).'
+params:
+  CC_TYPE: 0
+  INS_GYRO_FILTER: 10.0
+reboot_apos_params: true
+ganhos:
+  ATC_RAT_RLL_P: 0.051587
+  ATC_RAT_RLL_I: 0.051587
+  ATC_RAT_RLL_D: 0.000375
+  ATC_RAT_PIT_P: 0.049131
+  ATC_RAT_PIT_I: 0.049131
+  ATC_RAT_PIT_D: 0.000375
+  ATC_RAT_YAW_P: 0.536095
+  ATC_RAT_YAW_I: 0.053609
+  ATC_RAT_YAW_D: 0.0
+  ATC_RAT_YAW_FLTE: 1.0
+  ATC_ANG_RLL_P: 17.220308
+  ATC_ANG_PIT_P: 17.220308
+  ATC_ANG_YAW_P: 2.180122
+  ATC_ACC_R_MAX: 3035.307373
+  ATC_ACC_P_MAX: 2892.155273
+  ATC_ACC_Y_MAX: 120.858704
+ganhos_de_interesse:
+- ATC_RAT_RLL_P
+- ATC_RAT_RLL_I
+- ATC_ANG_RLL_P
+- ATC_RAT_YAW_P
+msg_pid: PIDR
+espera_cc_tipo: 0
+
+# So os cenarios do teste do filtro (projeto.CENARIOS_VARIANTE).
+cenarios:
+- rolagem/nominal
+- rolagem/torque_pulso
+- rolagem/torque_degrau
+- guinada/nominal
+- guinada/torque_pulso
+- guinada/torque_degrau
+- rolagem_arfagem_guinada/torque_estocastico
+- ruido/rnd20/torque_pulso

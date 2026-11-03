@@ -1,0 +1,44 @@
+# Erro de modelo: o veiculo muda, os ganhos ficam os do nominal (todos os
+# controladores). A massa do SITL nao serve para isso: a propulsao e refeita a
+# partir dela e a inercia escala junto, entao a dinamica angular quase nao muda
+# (SIM_Frame.cpp). Esta variante: SIM_FRM_HOVR_THR 0,50 (padrao 0,39): perda uniforme de empuxo, como uma carga
+# util. b em rolagem e arfagem cai 22 % (335,8 rad/s2) e em guinada 9 % (13,05);
+# o MOT_THST_HOVER vai no valor previsto pelo modelo (0,4742), porque o
+# aprendizado em voo (constante de segundos) nao convergiria antes do ensaio.
+# Valores de b de modelagem/modelo_sitl.py com o parm alterado.
+nome: "Torque impulsivo nos tres eixos, empuxo fraco"
+descricao: >
+  O rolagem_arfagem_guinada/torque_pulso com o veiculo alterado.
+
+params:
+  SIM_FRM_HOVR_THR: 0.5
+  MOT_THST_HOVER: 0.4742
+
+vento:
+  WND_MODE: 9
+  WND_SPD: 0
+  WND_DIR: 0
+  WND_DIRZ: 0
+  WND_GA: 0
+  WND_GT0: 0
+  WND_GDUR: 3
+  WND_TSIG: 0
+  WND_TLU: 200
+  WND_SEED: 1
+  WND_T0: 8
+  WND_TQX: 15.0
+  WND_TQY: 15.0
+  WND_TQZ: 3.0
+  WND_TQT0: 6
+  WND_TQDUR: 0.3
+  WND_TQF0: 0.2
+  WND_TQF1: 10.0
+
+voo:
+  altitude_m: 15
+  espera_apos_decolagem_s: 6
+  degrau_roll_deg: 0
+  degrau_pitch_deg: 0
+  degrau_yaw_deg: 0
+  t_degrau_s: 0
+  duracao_s: 25

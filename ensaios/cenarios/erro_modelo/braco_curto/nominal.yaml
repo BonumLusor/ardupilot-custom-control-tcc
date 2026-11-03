@@ -1,0 +1,41 @@
+# Erro de modelo: o veiculo muda, os ganhos ficam os do nominal (todos os
+# controladores). A massa do SITL nao serve para isso: a propulsao e refeita a
+# partir dela e a inercia escala junto, entao a dinamica angular quase nao muda
+# (SIM_Frame.cpp). Esta variante: SIM_FRM_DIAG_SZ 0,29: b sobe 21 % nos tres eixos (519 / 17,34 rad/s2).
+# Valores de b de modelagem/modelo_sitl.py com o parm alterado.
+nome: "Nominal nos tres eixos, braco curto"
+descricao: >
+  O rolagem_arfagem_guinada/nominal com o veiculo alterado.
+
+params:
+  SIM_FRM_DIAG_SZ: 0.29
+
+vento:
+  WND_MODE: 1
+  WND_SPD: 0
+  WND_DIR: 0
+  WND_DIRZ: 0
+  WND_GA: 0
+  WND_GT0: 0
+  WND_GDUR: 3
+  WND_TSIG: 0
+  WND_TLU: 200
+  WND_SEED: 1
+  WND_T0: 8
+  WND_TQX: 0
+  WND_TQY: 0
+  WND_TQZ: 0
+  WND_TQT0: 0
+  WND_TQDUR: 0.4
+  WND_TQF0: 0.2
+  WND_TQF1: 10.0
+
+voo:
+  altitude_m: 15
+  espera_apos_decolagem_s: 6
+  degrau_roll_deg: 10
+  degrau_pitch_deg: 10
+  degrau_yaw_deg: 30
+  t_degrau_s: 6
+  t_retorno_s: 11
+  duracao_s: 30

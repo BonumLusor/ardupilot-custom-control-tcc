@@ -1,0 +1,68 @@
+# GERADO por modelagem/projeto.py --escrever-yaml a partir do modelo de
+# ensaios/resultados/vento/rajada/nativo/2026-10-27_214349 (a = 1.988 1/s, b = 430 / 430 / 14.37 rad/s2,
+# BAT.VoltR = 12.44 V). Para mudar os ganhos, mude o projeto e gere de novo.
+nome: AC_CustomControl — LQR + ESO (filtro10)
+slug: cc_eso_filtro10
+descricao: 'Realimentacao de [theta, w] (LQR discreto), sem integrador, com a perturbacao
+  estimada por um observador de estado estendido de [w, d] e cancelada (-d_hat/b), no backend
+  AC_CustomControl_LQR com CC3_MODO = 1. A banda do observador e a que da a recuperacao mais
+  rapida mantendo a margem de fase do nativo. Variante ''filtro10'': projetado com o modelo
+  de 10 Hz no filtro do giroscopio, contra o nativo sintonizado pelo AutoTune nesse mesmo
+  veiculo. Na variante, o criterio e o do LQG dela (portao): ruido, MF e MF robusta nao piores
+  que as do nativo e o menor pico; a regra da mesma banda do nativo nao tem solucao com o
+  filtro mais lento.'
+params:
+  CC_TYPE: 3
+  CC_AXIS_MASK: 7
+  RC6_OPTION: 109
+  INS_GYRO_FILTER: 10.0
+reboot_apos_params: true
+
+# O backend so assume com a chave auxiliar em HIGH (RC6_OPTION 109);
+# o run_ensaio.py forca o canal, e espera_cc_tipo confere no log.
+rc_override:
+  6: 2000
+
+# Os CC3_* so existem com o backend instanciado (CC_TYPE 3 + reboot).
+ganhos:
+  CC3_MODO: 1
+  CC3_FF: 1
+  CC3_A: 1.98813
+  CC3_FLTW: 10.0
+  CC3_B_X: 430.023
+  CC3_KTH_X: 0.557581
+  CC3_KW_X: 0.0498315
+  CC3_ESO_L1_X: 0.0203221
+  CC3_ESO_L2_X: 0.0640672
+  CC3_B_Y: 430.023
+  CC3_KTH_Y: 0.557581
+  CC3_KW_Y: 0.0498315
+  CC3_ESO_L1_Y: 0.0139882
+  CC3_ESO_L2_Y: 0.0359852
+  CC3_B_Z: 14.3669
+  CC3_KTH_Z: 0.203343
+  CC3_KW_Z: 0.118177
+  CC3_ESO_L1_Z: 0.0287553
+  CC3_ESO_L2_Z: 0.113941
+  ATC_ACC_R_MAX: 3035.307373
+  ATC_ACC_P_MAX: 2892.155273
+  ATC_ACC_Y_MAX: 120.858704
+ganhos_de_interesse:
+- CC3_KTH_X
+- CC3_KW_X
+- CC3_ESO_L1_X
+- CC3_ESO_L2_X
+msg_pid: PIDR
+espera_cc_tipo: 3
+
+# So os cenarios do lote original (run_ensaio.voa_no_cenario): este
+# controlador e uma verificacao feita para eles.
+cenarios:
+- rolagem/nominal
+- rolagem/torque_pulso
+- rolagem/torque_degrau
+- guinada/nominal
+- guinada/torque_pulso
+- guinada/torque_degrau
+- rolagem_arfagem_guinada/torque_estocastico
+- ruido/rnd20/torque_pulso

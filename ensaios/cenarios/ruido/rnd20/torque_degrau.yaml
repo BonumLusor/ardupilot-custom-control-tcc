@@ -1,0 +1,62 @@
+# O rolagem_arfagem_guinada/torque_degrau, com ruido no giroscopio: e o ensaio que
+# mede o que cada controlador paga em sensibilidade a ruido pela banda que
+# tem (Cap. 5, ganho de ruido). O resto e identico ao original.
+nome: "Torque em degrau nos tres eixos, com ruido de giroscopio"
+descricao: >
+  Momento constante em rolagem (10 rad/s2), arfagem (10 rad/s2) e guinada
+  (1 rad/s2), ligados juntos em t=6 s e mantidos ate o fim. Os tres
+  integradores trabalham ao mesmo tempo, e os motores ficam desbalanceados de
+  vez: M3 contra M4 para o momento de rolagem + arfagem, que cai sobre a
+  diagonal do X, e o par CCW contra o par CW para a guinada.
+
+  A duracao e a do guinada/torque_degrau, para a guinada ser comparavel com a
+  dele. Rolagem e arfagem ficam com uma janela maior que a dos seus ensaios de
+  um eixo (40 s): o desvio maximo e o tempo de recuperacao se comparam direto,
+  mas RMSE, erro medio e esforco, que sao medias ou integrais sobre a janela,
+  nao.
+
+# Ruido do giroscopio, ligado so neste cenario. O SITL soma a cada sub-amostra
+# do giroscopio um ruido uniforme de amplitude SIM_GYRn_RND (graus/s) vezes o
+# acelerador — a media dos PWM dos motores, (PWM - 1000)/1000, ~0,6 no
+# pairado (AP_InertialSensor_SITL, SITL_State) —, nas tres IMUs que o EKF usa
+# (INS_USE, INS_USE2, INS_USE3). Com 20 graus/s, a amplitude no pairado e ~12
+# graus/s, a ordem da vibracao de motor que o proprio SITL cita para um
+# multirrotor pequeno. O IMU0 entrega a 1 kHz a MEDIA de 8 sub-amostras
+# (INS_FAST_SAMPLE), entao o desvio padrao a 1 kHz e ~2,5 graus/s (0,04 rad/s),
+# antes do passa-baixas de 20 Hz; e o angulo do AHRS integra esse mesmo ruido
+# sem o passa-baixas (conferido em modelagem/validacao.py --ruido). E isso que
+# mede o custo da banda de cada controlador no esforco (esforco_* no
+# consolidado) e na atitude.
+params:
+  SIM_GYR1_RND: 20
+  SIM_GYR2_RND: 20
+  SIM_GYR3_RND: 20
+
+vento:
+  WND_MODE: 33       # 1 (vento medio zero) + 32 (degrau de torque)
+  WND_SPD: 0
+  WND_DIR: 0
+  WND_DIRZ: 0
+  WND_GA: 0
+  WND_GT0: 0
+  WND_GDUR: 3
+  WND_TSIG: 0
+  WND_TLU: 200
+  WND_SEED: 1
+  WND_T0: 8
+  WND_TQX: 10.0      # rad/s2, o mesmo do rolagem/torque_degrau
+  WND_TQY: 10.0      # rad/s2, o mesmo do arfagem/torque_degrau
+  WND_TQZ: 1.0       # rad/s2, o mesmo do guinada/torque_degrau
+  WND_TQT0: 6
+  WND_TQDUR: 0.3     # o degrau ignora a duracao
+  WND_TQF0: 0.2
+  WND_TQF1: 10.0
+
+voo:
+  altitude_m: 15
+  espera_apos_decolagem_s: 6
+  degrau_roll_deg: 0
+  degrau_pitch_deg: 0
+  degrau_yaw_deg: 0
+  t_degrau_s: 0
+  duracao_s: 60

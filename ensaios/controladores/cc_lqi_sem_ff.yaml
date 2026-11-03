@@ -1,0 +1,71 @@
+# GERADO por modelagem/projeto.py --escrever-yaml a partir do modelo de
+# ensaios/resultados/vento/rajada/nativo/2026-10-27_214349 (a = 1.988 1/s, b = 430 / 430 / 14.37 rad/s2,
+# BAT.VoltR = 12.44 V). Para mudar os ganhos, mude o projeto e gere de novo.
+nome: AC_CustomControl — LQI sem alimentacao direta
+slug: cc_lqi_sem_ff
+descricao: 'O LQI de cc_lqi.yaml com a alimentacao direta desligada: sem u_ff e sem o filtro
+  do alvo de taxa (CC3_FF = 0, CC3_FLTW = 0), que so faz sentido junto com ela. Com o cc_pid_ff,
+  fecha a comparacao 2x2 que separa o efeito da realimentacao do efeito da alimentacao direta.
+  Nos ensaios de torque o alvo fica parado e ele e identico ao cc_lqi.'
+params:
+  CC_TYPE: 3
+  CC_AXIS_MASK: 7
+  RC6_OPTION: 109
+reboot_apos_params: true
+
+# O backend so assume com a chave auxiliar em HIGH (RC6_OPTION 109);
+# o run_ensaio.py forca o canal, e espera_cc_tipo confere no log.
+rc_override:
+  6: 2000
+
+# Os CC3_* so existem com o backend instanciado (CC_TYPE 3 + reboot): o
+# run_ensaio.py os aplica depois do reboot. O ATC_ACC_*_MAX e o do nativo.
+ganhos:
+  CC3_MODO: 0
+  CC3_FF: 0
+  CC3_A: 1.98813
+  CC3_FLTW: 0.0
+  CC3_B_X: 430.023
+  CC3_KI_X: 7.12921
+  CC3_KTH_X: 1.70721
+  CC3_KW_X: 0.0931107
+  CC3_B_Y: 430.023
+  CC3_KI_Y: 4.911
+  CC3_KTH_Y: 1.62536
+  CC3_KW_Y: 0.092306
+  CC3_B_Z: 14.3669
+  CC3_KI_Z: 2.17366
+  CC3_KTH_Z: 1.76197
+  CC3_KW_Z: 0.395903
+  ATC_ACC_R_MAX: 5856.644531
+  ATC_ACC_P_MAX: 5703.29248
+  ATC_ACC_Y_MAX: 115.243027
+ganhos_de_interesse:
+- CC3_FF
+- CC3_FLTW
+- CC3_KI_X
+- CC3_KTH_X
+msg_pid: PIDR
+espera_cc_tipo: 3
+
+# So os cenarios do lote original (run_ensaio.voa_no_cenario): este
+# controlador e uma verificacao feita para eles.
+cenarios:
+- rolagem/nominal
+- rolagem/torque_pulso
+- rolagem/torque_degrau
+- rolagem/torque_chirp
+- arfagem/nominal
+- arfagem/torque_pulso
+- arfagem/torque_degrau
+- arfagem/torque_chirp
+- guinada/nominal
+- guinada/torque_pulso
+- guinada/torque_degrau
+- guinada/torque_chirp
+- rolagem_arfagem_guinada/nominal
+- rolagem_arfagem_guinada/torque_pulso
+- rolagem_arfagem_guinada/torque_degrau
+- ruido/rnd20/torque_pulso
+- ruido/rnd20/torque_degrau
+- vento/rajada

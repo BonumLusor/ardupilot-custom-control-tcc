@@ -1,0 +1,38 @@
+# Saturacao em guinada. O mixer limita o esforco de guinada a yaw_allowed, a folga
+# dos motores (AP_MotorsMatrix.cpp:276-330), ~0,5 no pairado: a autoridade e
+# ~0,5 x b_z = ~7 rad/s2. Em rolagem, saturar exigiria ~400 rad/s2. Aqui se
+# compara o anti-windup de cada um: a integracao condicional do AC_PID e do
+# LQI, e o u aplicado que o ESO e o LQG levam ao estimador.
+nome: "Pulso de torque em guinada alem da autoridade — 12 rad/s2 / 0,5 s"
+descricao: >
+  Pulso de 12 rad/s2 em guinada por 0,5 s: o esforco necessario (~0,8) passa da
+  folga do mixer, que satura. O sobressinal depois do pulso mede o windup.
+
+vento:
+  WND_MODE: 9
+  WND_SPD: 0
+  WND_DIR: 0
+  WND_DIRZ: 0
+  WND_GA: 0
+  WND_GT0: 0
+  WND_GDUR: 3
+  WND_TSIG: 0
+  WND_TLU: 200
+  WND_SEED: 1
+  WND_T0: 8
+  WND_TQX: 0
+  WND_TQY: 0
+  WND_TQZ: 12.0
+  WND_TQT0: 6
+  WND_TQDUR: 0.5
+  WND_TQF0: 0.2
+  WND_TQF1: 10.0
+
+voo:
+  altitude_m: 15
+  espera_apos_decolagem_s: 6
+  degrau_roll_deg: 0
+  degrau_pitch_deg: 0
+  degrau_yaw_deg: 0
+  t_degrau_s: 0
+  duracao_s: 30

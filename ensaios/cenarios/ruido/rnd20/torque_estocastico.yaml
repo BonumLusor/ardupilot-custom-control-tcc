@@ -1,0 +1,45 @@
+# Nivel de ruido do giroscopio SIM_GYRn_RND = 20 (pasta ruido/rnd20/): um ponto da
+# fronteira rejeicao x ruido medida no SITL. O SITL soma a cada sub-amostra do
+# giroscopio um ruido uniforme de amplitude SIM_GYRn_RND (graus/s) vezes o
+# acelerador (~0,6 no pairado), e o IMU0 entrega a 1 kHz a media de 8
+# sub-amostras: desvio padrao a 1 kHz de ~2.5 graus/s. O angulo do AHRS
+# integra o mesmo ruido sem o passa-baixas (modelagem/validacao.py --ruido).
+nome: "Torque estocastico nos tres eixos, ruido de giroscopio 20"
+descricao: >
+  O rolagem_arfagem_guinada/torque_estocastico com ruido no giroscopio: a
+  rejeicao do torque aleatorio e o custo do ruido no mesmo voo.
+
+params:
+  SIM_GYR1_RND: 20
+  SIM_GYR2_RND: 20
+  SIM_GYR3_RND: 20
+
+vento:
+  WND_MODE: 129
+  WND_SPD: 0
+  WND_DIR: 0
+  WND_DIRZ: 0
+  WND_GA: 0
+  WND_GT0: 0
+  WND_GDUR: 3
+  WND_TSIG: 0
+  WND_TLU: 200
+  WND_SEED: 1
+  WND_T0: 8
+  WND_TQX: 10
+  WND_TQY: 10
+  WND_TQZ: 1
+  WND_TQT0: 6
+  WND_TQDUR: 60
+  WND_TQF0: 0.2
+  WND_TQF1: 10.0
+  WND_TQTC: 0.1      # s, tempo de correlacao
+
+voo:
+  altitude_m: 15
+  espera_apos_decolagem_s: 6
+  degrau_roll_deg: 0
+  degrau_pitch_deg: 0
+  degrau_yaw_deg: 0
+  t_degrau_s: 0
+  duracao_s: 70

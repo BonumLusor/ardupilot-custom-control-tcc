@@ -1,0 +1,43 @@
+# Torque estocastico (bit 128 do vento.lua): turbulencia que gera MOMENTO, que
+# o vento deste simulador nao gera. Em cada eixo, um processo de Gauss-Markov de
+# tempo de correlacao WND_TQTC = 0,1 s (corte em ~1,6 Hz, entre o cruzamento da
+# guinada e o da rolagem), com desvio padrao WND_TQX/Y/Z em rad/s2. A metrica e o
+# erro eficaz na janela (RMSE), exatamente o que um LQG minimiza; a semente fixa
+# torna a sequencia a mesma em todos os voos e em analise.dryden_ref.
+nome: "Torque estocastico em guinada"
+descricao: >
+  Torque aleatorio colorido (Gauss-Markov, tempo de correlacao 0,1 s), com
+  desvio padrao de 1 rad/s2,
+  de t = 6 s a t = 66 s, com a aeronave nivelada e sem vento. Os desvios sao os
+  das amplitudes dos degraus de torque, para os ensaios se compararem; o
+  processo corre desde o inicio do perfil, e chega estacionario em t = 6 s.
+
+vento:
+  WND_MODE: 129
+  WND_SPD: 0
+  WND_DIR: 0
+  WND_DIRZ: 0
+  WND_GA: 0
+  WND_GT0: 0
+  WND_GDUR: 3
+  WND_TSIG: 0
+  WND_TLU: 200
+  WND_SEED: 1
+  WND_T0: 8
+  WND_TQX: 0
+  WND_TQY: 0
+  WND_TQZ: 1
+  WND_TQT0: 6
+  WND_TQDUR: 60
+  WND_TQF0: 0.2
+  WND_TQF1: 10.0
+  WND_TQTC: 0.1      # s, tempo de correlacao
+
+voo:
+  altitude_m: 15
+  espera_apos_decolagem_s: 6
+  degrau_roll_deg: 0
+  degrau_pitch_deg: 0
+  degrau_yaw_deg: 0
+  t_degrau_s: 0
+  duracao_s: 70

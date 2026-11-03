@@ -1,0 +1,40 @@
+# Angulo grande (30 graus): a blindagem do controlador fora da faixa linear. O
+# backend nao tem o controlador de raiz quadrada do nativo, e o erro de angulo
+# passa por thrust_heading_rotation_angles; aqui se ve se isso pesa. O alvo e
+# modelado pelo AC_AttitudeControl igual para todos (ATC_ACC_*_MAX do nativo).
+nome: "Manobra combinada: 30 graus em rolagem e arfagem e 90 em guinada"
+descricao: >
+  Degrau simultaneo de 30 graus em rolagem e em arfagem e de 90 graus em
+  guinada, em t = 6 s, e volta em t = 11 s. Inclinado, girar em guinada move o
+  alvo de rolagem e arfagem em angulos de Euler; compare pelo erro de
+  rastreamento.
+
+vento:
+  WND_MODE: 1
+  WND_SPD: 0
+  WND_DIR: 0
+  WND_DIRZ: 0
+  WND_GA: 0
+  WND_GT0: 0
+  WND_GDUR: 3
+  WND_TSIG: 0
+  WND_TLU: 200
+  WND_SEED: 1
+  WND_T0: 8
+  WND_TQX: 0
+  WND_TQY: 0
+  WND_TQZ: 0
+  WND_TQT0: 0
+  WND_TQDUR: 0.4
+  WND_TQF0: 0.2
+  WND_TQF1: 10.0
+
+voo:
+  altitude_m: 15
+  espera_apos_decolagem_s: 6
+  degrau_roll_deg: 30
+  degrau_pitch_deg: 30
+  degrau_yaw_deg: 90
+  t_degrau_s: 6
+  t_retorno_s: 11
+  duracao_s: 30
