@@ -1,0 +1,167 @@
+--- a/monografia/referencias.bib
++++ b/monografia/referencias.bib
+@@ -18,6 +18,8 @@
+   title   = {Design and control of quadrotors with application to autonomous flying},
+   school  = {École Polytechnique Fédérale de Lausanne},
+   address = {Lausanne},
++  note    = {Th{\`e}se n\textsuperscript{o} 3727},
++  doi     = {10.5075/epfl-thesis-3727},
+   year    = {2007}
+ }
+ 
+@@ -25,7 +27,7 @@
+   author  = {Francesco Sabatino},
+   title   = {Quadrotor control: modeling, nonlinear control design, and simulation},
+   school  = {KTH Royal Institute of Technology},
+-  address = {Estocolmo},
++  address = {Stockholm},
+   year    = {2015}
+ }
+ 
+@@ -34,6 +36,7 @@
+   title       = {Quadrotor dynamics and control},
+   institution = {Brigham Young University},
+   address     = {Provo},
++  note        = {Brigham Young University. Rev.~0.1},
+   year        = {2008}
+ }
+ 
+@@ -43,6 +46,7 @@
+   subtitle  = {an introduction for scientists and engineers},
+   publisher = {Princeton University Press},
+   address   = {Princeton},
++  isbn      = {978-0-691-13576-2},
+   year      = {2008}
+ }
+ 
+@@ -61,6 +65,7 @@
+   edition   = {3},
+   publisher = {Addison-Wesley},
+   address   = {Menlo Park},
++  isbn      = {0-201-82054-4},
+   year      = {1998}
+ }
+ 
+@@ -69,8 +74,9 @@
+   title     = {System identification},
+   subtitle  = {theory for the user},
+   edition   = {2},
+-  publisher = {Prentice Hall},
++  publisher = {Prentice Hall PTR},
+   address   = {Upper Saddle River},
++  isbn      = {0-13-656695-2},
+   year      = {1999}
+ }
+ 
+@@ -80,6 +86,7 @@
+   subtitle  = {theory and practice},
+   publisher = {Princeton University Press},
+   address   = {Princeton},
++  isbn      = {978-0-691-14921-9},
+   year      = {2012}
+ }
+ 
+@@ -88,6 +95,7 @@
+   title        = {{MIL-F-8785C}},
+   subtitle     = {military specification: flying qualities of piloted airplanes},
+   address      = {Washington, D.C.},
++  note         = {Datada de 5 nov. 1980},
+   year         = {1980}
+ }
+ 
+@@ -98,6 +106,7 @@
+   volume  = {56},
+   number  = {3},
+   pages   = {900--906},
++  doi     = {10.1109/TIE.2008.2011621},
+   year    = {2009}
+ }
+ 
+@@ -108,6 +117,7 @@
+   volume  = {19},
+   number  = {3},
+   pages   = {20--32},
++  doi     = {10.1109/MRA.2012.2206474},
+   year    = {2012}
+ }
+ 
+@@ -118,6 +128,7 @@
+   volume  = {22},
+   number  = {2},
+   pages   = {173--179},
++  doi     = {10.1109/TAC.1977.1101470},
+   year    = {1977}
+ }
+ 
+@@ -156,6 +167,7 @@
+   volume  = {26},
+   number  = {6},
+   pages   = {855--860},
++  doi     = {10.2514/2.6929},
+   year    = {2003}
+ }
+ 
+@@ -163,12 +175,13 @@
+ % AP_TECS. O código cita o número do artigo AIAA (78-1307R); volume,
+ % número e páginas são os da publicação no periódico.
+ @article{widnall1980,
+-  author  = {W. S. Widnall and P. K. Sinha},
++  author  = {William S. Widnall and Prasun K. Sinha},
+   title   = {Optimizing the gains of the baro-inertial vertical channel},
+   journal = {Journal of Guidance and Control},
+   volume  = {3},
+   number  = {2},
+   pages   = {172--178},
++  doi     = {10.2514/3.55966},
+   year    = {1980}
+ }
+ 
+@@ -193,11 +206,14 @@
+   volume  = {5},
+   number  = {3},
+   pages   = {72},
++  doi     = {10.3390/aerospace5030072},
+   year    = {2018}
+ }
+ 
+ % libraries/SITL/SIM_Aircraft.cpp (~l. 350): ruído gaussiano dos
+ % acelerômetros simulados. Também usado pelo injetor ensaios/lua/vento.lua.
++% O injetor usa a forma trigonométrica deste artigo; o código do SITL usa a
++% forma polar, que é de Marsaglia e Bray (1964) -- ver marsaglia1964.
+ @article{box1958,
+   author  = {G. E. P. Box and Mervin E. Muller},
+   title   = {A note on the generation of random normal deviates},
+@@ -205,6 +221,7 @@
+   volume  = {29},
+   number  = {2},
+   pages   = {610--611},
++  doi     = {10.1214/aoms/1177706645},
+   year    = {1958}
+ }
+ 
+@@ -220,6 +237,7 @@
+   volume  = {31},
+   number  = {10},
+   pages   = {1192--1201},
++  doi     = {10.1145/63039.63042},
+   year    = {1988}
+ }
+ 
+@@ -231,6 +249,7 @@
+   volume  = {15},
+   number  = {2},
+   pages   = {70--73},
++  doi     = {10.1109/TAU.1967.1161901},
+   year    = {1967}
+ }
+ 
+@@ -241,6 +260,9 @@
+   edition   = {2},
+   publisher = {American Institute of Aeronautics and Astronautics},
+   address   = {Reston},
++  series    = {AIAA Education Series},
++  isbn      = {978-1-60086-820-7},
++  doi       = {10.2514/4.868207},
+   year      = {2012}
+ }
+ 

@@ -1,0 +1,661 @@
+298 ensaios; BAT.VoltR: [12.41, 12.43, 12.44] V
+
+cenario                                ctl     eixo       desvio SITL/mod   err%   recup. SITL/mod   err% RMSE err%
+arfagem/torque_chirp                   cc_eso  pitch    resposta em frequencia 0.4-9.6 Hz: |dmag| mediana 0.44 dB, max 2.71 dB; |dfase| max 7.5 graus
+                                                        planta identificada (21 pontos, 1.2-9.6 Hz): a = -0.51 (modelo 1.99), b = 438.9 (modelo 430.2, +2.0%); com a do modelo, b = 425.9 (-1.0%)
+arfagem/torque_chirp                   cc_lqg  pitch    resposta em frequencia 0.4-8.8 Hz: |dmag| mediana 0.96 dB, max 2.10 dB; |dfase| max 9.8 graus
+                                                        planta identificada (15 pontos, 1.2-6.8 Hz): a = 0.83 (modelo 1.99), b = 435.3 (modelo 430.3, +1.2%); com a do modelo, b = 430.9 (+0.2%)
+arfagem/torque_chirp                   cc_lqg  pitch    resposta em frequencia 0.4-8.8 Hz: |dmag| mediana 0.75 dB, max 2.19 dB; |dfase| max 9.7 graus
+                                                        planta identificada (19 pontos, 1.2-8.4 Hz): a = 0.27 (modelo 1.99), b = 437.6 (modelo 429.9, +1.8%); com a do modelo, b = 430.0 (+0.0%)
+arfagem/torque_chirp                   cc_lqi  pitch    resposta em frequencia 0.4-9.6 Hz: |dmag| mediana 0.50 dB, max 2.34 dB; |dfase| max 7.8 graus
+                                                        planta identificada (23 pontos, 0.8-9.6 Hz): a = 1.00 (modelo 1.99), b = 435.4 (modelo 430.0, +1.3%); com a do modelo, b = 430.5 (+0.1%)
+arfagem/torque_chirp                   cc_lqi  pitch    resposta em frequencia 0.4-8.8 Hz: |dmag| mediana 0.32 dB, max 1.90 dB; |dfase| max 7.5 graus
+                                                        planta identificada (21 pontos, 0.8-8.8 Hz): a = -0.21 (modelo 1.99), b = 441.6 (modelo 430.0, +2.7%); com a do modelo, b = 430.6 (+0.1%)
+arfagem/torque_chirp                   cc_lqi  pitch    resposta em frequencia 0.4-8.8 Hz: |dmag| mediana 0.39 dB, max 1.58 dB; |dfase| max 7.5 graus
+                                                        planta identificada (19 pontos, 0.8-8.0 Hz): a = 0.46 (modelo 1.99), b = 437.4 (modelo 429.9, +1.7%); com a do modelo, b = 430.0 (+0.0%)
+arfagem/torque_chirp                   cc_pid  pitch    resposta em frequencia 0.4-9.2 Hz: |dmag| mediana 0.56 dB, max 2.14 dB; |dfase| max 6.4 graus
+                                                        planta identificada (23 pontos, 0.4-9.2 Hz): a = -0.06 (modelo 1.99), b = 441.3 (modelo 430.0, +2.6%); com a do modelo, b = 432.0 (+0.5%)
+arfagem/torque_chirp                   cc_pid  pitch    resposta em frequencia 0.4-9.2 Hz: |dmag| mediana 0.60 dB, max 2.29 dB; |dfase| max 6.8 graus
+                                                        planta identificada (22 pontos, 0.4-9.2 Hz): a = 0.20 (modelo 1.99), b = 435.3 (modelo 429.9, +1.2%); com a do modelo, b = 427.4 (-0.6%)
+arfagem/torque_chirp                   nativo  pitch    resposta em frequencia 0.4-9.6 Hz: |dmag| mediana 0.56 dB, max 1.78 dB; |dfase| max 7.7 graus
+                                                        planta identificada (24 pontos, 0.4-9.6 Hz): a = -0.45 (modelo 1.99), b = 443.3 (modelo 430.0, +3.1%); com a do modelo, b = 432.1 (+0.5%)
+arfagem/torque_chirp                   nativo  pitch    resposta em frequencia 0.4-8.8 Hz: |dmag| mediana 0.45 dB, max 2.28 dB; |dfase| max 6.8 graus
+                                                        planta identificada (21 pontos, 0.8-8.8 Hz): a = 0.15 (modelo 1.99), b = 435.7 (modelo 430.0, +1.3%); com a do modelo, b = 426.5 (-0.8%)
+arfagem/torque_degrau                  cc_eso  pitch        0,69/0,69       -0.6     0,46/0,49       +7.1      -0.8
+arfagem/torque_degrau                  cc_lqg  pitch        0,56/0,58       +4.5     0,17/0,18       +4.3      -6.7
+arfagem/torque_degrau                  cc_lqg  pitch        0,57/0,60       +4.6     0,18/0,18       +1.4      -6.2
+arfagem/torque_degrau                  cc_lqi  pitch        0,69/0,69       -0.7     0,61/0,65       +7.9      -2.1
+arfagem/torque_degrau                  cc_lqi  pitch        0,69/0,69       -0.5     0,64/0,66       +3.5      -0.7
+arfagem/torque_degrau                  cc_lqi  pitch        0,69/0,70       +0.2     0,64/0,68       +6.7      -0.9
+arfagem/torque_degrau                  cc_pid  pitch        0,62/0,63       +1.9     2,22/2,09       -5.9      -1.1
+arfagem/torque_degrau                  cc_pid  pitch        0,62/0,63       +1.7     2,30/2,09       -9.3      -1.0
+arfagem/torque_degrau                  nativo  pitch        0,61/0,63       +2.1     2,15/2,13       -0.8      -0.1
+arfagem/torque_degrau                  nativo  pitch        0,70/0,70       -0.5     0,65/0,66       +0.4      -1.4
+arfagem/torque_estocastico             cc_eso  pitch        3,20/3,26       +1.8        —/—             —      +1.2
+arfagem/torque_estocastico             cc_lqg  pitch        2,27/2,35       +3.6        —/—             —      +1.7
+arfagem/torque_estocastico             cc_lqg  pitch        2,24/2,26       +0.8        —/—             —      +1.6
+arfagem/torque_estocastico             cc_lqi  pitch        2,76/2,81       +1.9        —/—             —      +1.2
+arfagem/torque_estocastico             cc_lqi  pitch        2,95/3,04       +2.9        —/—             —      +1.3
+arfagem/torque_estocastico             nativo  pitch        2,62/2,69       +2.5        —/—             —      +1.6
+arfagem/torque_pulso                   cc_eso  pitch        1,04/1,04       -0.6     0,78/0,81       +4.2      -0.3
+arfagem/torque_pulso                   cc_lqg  pitch        0,84/0,89       +5.4     0,18/0,18       +1.4      +0.5
+arfagem/torque_pulso                   cc_lqg  pitch        0,86/0,91       +6.0     0,18/0,19       +5.7      +0.7
+arfagem/torque_pulso                   cc_lqi  pitch        1,04/1,04       +0.2     0,87/0,90       +3.2      -0.4
+arfagem/torque_pulso                   cc_lqi  pitch        1,04/1,04       -0.3     0,88/0,91       +3.1      +0.1
+arfagem/torque_pulso                   cc_lqi  pitch        1,05/1,04       -0.5     0,87/0,91       +4.0      -0.3
+arfagem/torque_pulso                   cc_pid  pitch        0,94/0,95       +1.1     1,25/1,29       +3.2      +0.7
+arfagem/torque_pulso                   cc_pid  pitch        0,93/0,95       +1.8     1,27/1,32       +4.5      +0.8
+arfagem/torque_pulso                   nativo  pitch        0,93/0,94       +1.2     1,25/1,33       +6.2      +0.9
+arfagem/torque_pulso                   nativo  pitch        1,05/1,05       +0.5     0,92/0,95       +3.3      -0.4
+erro_modelo/braco_curto/torque_degrau  cc_eso  roll         0,53/0,52       -1.1     0,42/0,45       +7.7      -2.4
+erro_modelo/braco_curto/torque_degrau  cc_eso  pitch        0,56/0,55       -1.6     0,49/0,45       -6.7      -0.3
+erro_modelo/braco_curto/torque_degrau  cc_eso  yaw          1,44/1,46       +1.0     1,09/1,08       -0.7      +0.2
+erro_modelo/braco_curto/torque_degrau  cc_lqg  roll         0,43/0,46       +5.2     0,18/0,19       +5.6     -17.8
+erro_modelo/braco_curto/torque_degrau  cc_lqg  pitch        0,44/0,47       +7.5     0,20/0,20       -3.7     -15.4
+erro_modelo/braco_curto/torque_degrau  cc_lqg  yaw          1,88/1,93       +2.5     1,47/1,45       -0.7      +3.3
+erro_modelo/braco_curto/torque_degrau  cc_lqg  roll         0,44/0,46       +4.5     0,22/0,23       +5.6     -15.0
+erro_modelo/braco_curto/torque_degrau  cc_lqg  pitch        0,46/0,48       +4.8     0,20/0,20       +3.8     -14.2
+erro_modelo/braco_curto/torque_degrau  cc_lqg  yaw          1,56/1,59       +1.8     1,75/1,74       -0.6      +2.3
+erro_modelo/braco_curto/torque_degrau  cc_lqi  roll         0,51/0,53       +3.0     0,44/0,49      +11.3      -0.4
+erro_modelo/braco_curto/torque_degrau  cc_lqi  pitch        0,56/0,55       -2.2     0,65/0,61       -6.2      -1.0
+erro_modelo/braco_curto/torque_degrau  cc_lqi  yaw          1,53/1,54       +0.8     1,22/1,20       -1.2      +0.3
+erro_modelo/braco_curto/torque_degrau  cc_lqi  roll         0,51/0,52       +2.2     0,45/0,48       +5.6      -2.2
+erro_modelo/braco_curto/torque_degrau  cc_lqi  pitch        0,55/0,57       +2.2     0,63/0,69       +9.1      +5.0
+erro_modelo/braco_curto/torque_degrau  cc_lqi  yaw          5,10/5,13       +0.6     2,41/2,41       +0.2      +0.2
+erro_modelo/braco_curto/torque_degrau  nativo  roll         0,47/0,48       +2.1     2,31/2,11       -8.8      -2.4
+erro_modelo/braco_curto/torque_degrau  nativo  pitch        0,49/0,49       +1.6     2,24/2,14       -4.4      -1.7
+erro_modelo/braco_curto/torque_degrau  nativo  yaw          2,08/2,11       +1.3    21,39/22,71      +6.2      +0.4
+erro_modelo/braco_curto/torque_pulso   cc_eso  roll         0,79/0,79       -0.8     0,71/0,78      +10.3      +0.6
+erro_modelo/braco_curto/torque_pulso   cc_eso  pitch        0,83/0,83       +0.2     0,78/0,77       -0.6      +0.7
+erro_modelo/braco_curto/torque_pulso   cc_eso  yaw          3,58/3,61       +0.9     1,55/1,53       -1.1      +0.4
+erro_modelo/braco_curto/torque_pulso   cc_lqg  roll         0,67/0,69       +3.6     0,19/0,18       -0.0      -1.3
+erro_modelo/braco_curto/torque_pulso   cc_lqg  pitch        0,65/0,72       +9.4     0,19/0,20       +2.6      +2.1
+erro_modelo/braco_curto/torque_pulso   cc_lqg  yaw          5,02/5,10       +1.5     1,61/1,61       +0.2      +1.9
+erro_modelo/braco_curto/torque_pulso   cc_lqg  roll         0,65/0,68       +4.5     0,57/0,56       -1.3      -1.4
+erro_modelo/braco_curto/torque_pulso   cc_lqg  pitch        0,67/0,73       +9.2     0,20/0,20       +2.6      +2.1
+erro_modelo/braco_curto/torque_pulso   cc_lqg  yaw          4,27/4,30       +0.6     1,70/1,69       -0.4      +1.1
+erro_modelo/braco_curto/torque_pulso   cc_lqi  roll         0,78/0,79       +1.5     0,75/0,78       +4.4      -0.2
+erro_modelo/braco_curto/torque_pulso   cc_lqi  pitch        0,83/0,83       +0.2     0,88/0,88       -0.0      +1.1
+erro_modelo/braco_curto/torque_pulso   cc_lqi  yaw          3,60/3,63       +0.9     1,66/1,65       -0.3      +0.6
+erro_modelo/braco_curto/torque_pulso   cc_lqi  roll         0,78/0,79       +1.4     0,74/0,78       +5.4      -0.9
+erro_modelo/braco_curto/torque_pulso   cc_lqi  pitch        0,83/0,83       -0.2     0,89/0,89       -0.3      +1.4
+erro_modelo/braco_curto/torque_pulso   cc_lqi  yaw          7,19/7,22       +0.5     3,15/3,10       -1.5      +0.3
+erro_modelo/braco_curto/torque_pulso   nativo  roll         0,71/0,72       +1.4     1,34/1,42       +6.0      -0.5
+erro_modelo/braco_curto/torque_pulso   nativo  pitch        0,73/0,74       +2.0     1,37/1,44       +5.5      +1.5
+erro_modelo/braco_curto/torque_pulso   nativo  yaw          5,39/5,44       +1.0     0,50/0,83      +65.2      +0.9
+erro_modelo/braco_longo/torque_degrau  cc_eso  roll         0,83/0,83       +0.6     0,41/0,41       -1.2      -0.5
+erro_modelo/braco_longo/torque_degrau  cc_eso  pitch        0,86/0,87       +1.0     0,47/0,46       -0.5      +0.0
+erro_modelo/braco_longo/torque_degrau  cc_eso  yaw          2,12/2,15       +1.4     0,95/0,94       -0.8      +0.8
+erro_modelo/braco_longo/torque_degrau  cc_lqg  roll         0,66/0,69       +4.4     0,15/0,15       +1.7      -7.8
+erro_modelo/braco_longo/torque_degrau  cc_lqg  pitch        0,69/0,72       +3.5     0,16/0,16       +1.6      -6.5
+erro_modelo/braco_longo/torque_degrau  cc_lqg  yaw          2,72/2,79       +2.6     1,20/1,21       +1.2      +2.7
+erro_modelo/braco_longo/torque_degrau  cc_lqg  roll         0,69/0,70       +2.1     0,19/0,20       +6.7      -7.0
+erro_modelo/braco_longo/torque_degrau  cc_lqg  pitch        0,70/0,74       +4.8     0,16/0,17       +3.1      -4.1
+erro_modelo/braco_longo/torque_degrau  cc_lqg  yaw          2,30/2,35       +2.2     1,49/1,48       -0.3      +2.2
+erro_modelo/braco_longo/torque_degrau  cc_lqi  roll         0,82/0,83       +1.1     0,43/0,43       -0.6      -0.9
+erro_modelo/braco_longo/torque_degrau  cc_lqi  pitch        0,86/0,88       +2.1     0,62/0,66       +6.9      +0.9
+erro_modelo/braco_longo/torque_degrau  cc_lqi  yaw          2,24/2,26       +1.1     1,07/1,06       -0.5      +0.6
+erro_modelo/braco_longo/torque_degrau  cc_lqi  roll         0,82/0,83       +0.8     0,43/0,43       +0.6      -1.3
+erro_modelo/braco_longo/torque_degrau  cc_lqi  pitch        0,87/0,88       +2.0     0,65/0,66       +2.7      +1.9
+erro_modelo/braco_longo/torque_degrau  cc_lqi  yaw          7,26/7,32       +0.7     2,25/2,23       -0.8      +0.4
+erro_modelo/braco_longo/torque_degrau  nativo  roll         0,75/0,76       +1.6     2,22/2,05       -7.8      -1.8
+erro_modelo/braco_longo/torque_degrau  nativo  pitch        0,77/0,78       +1.7     2,25/2,06       -8.4      -1.2
+erro_modelo/braco_longo/torque_degrau  nativo  yaw          3,07/3,11       +1.3    22,01/22,70      +3.2      +0.4
+erro_modelo/braco_longo/torque_pulso   cc_eso  roll         1,25/1,25       +0.4     0,70/0,73       +3.2      +0.3
+erro_modelo/braco_longo/torque_pulso   cc_eso  pitch        1,28/1,31       +1.9     0,77/0,78       +1.0      +1.2
+erro_modelo/braco_longo/torque_pulso   cc_eso  yaw          4,73/4,77       +0.9     1,56/1,54       -1.1      +0.6
+erro_modelo/braco_longo/torque_pulso   cc_lqg  roll         1,03/1,06       +2.8     0,15/0,15       +5.2      -1.5
+erro_modelo/braco_longo/torque_pulso   cc_lqg  pitch        1,00/1,09       +8.8     0,49/0,16      -67.0      +3.5
+erro_modelo/braco_longo/torque_pulso   cc_lqg  yaw          6,24/6,27       +0.5     1,69/1,68       -0.3      +1.6
+erro_modelo/braco_longo/torque_pulso   cc_lqg  roll         1,02/1,05       +3.3     0,19/0,51     +174.3      -1.7
+erro_modelo/braco_longo/torque_pulso   cc_lqg  pitch        1,03/1,13       +9.7     0,48/0,17      -64.9      +3.7
+erro_modelo/braco_longo/torque_pulso   cc_lqg  yaw          5,32/5,36       +0.7     1,77/1,76       -0.7      +1.3
+erro_modelo/braco_longo/torque_pulso   cc_lqi  roll         1,23/1,25       +1.4     0,72/0,71       -0.7      -0.3
+erro_modelo/braco_longo/torque_pulso   cc_lqi  pitch        1,29/1,32       +2.2     0,86/0,86       -0.3      +1.4
+erro_modelo/braco_longo/torque_pulso   cc_lqi  yaw          4,74/4,77       +0.7     1,71/1,69       -0.7      +0.5
+erro_modelo/braco_longo/torque_pulso   cc_lqi  roll         1,23/1,25       +1.5     0,72/0,72       +0.3      -1.0
+erro_modelo/braco_longo/torque_pulso   cc_lqi  pitch        1,29/1,32       +2.3     0,88/0,88       -0.3      +1.7
+erro_modelo/braco_longo/torque_pulso   cc_lqi  yaw          8,88/8,92       +0.4        —/3,39          —      +0.4
+erro_modelo/braco_longo/torque_pulso   nativo  roll         1,13/1,14       +1.0     1,16/1,21       +4.3      -0.4
+erro_modelo/braco_longo/torque_pulso   nativo  pitch        1,15/1,18       +2.6     1,18/1,21       +2.5      +1.6
+erro_modelo/braco_longo/torque_pulso   nativo  yaw          6,44/6,48       +0.7     0,40/0,39       -2.5      +0.4
+erro_modelo/empuxo_fraco/torque_degrau cc_eso  roll         0,89/0,90       +0.8     0,40/0,40       -0.6      -1.1
+erro_modelo/empuxo_fraco/torque_degrau cc_eso  pitch        0,93/0,94       +0.8     0,47/0,46       -1.1      -0.0
+erro_modelo/empuxo_fraco/torque_degrau cc_eso  yaw          1,93/1,96       +1.4     0,98/0,97       -0.5      +0.8
+erro_modelo/empuxo_fraco/torque_degrau cc_lqg  roll         0,70/0,75       +5.7     0,14/0,14       -0.0      -6.0
+erro_modelo/empuxo_fraco/torque_degrau cc_lqg  pitch        0,72/0,77       +7.6     0,15/0,15       -0.0      -3.2
+erro_modelo/empuxo_fraco/torque_degrau cc_lqg  yaw          2,48/2,56       +3.2     1,27/1,28       +0.8      +3.3
+erro_modelo/empuxo_fraco/torque_degrau cc_lqg  roll         0,71/0,75       +5.3     0,19/0,19       +4.1      -6.0
+erro_modelo/empuxo_fraco/torque_degrau cc_lqg  pitch        0,74/0,79       +5.8     0,16/0,16       +1.6      -4.3
+erro_modelo/empuxo_fraco/torque_degrau cc_lqg  yaw          2,09/2,14       +2.5     1,55/1,55       -0.0      +2.4
+erro_modelo/empuxo_fraco/torque_degrau cc_lqi  roll         0,88/0,89       +1.7     0,42/0,43       +2.4      -0.8
+erro_modelo/empuxo_fraco/torque_degrau cc_lqi  pitch        0,93/0,94       +0.9     0,64/0,62       -3.1      -0.7
+erro_modelo/empuxo_fraco/torque_degrau cc_lqi  yaw          2,04/2,06       +1.0     1,10/1,09       -0.7      +0.5
+erro_modelo/empuxo_fraco/torque_degrau cc_lqi  roll         0,88/0,90       +2.3     0,42/0,43       +3.0      +0.5
+erro_modelo/empuxo_fraco/torque_degrau cc_lqi  pitch        0,93/0,94       +0.8     0,64/0,62       -3.5      -0.6
+erro_modelo/empuxo_fraco/torque_degrau cc_lqi  yaw          6,67/6,71       +0.7     2,28/2,26       -1.0      +0.3
+erro_modelo/empuxo_fraco/torque_degrau nativo  roll         0,80/0,82       +1.7     2,18/2,03       -6.9      -1.7
+erro_modelo/empuxo_fraco/torque_degrau nativo  pitch        0,83/0,84       +1.9     2,21/2,06       -6.7      -1.2
+erro_modelo/empuxo_fraco/torque_degrau nativo  yaw          2,79/2,83       +1.3    21,91/22,75      +3.8      +0.5
+erro_modelo/empuxo_fraco/torque_pulso  cc_eso  roll         1,34/1,35       +0.6     0,71/0,73       +2.5      +0.3
+erro_modelo/empuxo_fraco/torque_pulso  cc_eso  pitch        1,39/1,41       +1.8     0,77/0,78       +1.3      +0.8
+erro_modelo/empuxo_fraco/torque_pulso  cc_eso  yaw          4,53/4,58       +1.1     1,55/1,53       -1.1      +0.7
+erro_modelo/empuxo_fraco/torque_pulso  cc_lqg  roll         1,10/1,12       +2.5     0,14/0,14       +1.8      -0.9
+erro_modelo/empuxo_fraco/torque_pulso  cc_lqg  pitch        1,09/1,17       +7.1     0,48/0,15      -68.6      +2.7
+erro_modelo/empuxo_fraco/torque_pulso  cc_lqg  yaw          5,97/6,00       +0.6     1,67/1,67       -0.0      +2.2
+erro_modelo/empuxo_fraco/torque_pulso  cc_lqg  roll         1,11/1,13       +1.7     0,53/0,54       +1.9      -1.4
+erro_modelo/empuxo_fraco/torque_pulso  cc_lqg  pitch        1,10/1,20       +9.4     0,51/0,16      -68.8      +3.4
+erro_modelo/empuxo_fraco/torque_pulso  cc_lqg  yaw          5,36/5,43       +1.4     1,77/1,76       -0.6      +1.6
+erro_modelo/empuxo_fraco/torque_pulso  cc_lqi  roll         1,32/1,33       +0.6     0,72/0,73       +1.0      -0.4
+erro_modelo/empuxo_fraco/torque_pulso  cc_lqi  pitch        1,39/1,42       +2.2     0,86/0,87       +1.5      +1.2
+erro_modelo/empuxo_fraco/torque_pulso  cc_lqi  yaw          4,43/4,46       +0.7     1,69/1,68       -0.6      +0.2
+erro_modelo/empuxo_fraco/torque_pulso  cc_lqi  roll         1,33/1,33       +0.6     0,71/0,72       +2.5      -1.1
+erro_modelo/empuxo_fraco/torque_pulso  cc_lqi  pitch        1,38/1,43       +3.4     0,86/0,85       -1.4      +2.0
+erro_modelo/empuxo_fraco/torque_pulso  cc_lqi  yaw          8,37/8,38       +0.2     3,34/3,31       -0.7      +0.1
+erro_modelo/empuxo_fraco/torque_pulso  nativo  roll         1,22/1,24       +1.2     1,22/1,28       +4.9      -0.1
+erro_modelo/empuxo_fraco/torque_pulso  nativo  pitch        1,24/1,27       +2.6     1,25/1,29       +3.2      +1.8
+erro_modelo/empuxo_fraco/torque_pulso  nativo  yaw          6,48/6,56       +1.3     0,37/0,37       -0.0      +1.2
+guinada/torque_chirp                   cc_eso  yaw      resposta em frequencia 0.2-4.8 Hz: |dmag| mediana 0.09 dB, max 0.27 dB; |dfase| max 3.3 graus
+                                                        planta identificada (22 pontos, 0.6-4.8 Hz): a = 1.91 (modelo 1.99), b = 14.7 (modelo 14.4, +2.4%); com a do modelo, b = 14.6 (+1.7%)
+guinada/torque_chirp                   cc_lqg  yaw      resposta em frequencia 0.2-4.4 Hz: |dmag| mediana 0.15 dB, max 0.84 dB; |dfase| max 4.1 graus
+                                                        planta identificada (16 pontos, 0.6-3.6 Hz): a = 1.98 (modelo 1.99), b = 14.7 (modelo 14.4, +2.3%); com a do modelo, b = 14.7 (+2.3%)
+guinada/torque_chirp                   cc_lqg  yaw      resposta em frequencia 0.2-4.6 Hz: |dmag| mediana 0.28 dB, max 0.95 dB; |dfase| max 4.6 graus
+                                                        planta identificada (17 pontos, 0.6-3.8 Hz): a = 1.92 (modelo 1.99), b = 14.7 (modelo 14.4, +2.2%); com a do modelo, b = 14.7 (+1.9%)
+guinada/torque_chirp                   cc_lqi  yaw      resposta em frequencia 0.2-4.8 Hz: |dmag| mediana 0.10 dB, max 0.24 dB; |dfase| max 2.1 graus
+                                                        planta identificada (22 pontos, 0.6-4.8 Hz): a = 1.88 (modelo 1.99), b = 14.8 (modelo 14.4, +2.8%); com a do modelo, b = 14.6 (+1.5%)
+guinada/torque_chirp                   cc_lqi  yaw      resposta em frequencia 0.2-4.8 Hz: |dmag| mediana 0.03 dB, max 0.13 dB; |dfase| max 4.8 graus
+                                                        planta identificada (23 pontos, 0.2-4.8 Hz): a = 2.13 (modelo 1.99), b = 14.3 (modelo 14.4, -0.6%); com a do modelo, b = 14.6 (+1.7%)
+guinada/torque_chirp                   cc_lqi  yaw      resposta em frequencia 0.2-4.8 Hz: |dmag| mediana 0.08 dB, max 0.14 dB; |dfase| max 5.1 graus
+                                                        planta identificada (22 pontos, 0.6-4.8 Hz): a = 1.96 (modelo 1.99), b = 14.8 (modelo 14.4, +3.2%); com a do modelo, b = 14.8 (+2.9%)
+guinada/torque_chirp                   cc_pid  yaw      resposta em frequencia 0.2-4.8 Hz: |dmag| mediana 0.06 dB, max 0.40 dB; |dfase| max 1.8 graus
+                                                        planta identificada (24 pontos, 0.2-4.8 Hz): a = 2.07 (modelo 1.99), b = 14.6 (modelo 14.4, +1.4%); com a do modelo, b = 14.6 (+1.8%)
+guinada/torque_chirp                   cc_pid  yaw      resposta em frequencia 0.2-4.8 Hz: |dmag| mediana 0.06 dB, max 1.58 dB; |dfase| max 3.2 graus
+                                                        planta identificada (24 pontos, 0.2-4.8 Hz): a = 2.03 (modelo 1.99), b = 14.6 (modelo 14.4, +1.5%); com a do modelo, b = 14.6 (+1.7%)
+guinada/torque_chirp                   nativo  yaw      resposta em frequencia 0.2-4.8 Hz: |dmag| mediana 0.07 dB, max 0.85 dB; |dfase| max 2.9 graus
+                                                        planta identificada (24 pontos, 0.2-4.8 Hz): a = 2.01 (modelo 1.99), b = 14.6 (modelo 14.4, +1.7%); com a do modelo, b = 14.6 (+1.7%)
+guinada/torque_chirp                   nativo  yaw      resposta em frequencia 0.2-4.8 Hz: |dmag| mediana 0.06 dB, max 0.21 dB; |dfase| max 3.5 graus
+                                                        planta identificada (24 pontos, 0.2-4.8 Hz): a = 2.01 (modelo 1.99), b = 14.6 (modelo 14.4, +1.7%); com a do modelo, b = 14.6 (+1.8%)
+guinada/torque_degrau                  cc_eso  yaw          1,77/1,78       +0.4     1,02/1,01       -1.0      -0.2
+guinada/torque_degrau                  cc_eso  yaw          3,21/3,22       +0.1     2,44/2,42       -0.6      -1.1
+guinada/torque_degrau                  cc_lqg  yaw          2,28/2,33       +2.0     1,34/1,34       -0.2      +2.9
+guinada/torque_degrau                  cc_lqg  yaw          2,16/2,21       +2.1     2,11/2,12       +0.6      +2.2
+guinada/torque_degrau                  cc_lqg  yaw          1,90/1,94       +1.9     1,61/1,61       -0.0      +1.8
+guinada/torque_degrau                  cc_lqi  yaw          1,87/1,87       +0.1     1,13/1,12       -0.4      -0.3
+guinada/torque_degrau                  cc_lqi  yaw          4,73/4,73       -0.1     2,00/1,99       -0.4      -0.4
+guinada/torque_degrau                  cc_lqi  yaw          6,16/6,15       -0.1     2,33/2,30       -1.2      -0.5
+guinada/torque_degrau                  cc_lqi  yaw          1,87/1,87       +0.1     1,13/1,13       -0.4      -0.3
+guinada/torque_degrau                  cc_pid  yaw          2,56/2,58       +0.5    22,09/22,79      +3.2      -0.0
+guinada/torque_degrau                  cc_pid  yaw          2,56/2,58       +0.5    22,17/22,81      +2.9      +0.0
+guinada/torque_degrau                  nativo  yaw          2,56/2,57       +0.4    22,18/22,74      +2.5      -0.1
+guinada/torque_degrau                  nativo  yaw          3,00/3,00       -0.2    21,60/22,97      +6.4      -0.3
+guinada/torque_degrau                  nativo  yaw          2,56/2,57       +0.4    22,15/22,73      +2.6      -0.1
+guinada/torque_estocastico             cc_eso  yaw          3,58/3,60       +0.4    13,93/13,94      +0.1      +0.5
+guinada/torque_estocastico             cc_lqg  yaw          4,66/4,59       -1.3    11,91/11,90      -0.1      +1.6
+guinada/torque_estocastico             cc_lqg  yaw          4,10/4,03       -1.6    11,76/11,77      +0.1      +1.5
+guinada/torque_estocastico             cc_lqi  yaw          3,46/3,47       +0.3     2,29/2,29       -0.1      +0.4
+guinada/torque_estocastico             cc_lqi  yaw          8,13/8,13       +0.1     4,32/4,32       -0.1      +0.1
+guinada/torque_estocastico             nativo  yaw          5,04/5,10       +1.1     4,75/4,75       +0.1      +0.8
+guinada/torque_pulso                   cc_eso  yaw          4,21/4,24       +0.6     1,55/1,53       -1.5      +0.2
+guinada/torque_pulso                   cc_eso  yaw          6,15/6,17       +0.4     2,79/2,67       -4.4      -0.4
+guinada/torque_pulso                   cc_lqg  yaw          5,63/5,62       -0.1     1,64/1,64       -0.2      +1.0
+guinada/torque_pulso                   cc_lqg  yaw          5,59/5,59       +0.0     1,76/1,75       -0.6      +1.0
+guinada/torque_pulso                   cc_lqg  yaw          4,70/4,71       +0.2     1,72/1,71       -0.4      +0.9
+guinada/torque_pulso                   cc_lqi  yaw          4,18/4,20       +0.5     1,68/1,66       -0.6      +0.2
+guinada/torque_pulso                   cc_lqi  yaw          7,08/7,08       +0.1     2,80/2,78       -0.6      -0.2
+guinada/torque_pulso                   cc_lqi  yaw          7,98/7,97       -0.1     3,26/3,23       -0.6      -0.3
+guinada/torque_pulso                   cc_lqi  yaw          4,20/4,21       +0.2     1,68/1,66       -0.7      -0.3
+guinada/torque_pulso                   cc_pid  yaw          5,70/5,73       +0.4     0,35/0,57      +61.4      +0.3
+guinada/torque_pulso                   cc_pid  yaw          5,86/5,88       +0.3     0,35/0,56      +61.2      +0.1
+guinada/torque_pulso                   nativo  yaw          6,06/6,10       +0.6     0,35/0,54      +55.0      +0.5
+guinada/torque_pulso                   nativo  yaw          6,68/6,70       +0.3     0,38/0,37       -2.0      +0.1
+guinada/torque_pulso                   nativo  yaw          5,94/5,97       +0.5     0,35/0,55      +57.1      +0.2
+rolagem/torque_chirp                   cc_eso  roll     resposta em frequencia 0.4-9.6 Hz: |dmag| mediana 0.42 dB, max 2.79 dB; |dfase| max 7.4 graus
+                                                        planta identificada (17 pontos, 1.2-8.0 Hz): a = 0.17 (modelo 1.99), b = 439.8 (modelo 430.2, +2.2%); com a do modelo, b = 431.0 (+0.2%)
+rolagem/torque_chirp                   cc_lqg  roll     resposta em frequencia 0.4-9.6 Hz: |dmag| mediana 0.77 dB, max 2.26 dB; |dfase| max 10.9 graus
+                                                        planta identificada (22 pontos, 1.2-9.6 Hz): a = -0.33 (modelo 1.99), b = 436.9 (modelo 430.0, +1.6%); com a do modelo, b = 426.8 (-0.8%)
+rolagem/torque_chirp                   cc_lqg  roll     resposta em frequencia 0.4-9.6 Hz: |dmag| mediana 0.68 dB, max 2.13 dB; |dfase| max 9.8 graus
+                                                        planta identificada (21 pontos, 1.2-9.2 Hz): a = 0.14 (modelo 1.99), b = 435.8 (modelo 430.0, +1.3%); com a do modelo, b = 427.7 (-0.5%)
+rolagem/torque_chirp                   cc_lqi  roll     resposta em frequencia 0.4-9.2 Hz: |dmag| mediana 0.37 dB, max 2.52 dB; |dfase| max 7.1 graus
+                                                        planta identificada (22 pontos, 1.2-9.6 Hz): a = -0.06 (modelo 1.99), b = 440.2 (modelo 430.0, +2.4%); com a do modelo, b = 430.0 (-0.0%)
+rolagem/torque_chirp                   cc_lqi  roll     resposta em frequencia 0.4-8.8 Hz: |dmag| mediana 0.34 dB, max 2.84 dB; |dfase| max 7.5 graus
+                                                        planta identificada (17 pontos, 1.2-7.6 Hz): a = 1.06 (modelo 1.99), b = 432.2 (modelo 430.3, +0.5%); com a do modelo, b = 427.8 (-0.6%)
+rolagem/torque_chirp                   cc_lqi  roll     resposta em frequencia 0.4-9.6 Hz: |dmag| mediana 0.37 dB, max 1.78 dB; |dfase| max 7.4 graus
+                                                        planta identificada (20 pontos, 1.2-9.6 Hz): a = -0.45 (modelo 1.99), b = 435.2 (modelo 430.3, +1.1%); com a do modelo, b = 423.3 (-1.6%)
+rolagem/torque_chirp                   cc_pid  roll     resposta em frequencia 0.4-9.6 Hz: |dmag| mediana 0.49 dB, max 2.04 dB; |dfase| max 7.5 graus
+                                                        planta identificada (23 pontos, 0.4-9.6 Hz): a = -0.53 (modelo 1.99), b = 440.5 (modelo 430.0, +2.4%); com a do modelo, b = 429.5 (-0.1%)
+rolagem/torque_chirp                   cc_pid  roll     resposta em frequencia 0.4-9.6 Hz: |dmag| mediana 0.42 dB, max 1.97 dB; |dfase| max 7.2 graus
+                                                        planta identificada (24 pontos, 0.4-9.6 Hz): a = -0.59 (modelo 1.99), b = 440.1 (modelo 429.9, +2.4%); com a do modelo, b = 428.6 (-0.3%)
+rolagem/torque_chirp                   nativo  roll     resposta em frequencia 0.4-9.6 Hz: |dmag| mediana 0.57 dB, max 1.42 dB; |dfase| max 6.7 graus
+                                                        planta identificada (24 pontos, 0.4-9.6 Hz): a = -1.51 (modelo 1.99), b = 445.6 (modelo 430.0, +3.6%); com a do modelo, b = 429.9 (-0.0%)
+rolagem/torque_chirp                   nativo  roll     resposta em frequencia 0.4-9.6 Hz: |dmag| mediana 0.62 dB, max 2.42 dB; |dfase| max 7.4 graus
+                                                        planta identificada (22 pontos, 1.2-9.6 Hz): a = -0.02 (modelo 1.99), b = 441.2 (modelo 430.0, +2.6%); com a do modelo, b = 431.3 (+0.3%)
+rolagem/torque_degrau                  cc_eso  roll         0,66/0,66       +0.4     0,41/0,43       +4.8      -1.3
+rolagem/torque_degrau                  cc_eso  roll         1,95/1,97       +1.1     0,74/0,77       +3.0      -0.3
+rolagem/torque_degrau                  cc_lqg  roll         0,51/0,56       +9.9     0,18/0,17       -1.4      -6.6
+rolagem/torque_degrau                  cc_lqg  roll         1,28/1,34       +4.6     0,40/0,41       +1.9      -0.9
+rolagem/torque_degrau                  cc_lqg  roll         0,54/0,57       +5.8     0,21/0,21       +4.9      -7.0
+rolagem/torque_degrau                  cc_lqi  roll         0,65/0,67       +2.1     0,44/0,47       +5.6      +0.1
+rolagem/torque_degrau                  cc_lqi  roll         1,80/1,87       +3.6     0,40/0,42       +5.7      +1.0
+rolagem/torque_degrau                  cc_lqi  roll         0,65/0,66       +1.1     0,42/0,45       +7.7      -1.5
+rolagem/torque_degrau                  cc_lqi  roll         0,65/0,66       +1.8     0,44/0,46       +5.1      -0.5
+rolagem/torque_degrau                  cc_pid  roll         0,61/0,62       +0.8     2,09/2,08       -0.6      -1.5
+rolagem/torque_degrau                  cc_pid  roll         0,61/0,62       +1.0     2,25/2,08       -7.6      -1.5
+rolagem/torque_degrau                  nativo  roll         0,60/0,61       +1.2     2,25/2,08       -7.6      -1.8
+rolagem/torque_degrau                  nativo  roll         1,42/1,45       +2.5     2,29/2,22       -3.1      -0.3
+rolagem/torque_degrau                  nativo  roll         0,66/0,67       +2.3     0,45/0,44       -0.6      -0.6
+rolagem/torque_estocastico             cc_eso  roll         1,89/1,93       +1.8        —/—             —      +1.4
+rolagem/torque_estocastico             cc_lqg  roll         1,60/1,57       -1.9        —/—             —      +1.7
+rolagem/torque_estocastico             cc_lqg  roll         1,60/1,58       -1.5        —/—             —      +1.8
+rolagem/torque_estocastico             cc_lqi  roll         1,86/1,90       +2.2        —/—             —      +1.3
+rolagem/torque_estocastico             cc_lqi  roll         1,83/1,89       +3.0        —/—             —      +1.4
+rolagem/torque_estocastico             nativo  roll         1,81/1,82       +0.5        —/—             —      +1.7
+rolagem/torque_pulso                   cc_eso  roll         0,99/1,00       +0.9     0,74/0,76       +3.1      +0.1
+rolagem/torque_pulso                   cc_eso  roll         2,90/2,95       +1.7     0,99/1,00       +0.5      +0.6
+rolagem/torque_pulso                   cc_lqg  roll         0,81/0,86       +5.5     0,51/0,17      -65.8      -0.0
+rolagem/torque_pulso                   cc_lqg  roll         1,93/2,02       +4.6     0,71/0,70       -1.8      +0.6
+rolagem/torque_pulso                   cc_lqg  roll         0,79/0,85       +7.7     0,22/0,55     +154.0      +0.6
+rolagem/torque_pulso                   cc_lqi  roll         0,98/0,99       +1.5     0,75/0,76       +2.0      -0.1
+rolagem/torque_pulso                   cc_lqi  roll         2,72/2,79       +2.7     0,74/0,73       -1.0      +0.2
+rolagem/torque_pulso                   cc_lqi  roll         0,97/1,00       +3.0     0,74/0,74       +0.7      +0.2
+rolagem/torque_pulso                   cc_lqi  roll         0,97/1,00       +2.6     0,73/0,74       +1.7      +0.3
+rolagem/torque_pulso                   cc_pid  roll         0,91/0,93       +1.9     1,21/1,27       +4.5      +0.6
+rolagem/torque_pulso                   cc_pid  roll         0,91/0,93       +2.3     1,21/1,26       +4.3      +0.7
+rolagem/torque_pulso                   nativo  roll         0,90/0,91       +1.9     1,32/1,38       +4.4      +0.8
+rolagem/torque_pulso                   nativo  roll         2,13/2,19       +2.5     1,29/1,30       +0.6      +0.7
+rolagem/torque_pulso                   nativo  roll         0,99/1,02       +2.5     0,74/0,76       +2.7      +0.4
+rolagem_arfagem_guinada/torque_degrau  cc_eso  roll         0,66/0,66       -0.0     0,43/0,43       -0.0      -1.2
+rolagem_arfagem_guinada/torque_degrau  cc_eso  pitch        0,69/0,68       -0.6     0,47/0,48       +2.6      +0.5
+rolagem_arfagem_guinada/torque_degrau  cc_eso  yaw          1,76/1,78       +1.4     1,02/1,00       -1.2      +0.6
+rolagem_arfagem_guinada/torque_degrau  cc_lqg  roll         0,53/0,56       +7.0     0,17/0,18       +6.1     -10.3
+rolagem_arfagem_guinada/torque_degrau  cc_lqg  pitch        0,54/0,58       +8.8     0,18/0,18       -1.4      -8.7
+rolagem_arfagem_guinada/torque_degrau  cc_lqg  yaw          2,29/2,32       +1.6     1,34/1,33       -0.2      +2.6
+rolagem_arfagem_guinada/torque_degrau  cc_lqg  roll         0,53/0,56       +5.6     0,21/0,21       +1.2     -11.4
+rolagem_arfagem_guinada/torque_degrau  cc_lqg  pitch        0,55/0,60       +7.7     0,19/0,19       -0.0      -8.9
+rolagem_arfagem_guinada/torque_degrau  cc_lqg  yaw          1,90/1,94       +2.2     1,59/1,62       +1.4      +2.5
+rolagem_arfagem_guinada/torque_degrau  cc_lqi  roll         0,65/0,66       +1.7     0,45/0,46       +2.8      -1.4
+rolagem_arfagem_guinada/torque_degrau  cc_lqi  pitch        0,69/0,69       -0.3     0,66/0,66       +0.4      -0.9
+rolagem_arfagem_guinada/torque_degrau  cc_lqi  yaw          1,86/1,87       +0.7     1,13/1,12       -0.4      +0.3
+rolagem_arfagem_guinada/torque_degrau  cc_lqi  roll         0,65/0,67       +2.3     0,45/0,46       +3.3      -0.1
+rolagem_arfagem_guinada/torque_degrau  cc_lqi  pitch        0,69/0,70       +0.8     0,66/0,68       +3.8      -0.0
+rolagem_arfagem_guinada/torque_degrau  cc_lqi  yaw          6,12/6,16       +0.7     2,33/2,30       -1.0      +0.4
+rolagem_arfagem_guinada/torque_degrau  cc_lqi  roll         0,65/0,66       +1.7     0,44/0,46       +4.0      -1.2
+rolagem_arfagem_guinada/torque_degrau  cc_lqi  pitch        0,69/0,70       +0.8     0,65/0,69       +6.6      +1.1
+rolagem_arfagem_guinada/torque_degrau  cc_lqi  yaw          1,86/1,88       +0.7     1,13/1,13       -0.4      +0.3
+rolagem_arfagem_guinada/torque_degrau  cc_pid  roll         0,61/0,62       +1.6     2,21/2,07       -6.7      -2.1
+rolagem_arfagem_guinada/torque_degrau  cc_pid  pitch        0,62/0,63       +1.4     2,23/2,09       -6.3      -1.7
+rolagem_arfagem_guinada/torque_degrau  cc_pid  yaw          2,54/2,58       +1.3    22,24/22,83      +2.7      +0.5
+rolagem_arfagem_guinada/torque_degrau  cc_pid  roll         0,60/0,61       +1.7     2,24/2,07       -7.5      -2.1
+rolagem_arfagem_guinada/torque_degrau  cc_pid  pitch        0,62/0,63       +1.5     2,25/2,09       -7.0      -1.6
+rolagem_arfagem_guinada/torque_degrau  cc_pid  yaw          2,54/2,57       +1.1    22,11/22,80      +3.1      +0.5
+rolagem_arfagem_guinada/torque_degrau  nativo  roll         0,59/0,61       +1.8     2,30/2,07       -9.9      -2.0
+rolagem_arfagem_guinada/torque_degrau  nativo  pitch        0,61/0,63       +1.8     2,28/2,12       -6.6      -1.4
+rolagem_arfagem_guinada/torque_degrau  nativo  yaw          2,54/2,57       +1.2    22,14/22,73      +2.7      +0.4
+rolagem_arfagem_guinada/torque_degrau  nativo  roll         0,66/0,67       +2.5     0,46/0,44       -3.8      -1.4
+rolagem_arfagem_guinada/torque_degrau  nativo  pitch        0,69/0,70       +0.7     0,66/0,65       -0.4      -0.3
+rolagem_arfagem_guinada/torque_degrau  nativo  yaw          2,53/2,56       +1.2    22,15/22,73      +2.6      +0.4
+rolagem_arfagem_guinada/torque_estocastico cc_eso  roll         1,88/1,89       +0.6        —/—             —      +1.4
+rolagem_arfagem_guinada/torque_estocastico cc_eso  pitch        3,09/3,13       +1.5        —/—             —      +1.1
+rolagem_arfagem_guinada/torque_estocastico cc_eso  yaw          3,60/3,66       +1.5     8,02/8,01       -0.1      +0.6
+rolagem_arfagem_guinada/torque_estocastico cc_eso  roll         5,50/5,45       -1.0        —/—             —      +1.4
+rolagem_arfagem_guinada/torque_estocastico cc_eso  pitch        7,53/7,76       +3.0        —/—             —      +1.3
+rolagem_arfagem_guinada/torque_estocastico cc_eso  yaw          5,65/5,62       -0.5     2,17/2,43      +12.5      +0.1
+rolagem_arfagem_guinada/torque_estocastico cc_lqg  roll         1,46/1,51       +3.2        —/—             —      +1.9
+rolagem_arfagem_guinada/torque_estocastico cc_lqg  pitch        2,18/2,20       +0.8        —/—             —      +1.5
+rolagem_arfagem_guinada/torque_estocastico cc_lqg  yaw          4,77/4,59       -3.6    12,83/12,79      -0.3      +0.9
+rolagem_arfagem_guinada/torque_estocastico cc_lqg  roll         3,60/3,78       +5.0        —/—             —      +1.9
+rolagem_arfagem_guinada/torque_estocastico cc_lqg  pitch        5,98/6,13       +2.5        —/—             —      +1.8
+rolagem_arfagem_guinada/torque_estocastico cc_lqg  yaw          4,80/4,67       -2.6    11,94/12,80      +7.2      -0.7
+rolagem_arfagem_guinada/torque_estocastico cc_lqg  roll         1,45/1,49       +2.8        —/—             —      +1.9
+rolagem_arfagem_guinada/torque_estocastico cc_lqg  pitch        2,33/2,41       +3.4        —/—             —      +1.4
+rolagem_arfagem_guinada/torque_estocastico cc_lqg  yaw          4,08/3,99       -2.2    14,17/13,87      -2.1      +1.3
+rolagem_arfagem_guinada/torque_estocastico cc_lqi  roll         1,87/1,92       +2.3        —/—             —      +1.3
+rolagem_arfagem_guinada/torque_estocastico cc_lqi  pitch        2,98/3,02       +1.4        —/—             —      +1.2
+rolagem_arfagem_guinada/torque_estocastico cc_lqi  yaw          3,39/3,42       +0.8    11,89/11,89      -0.0      +0.3
+rolagem_arfagem_guinada/torque_estocastico cc_lqi  roll         5,10/5,17       +1.4        —/—             —      +1.7
+rolagem_arfagem_guinada/torque_estocastico cc_lqi  pitch        7,89/8,07       +2.4    29,54/29,54      -0.0      +1.4
+rolagem_arfagem_guinada/torque_estocastico cc_lqi  yaw          7,12/7,09       -0.4     2,45/2,47       +0.8      -0.1
+rolagem_arfagem_guinada/torque_estocastico cc_lqi  roll         1,83/1,86       +1.4        —/—             —      +1.4
+rolagem_arfagem_guinada/torque_estocastico cc_lqi  pitch        2,93/3,01       +2.9        —/—             —      +1.1
+rolagem_arfagem_guinada/torque_estocastico cc_lqi  yaw          7,99/7,99       +0.1     4,27/4,26       -0.2      -0.1
+rolagem_arfagem_guinada/torque_estocastico nativo  roll         1,80/1,86       +3.7        —/—             —      +1.6
+rolagem_arfagem_guinada/torque_estocastico nativo  pitch        2,52/2,58       +2.2        —/—             —      +1.5
+rolagem_arfagem_guinada/torque_estocastico nativo  yaw          5,15/5,22       +1.4     4,74/4,74       +0.1      +0.8
+rolagem_arfagem_guinada/torque_estocastico nativo  roll         4,42/4,44       +0.4        —/—             —      +1.7
+rolagem_arfagem_guinada/torque_estocastico nativo  pitch        5,92/6,10       +3.0        —/—             —      +1.6
+rolagem_arfagem_guinada/torque_estocastico nativo  yaw          5,93/6,08       +2.4    15,17/4,75      -68.7      +0.8
+rolagem_arfagem_guinada/torque_pulso   cc_eso  roll         1,00/1,00       -0.3     0,72/0,75       +3.8      +0.1
+rolagem_arfagem_guinada/torque_pulso   cc_eso  pitch        1,03/1,03       +0.2     0,77/0,80       +3.6      +0.8
+rolagem_arfagem_guinada/torque_pulso   cc_eso  yaw          4,11/4,14       +0.7     1,55/1,52       -1.5      +0.1
+rolagem_arfagem_guinada/torque_pulso   cc_lqg  roll         0,84/0,86       +2.9     0,16/0,17       +6.2      -2.5
+rolagem_arfagem_guinada/torque_pulso   cc_lqg  pitch        0,81/0,89       +9.3     0,18/0,18       -0.0      +2.3
+rolagem_arfagem_guinada/torque_pulso   cc_lqg  yaw          5,69/5,64       -0.8     1,65/1,64       -0.2      +1.3
+rolagem_arfagem_guinada/torque_pulso   cc_lqg  roll         0,82/0,85       +3.8     0,22/0,55     +152.9      -1.7
+rolagem_arfagem_guinada/torque_pulso   cc_lqg  pitch        0,84/0,91       +8.8     0,52/0,18      -64.1      +2.4
+rolagem_arfagem_guinada/torque_pulso   cc_lqg  yaw          4,91/4,98       +1.4     1,74/1,73       -0.4      +1.8
+rolagem_arfagem_guinada/torque_pulso   cc_lqi  roll         0,98/0,99       +1.2     0,74/0,75       +1.4      -0.3
+rolagem_arfagem_guinada/torque_pulso   cc_lqi  pitch        1,03/1,04       +0.2     0,88/0,92       +4.6      +1.3
+rolagem_arfagem_guinada/torque_pulso   cc_lqi  yaw          4,14/4,17       +0.8     1,68/1,67       -0.7      +0.3
+rolagem_arfagem_guinada/torque_pulso   cc_lqi  roll         0,99/0,99       +0.1     0,75/0,77       +3.3      -1.0
+rolagem_arfagem_guinada/torque_pulso   cc_lqi  pitch        1,03/1,05       +1.5     0,91/0,91       +0.8      +1.6
+rolagem_arfagem_guinada/torque_pulso   cc_lqi  yaw          8,26/8,29       +0.3     3,27/3,24       -0.9      +0.2
+rolagem_arfagem_guinada/torque_pulso   cc_lqi  roll         0,98/0,99       +1.4     0,74/0,75       +1.4      -0.3
+rolagem_arfagem_guinada/torque_pulso   cc_lqi  pitch        1,03/1,05       +2.1     0,87/0,87       +0.6      +1.2
+rolagem_arfagem_guinada/torque_pulso   cc_lqi  yaw          4,13/4,16       +0.6     1,68/1,66       -0.6      +0.2
+rolagem_arfagem_guinada/torque_pulso   cc_pid  roll         0,91/0,93       +1.4     1,29/1,31       +1.7      -0.2
+rolagem_arfagem_guinada/torque_pulso   cc_pid  pitch        0,93/0,95       +2.6     1,27/1,34       +5.1      +1.5
+rolagem_arfagem_guinada/torque_pulso   cc_pid  yaw          6,02/6,08       +1.0     0,35/0,55      +55.7      +0.8
+rolagem_arfagem_guinada/torque_pulso   cc_pid  roll         0,91/0,93       +1.2     1,20/1,29       +7.3      +0.0
+rolagem_arfagem_guinada/torque_pulso   cc_pid  pitch        0,93/0,95       +2.3     1,27/1,29       +1.2      +1.6
+rolagem_arfagem_guinada/torque_pulso   cc_pid  yaw          5,89/5,96       +1.1     0,35/0,55      +57.9      +1.0
+rolagem_arfagem_guinada/torque_pulso   nativo  roll         0,90/0,91       +1.1     1,29/1,34       +4.3      -0.0
+rolagem_arfagem_guinada/torque_pulso   nativo  pitch        0,92/0,94       +2.5     1,31/1,34       +2.3      +1.6
+rolagem_arfagem_guinada/torque_pulso   nativo  yaw          6,03/6,08       +0.9     0,35/0,55      +55.7      +0.6
+rolagem_arfagem_guinada/torque_pulso   nativo  roll         1,00/1,02       +1.7     0,75/0,77       +3.4      +0.2
+rolagem_arfagem_guinada/torque_pulso   nativo  pitch        1,04/1,05       +1.6     0,90/0,93       +3.0      +1.1
+rolagem_arfagem_guinada/torque_pulso   nativo  yaw          5,98/6,02       +0.6     0,35/0,55      +56.0      +0.4
+ruido/rnd10/torque_degrau              cc_eso  roll         0,66/0,72       +8.9     0,44/1,57     +260.3     +46.2
+ruido/rnd10/torque_degrau              cc_eso  pitch        0,71/0,74       +4.8     0,50/1,56     +212.0     +39.8
+ruido/rnd10/torque_degrau              cc_eso  yaw          1,79/1,81       +1.1     1,01/1,16      +15.4      +6.6
+ruido/rnd10/torque_degrau              cc_lqg  roll         0,53/0,61      +15.3     0,16/2,10     +1190.8     +80.1
+ruido/rnd10/torque_degrau              cc_lqg  pitch        0,53/0,63      +18.7     0,16/0,18       +9.2     +78.2
+ruido/rnd10/torque_degrau              cc_lqg  yaw          2,29/2,34       +2.0     1,35/1,40       +3.9      +3.3
+ruido/rnd10/torque_degrau              cc_lqg  roll         0,51/0,61      +20.1     0,22/2,06     +824.7     +77.9
+ruido/rnd10/torque_degrau              cc_lqg  pitch        0,53/0,64      +20.3     0,19/0,20       +6.8     +73.6
+ruido/rnd10/torque_degrau              cc_lqg  yaw          1,93/1,95       +1.3     1,55/1,69       +9.4      +3.8
+ruido/rnd10/torque_degrau              cc_lqi  roll         0,66/0,71       +8.6     0,46/1,57     +246.2     +48.4
+ruido/rnd10/torque_degrau              cc_lqi  pitch        0,69/0,75       +7.5     0,70/1,57     +123.1     +36.8
+ruido/rnd10/torque_degrau              cc_lqi  yaw          1,87/1,90       +1.7     1,10/1,22      +11.4      +6.3
+ruido/rnd10/torque_degrau              cc_lqi  roll         0,65/0,71      +10.2     0,46/1,58     +241.6     +47.9
+ruido/rnd10/torque_degrau              cc_lqi  pitch        0,70/0,74       +6.3     0,67/1,56     +133.2     +37.0
+ruido/rnd10/torque_degrau              cc_lqi  yaw          6,06/6,21       +2.4     2,38/2,26       -5.1      +2.4
+ruido/rnd10/torque_degrau              nativo  roll         0,60/0,66       +8.7     2,57/2,37       -7.8     +34.1
+ruido/rnd10/torque_degrau              nativo  pitch        0,62/0,68       +8.4     2,37/2,38       +0.4     +32.0
+ruido/rnd10/torque_degrau              nativo  yaw          2,56/2,60       +1.7    22,70/20,79      -8.4      -0.0
+ruido/rnd10/torque_estocastico         cc_eso  roll         1,90/2,01       +6.0        —/—             —      +1.3
+ruido/rnd10/torque_estocastico         cc_eso  pitch        3,05/3,11       +2.0        —/—             —      +1.5
+ruido/rnd10/torque_estocastico         cc_eso  yaw          3,49/3,46       -0.9    12,81/10,95     -14.5      +0.3
+ruido/rnd10/torque_estocastico         cc_lqg  roll         1,53/1,61       +5.4        —/—             —      +1.9
+ruido/rnd10/torque_estocastico         cc_lqg  pitch        2,28/2,38       +4.3        —/—             —      +1.9
+ruido/rnd10/torque_estocastico         cc_lqg  yaw          4,80/4,59       -4.4     6,25/6,25       +0.0      +0.7
+ruido/rnd10/torque_estocastico         cc_lqg  roll         1,55/1,59       +2.5        —/—             —      +2.0
+ruido/rnd10/torque_estocastico         cc_lqg  pitch        2,42/2,51       +3.8        —/—             —      +1.7
+ruido/rnd10/torque_estocastico         cc_lqg  yaw          4,28/4,15       -3.2     6,27/6,26       -0.1      +1.1
+ruido/rnd10/torque_estocastico         cc_lqi  roll         1,81/1,90       +5.0        —/—             —      +1.3
+ruido/rnd10/torque_estocastico         cc_lqi  pitch        2,95/3,04       +3.0        —/—             —      +1.5
+ruido/rnd10/torque_estocastico         cc_lqi  yaw          3,39/3,41       +0.8     6,42/6,42       -0.0      -0.1
+ruido/rnd10/torque_estocastico         cc_lqi  roll         1,85/1,96       +6.0        —/—             —      +1.3
+ruido/rnd10/torque_estocastico         cc_lqi  pitch        3,00/3,07       +2.6        —/—             —      +1.5
+ruido/rnd10/torque_estocastico         cc_lqi  yaw          8,04/7,92       -1.4     4,39/4,37       -0.4      -0.7
+ruido/rnd10/torque_estocastico         nativo  roll         1,81/1,87       +3.3        —/—             —      +1.9
+ruido/rnd10/torque_estocastico         nativo  pitch        2,39/2,48       +3.8        —/—             —      +2.1
+ruido/rnd10/torque_estocastico         nativo  yaw          5,22/5,26       +0.7     4,74/4,75       +0.2      +1.0
+ruido/rnd10/torque_pulso               cc_eso  roll         1,00/1,05       +5.2     0,70/0,68       -2.9      +1.1
+ruido/rnd10/torque_pulso               cc_eso  pitch        1,05/1,09       +3.7     0,77/0,71       -7.8      +1.0
+ruido/rnd10/torque_pulso               cc_eso  yaw          4,15/4,21       +1.5     1,58/1,47       -6.8      -0.4
+ruido/rnd10/torque_pulso               cc_lqg  roll         0,83/0,89       +7.0     0,16/0,46     +186.2      +2.1
+ruido/rnd10/torque_pulso               cc_lqg  pitch        0,84/0,91       +9.4     0,48/0,48       -1.0      +5.4
+ruido/rnd10/torque_pulso               cc_lqg  yaw          5,42/5,48       +1.1     1,66/1,61       -3.5      +1.2
+ruido/rnd10/torque_pulso               cc_lqg  roll         0,82/0,90       +8.9     0,21/0,50     +141.0      +2.5
+ruido/rnd10/torque_pulso               cc_lqg  pitch        0,84/0,94      +11.6     0,49/0,48       -2.6      +5.5
+ruido/rnd10/torque_pulso               cc_lqg  yaw          4,69/4,73       +0.8     1,73/1,68       -3.2      +0.5
+ruido/rnd10/torque_pulso               cc_lqi  roll         0,99/1,04       +5.1     0,73/0,67       -7.9      +0.7
+ruido/rnd10/torque_pulso               cc_lqi  pitch        1,04/1,08       +4.7     0,84/0,78       -7.4      +1.0
+ruido/rnd10/torque_pulso               cc_lqi  yaw          4,05/4,09       +0.9     1,67/1,63       -2.5      -1.1
+ruido/rnd10/torque_pulso               cc_lqi  roll         0,98/1,04       +6.8     0,75/0,70       -6.0      -0.0
+ruido/rnd10/torque_pulso               cc_lqi  pitch        1,02/1,09       +7.0     0,94/0,82      -12.5      +1.9
+ruido/rnd10/torque_pulso               cc_lqi  yaw          8,34/8,44       +1.2     3,25/3,24       -0.3      +0.6
+ruido/rnd10/torque_pulso               nativo  roll         0,90/0,97       +7.7     1,37/0,79      -42.5      -0.5
+ruido/rnd10/torque_pulso               nativo  pitch        0,93/1,00       +7.9     1,41/0,83      -41.1      +1.2
+ruido/rnd10/torque_pulso               nativo  yaw          6,10/6,18       +1.2     0,35/0,35       -0.7      +1.0
+ruido/rnd20/torque_degrau              cc_eso  roll         0,66/0,77      +17.1     0,38/2,11     +450.3    +126.5
+ruido/rnd20/torque_degrau              cc_eso  pitch        0,69/0,80      +16.0     0,50/2,10     +320.5    +110.9
+ruido/rnd20/torque_degrau              cc_eso  yaw          1,81/1,89       +4.1     1,08/1,43      +32.4     +16.2
+ruido/rnd20/torque_degrau              cc_lqg  roll         0,52/0,65      +25.3     0,17/2,10     +1136.8    +197.1
+ruido/rnd20/torque_degrau              cc_lqg  pitch        0,53/0,67      +25.7     0,19/2,10     +1003.9    +187.4
+ruido/rnd20/torque_degrau              cc_lqg  yaw          2,35/2,26       -4.0     1,15/1,21       +5.2      -5.0
+ruido/rnd20/torque_degrau              cc_lqg  roll         0,52/0,67      +28.4     0,21/2,11     +907.1    +191.6
+ruido/rnd20/torque_degrau              cc_lqg  pitch        0,54/0,69      +27.1     0,19/2,11     +1025.3    +178.2
+ruido/rnd20/torque_degrau              cc_lqg  yaw          1,96/1,89       -3.6     1,49/1,47       -1.5      -0.1
+ruido/rnd20/torque_degrau              cc_lqi  roll         0,66/0,76      +15.4     0,53/2,10     +297.2    +129.7
+ruido/rnd20/torque_degrau              cc_lqi  pitch        0,70/0,79      +13.0     0,73/2,09     +185.7    +101.8
+ruido/rnd20/torque_degrau              cc_lqi  yaw          1,87/1,92       +2.8     1,14/1,28      +12.3     +15.5
+ruido/rnd20/torque_degrau              cc_lqi  roll         0,65/0,76      +16.0     0,43/2,10     +393.5    +128.1
+ruido/rnd20/torque_degrau              cc_lqi  pitch        0,72/0,79       +9.7     0,72/2,09     +192.3    +101.3
+ruido/rnd20/torque_degrau              cc_lqi  yaw          5,92/6,26       +5.8     2,31/2,21       -4.2      +5.6
+ruido/rnd20/torque_degrau              cc_lqi  roll         0,66/0,75      +13.8     0,44/2,09     +372.9    +130.2
+ruido/rnd20/torque_degrau              cc_lqi  pitch        0,72/0,78       +9.3     0,74/2,09     +183.1    +101.8
+ruido/rnd20/torque_degrau              cc_lqi  yaw          1,85/1,96       +6.0     1,13/1,35      +19.5     +16.6
+ruido/rnd20/torque_degrau              cc_pid  roll         0,62/0,72      +16.7     2,58/2,39       -7.3     +89.5
+ruido/rnd20/torque_degrau              cc_pid  pitch        0,64/0,74      +16.0     2,36/2,39       +1.4     +83.4
+ruido/rnd20/torque_degrau              cc_pid  yaw          2,61/2,76       +5.4    22,04/20,79      -5.6      +4.0
+ruido/rnd20/torque_degrau              cc_pid  roll         0,62/0,72      +17.6     2,58/2,39       -7.2     +89.3
+ruido/rnd20/torque_degrau              cc_pid  pitch        0,65/0,74      +14.2     2,36/2,39       +1.4     +83.3
+ruido/rnd20/torque_degrau              cc_pid  yaw          2,61/2,76       +5.4    22,09/20,80      -5.8      +4.2
+ruido/rnd20/torque_degrau              nativo  roll         0,61/0,72      +17.4     2,59/2,39       -7.4     +89.5
+ruido/rnd20/torque_degrau              nativo  pitch        0,64/0,73      +14.4     2,37/2,39       +1.3     +83.3
+ruido/rnd20/torque_degrau              nativo  yaw          2,61/2,75       +5.4    22,61/20,78      -8.1      +3.8
+ruido/rnd20/torque_degrau              nativo  roll         0,67/0,78      +16.0     0,46/2,09     +355.4    +133.3
+ruido/rnd20/torque_degrau              nativo  pitch        0,71/0,80      +12.7     0,76/2,09     +177.2    +103.5
+ruido/rnd20/torque_degrau              nativo  yaw          2,61/2,75       +5.5    22,61/20,78      -8.1      +3.5
+ruido/rnd20/torque_estocastico         cc_eso  roll         1,86/2,10      +12.7        —/—             —      +1.7
+ruido/rnd20/torque_estocastico         cc_eso  pitch        3,09/3,17       +2.8        —/—             —      +2.3
+ruido/rnd20/torque_estocastico         cc_eso  yaw          3,70/3,75       +1.2     8,23/6,34      -22.9      +0.1
+ruido/rnd20/torque_estocastico         cc_lqg  roll         1,54/1,66       +7.8        —/—             —      +2.7
+ruido/rnd20/torque_estocastico         cc_lqg  pitch        2,17/2,28       +5.0        —/—             —      +2.9
+ruido/rnd20/torque_estocastico         cc_lqg  yaw          4,90/4,64       -5.4    11,70/11,80      +0.8      +0.7
+ruido/rnd20/torque_estocastico         cc_lqg  roll         1,47/1,67      +13.6        —/—             —      +2.5
+ruido/rnd20/torque_estocastico         cc_lqg  pitch        2,25/2,33       +3.5        —/—             —      +2.4
+ruido/rnd20/torque_estocastico         cc_lqg  yaw          4,24/4,15       -2.3     6,27/11,81     +88.3      +1.1
+ruido/rnd20/torque_estocastico         cc_lqi  roll         1,87/2,07      +10.8        —/—             —      +1.7
+ruido/rnd20/torque_estocastico         cc_lqi  pitch        2,75/2,83       +2.8        —/—             —      +2.1
+ruido/rnd20/torque_estocastico         cc_lqi  yaw          3,46/3,42       -1.2    12,80/6,43      -49.7      -0.5
+ruido/rnd20/torque_estocastico         cc_lqi  roll         1,89/1,98       +4.7        —/—             —      +1.7
+ruido/rnd20/torque_estocastico         cc_lqi  pitch        3,00/3,11       +3.5        —/48,24         —      +2.1
+ruido/rnd20/torque_estocastico         cc_lqi  yaw          7,83/7,70       -1.6     4,28/4,29       +0.3      -0.6
+ruido/rnd20/torque_estocastico         nativo  roll         1,79/1,85       +3.2        —/—             —      +2.6
+ruido/rnd20/torque_estocastico         nativo  pitch        2,47/2,60       +5.1        —/—             —      +3.3
+ruido/rnd20/torque_estocastico         nativo  yaw          5,43/5,36       -1.4     3,88/15,19    +291.9      +0.9
+ruido/rnd20/torque_pulso               cc_eso  roll         1,01/1,11      +10.0     0,71/2,08     +193.0      +3.9
+ruido/rnd20/torque_pulso               cc_eso  pitch        1,06/1,14       +7.8     0,76/2,07     +172.1      +3.4
+ruido/rnd20/torque_pulso               cc_eso  yaw          4,40/4,46       +1.4     1,58/1,40      -11.4      -3.4
+ruido/rnd20/torque_pulso               cc_eso  roll         2,93/3,03       +3.5     0,97/0,91       -6.2      -1.5
+ruido/rnd20/torque_pulso               cc_eso  pitch        2,97/3,11       +4.7     1,17/1,01      -14.1      +0.5
+ruido/rnd20/torque_pulso               cc_eso  yaw          6,21/6,30       +1.5     2,94/2,41      -17.9      -4.1
+ruido/rnd20/torque_pulso               cc_lqg  roll         0,86/0,94      +10.0     0,16/2,10     +1251.6     +12.1
+ruido/rnd20/torque_pulso               cc_lqg  pitch        0,83/0,97      +17.2     0,18/2,09     +1094.3     +13.7
+ruido/rnd20/torque_pulso               cc_lqg  yaw          5,56/5,51       -0.8     1,59/1,66       +4.7      +1.2
+ruido/rnd20/torque_pulso               cc_lqg  roll         1,94/2,10       +8.0     0,72/0,66       -9.0      +0.1
+ruido/rnd20/torque_pulso               cc_lqg  pitch        2,09/2,22       +6.1     0,66/0,62       -5.3      +2.3
+ruido/rnd20/torque_pulso               cc_lqg  yaw          5,30/5,32       +0.3     1,71/1,71       +0.6      +1.7
+ruido/rnd20/torque_pulso               cc_lqg  roll         0,84/0,95      +12.8     0,22/2,08     +858.6     +10.5
+ruido/rnd20/torque_pulso               cc_lqg  pitch        0,85/0,99      +16.8     0,18/2,08     +1074.6     +12.9
+ruido/rnd20/torque_pulso               cc_lqg  yaw          4,78/4,76       -0.6     1,66/1,75       +5.1      +0.4
+ruido/rnd20/torque_pulso               cc_lqi  roll         0,99/1,09      +10.2     0,71/2,07     +194.3      +3.5
+ruido/rnd20/torque_pulso               cc_lqi  pitch        1,03/1,13       +9.7     0,90/2,06     +128.5      +3.0
+ruido/rnd20/torque_pulso               cc_lqi  yaw          4,09/4,14       +1.4     1,72/1,61       -6.4      -2.5
+ruido/rnd20/torque_pulso               cc_lqi  roll         2,75/2,87       +4.4     0,74/0,70       -5.7      -1.4
+ruido/rnd20/torque_pulso               cc_lqi  pitch        2,84/3,03       +6.5     0,82/0,80       -3.3      +2.2
+ruido/rnd20/torque_pulso               cc_lqi  yaw          7,21/7,19       -0.3     2,74/2,85       +4.2      -1.9
+ruido/rnd20/torque_pulso               cc_lqi  roll         1,00/1,09       +9.1     0,76/2,07     +171.8      +3.5
+ruido/rnd20/torque_pulso               cc_lqi  pitch        1,03/1,13       +9.4     0,91/2,06     +126.6      +3.5
+ruido/rnd20/torque_pulso               cc_lqi  yaw          7,92/8,01       +1.2     3,24/3,29       +1.6      +1.2
+ruido/rnd20/torque_pulso               cc_lqi  roll         0,98/1,10      +12.1     0,73/2,09     +185.6      +3.9
+ruido/rnd20/torque_pulso               cc_lqi  pitch        1,05/1,14       +8.3     0,85/2,07     +145.3      +3.4
+ruido/rnd20/torque_pulso               cc_lqi  yaw          4,21/4,23       +0.5     1,69/1,61       -5.0      -2.9
+ruido/rnd20/torque_pulso               cc_pid  roll         0,93/1,04      +12.4     1,49/0,53      -64.3      +3.5
+ruido/rnd20/torque_pulso               cc_pid  pitch        0,93/1,07      +14.5     1,34/0,53      -60.5      +4.0
+ruido/rnd20/torque_pulso               cc_pid  yaw          6,02/6,14       +1.9     0,58/0,35      -38.3      +1.9
+ruido/rnd20/torque_pulso               cc_pid  roll         0,91/1,03      +13.6     1,46/0,52      -64.8      +2.8
+ruido/rnd20/torque_pulso               cc_pid  pitch        0,94/1,06      +12.2     1,26/0,52      -58.8      +3.7
+ruido/rnd20/torque_pulso               cc_pid  yaw          5,93/6,04       +1.8     0,57/0,36      -38.0      +1.9
+ruido/rnd20/torque_pulso               nativo  roll         0,91/1,02      +12.4     1,33/0,52      -61.4      +3.3
+ruido/rnd20/torque_pulso               nativo  pitch        0,92/1,05      +14.4     1,37/0,52      -62.5      +4.9
+ruido/rnd20/torque_pulso               nativo  yaw          5,85/5,91       +0.9     0,57/0,35      -38.2      +1.1
+ruido/rnd20/torque_pulso               nativo  roll         2,16/2,26       +4.7     1,34/0,84      -37.3      -1.9
+ruido/rnd20/torque_pulso               nativo  pitch        2,23/2,39       +7.0     1,31/0,82      -37.0      +1.5
+ruido/rnd20/torque_pulso               nativo  yaw          6,48/6,55       +1.0     0,37/0,38       +2.7      +0.8
+ruido/rnd20/torque_pulso               nativo  roll         1,01/1,12      +11.4     0,72/2,07     +187.2      +4.1
+ruido/rnd20/torque_pulso               nativo  pitch        1,04/1,15      +11.0     0,92/2,06     +125.7      +3.2
+ruido/rnd20/torque_pulso               nativo  yaw          5,87/6,06       +3.2     0,34/0,36       +4.4      +3.8
+ruido/rnd40/torque_degrau              cc_eso  roll         0,68/0,87      +27.9     0,87/2,38     +173.1    +269.5
+ruido/rnd40/torque_degrau              cc_eso  pitch        0,74/0,91      +23.2     0,57/2,38     +321.7    +240.8
+ruido/rnd40/torque_degrau              cc_eso  yaw          1,96/2,14       +9.2     1,02/1,89      +85.5     +61.9
+ruido/rnd40/torque_degrau              cc_lqg  roll         0,49/0,76      +54.6     0,14/2,38     +1661.1    +312.7
+ruido/rnd40/torque_degrau              cc_lqg  pitch        0,51/0,77      +51.4     0,15/2,38     +1513.6    +292.4
+ruido/rnd40/torque_degrau              cc_lqg  yaw          2,59/1,98      -23.4     0,80/0,44      -45.0     +15.0
+ruido/rnd40/torque_degrau              cc_lqg  roll         0,49/0,76      +54.8     0,21/2,37     +1016.5    +313.1
+ruido/rnd40/torque_degrau              cc_lqg  pitch        0,54/0,78      +44.3     0,17/2,38     +1276.8    +284.1
+ruido/rnd40/torque_degrau              cc_lqg  yaw          2,06/1,62      -21.3     0,88/0,55      -37.3     +39.4
+ruido/rnd40/torque_degrau              cc_lqi  roll         0,66/0,86      +29.7     0,53/2,38     +346.5    +274.3
+ruido/rnd40/torque_degrau              cc_lqi  pitch        0,72/0,88      +22.4     0,76/2,37     +211.1    +230.0
+ruido/rnd40/torque_degrau              cc_lqi  yaw          1,89/1,94       +2.6     0,99/1,33      +35.2     +44.1
+ruido/rnd40/torque_degrau              cc_lqi  roll         0,70/0,87      +24.6     0,44/2,39     +448.3    +271.9
+ruido/rnd40/torque_degrau              cc_lqi  pitch        0,69/0,90      +29.1     0,86/2,38     +178.4    +229.6
+ruido/rnd40/torque_degrau              cc_lqi  yaw          5,83/6,41       +9.8     2,53/2,16      -14.4     +14.3
+ruido/rnd40/torque_degrau              nativo  roll         0,60/0,83      +37.5     2,44/3,25      +33.3    +202.2
+ruido/rnd40/torque_degrau              nativo  pitch        0,66/0,84      +27.8     2,65/3,24      +22.7    +190.9
+ruido/rnd40/torque_degrau              nativo  yaw          2,46/3,13      +27.0    16,05/13,06     -18.6     +19.3
+ruido/rnd40/torque_estocastico         cc_eso  roll         1,88/2,29      +21.7        —/—             —      +4.0
+ruido/rnd40/torque_estocastico         cc_eso  pitch        3,07/3,19       +3.9        —/—             —      +4.9
+ruido/rnd40/torque_estocastico         cc_eso  yaw          3,53/3,40       -3.7    11,16/8,08      -27.6      +2.2
+ruido/rnd40/torque_estocastico         cc_lqg  roll         1,50/1,74      +15.9        —/—             —      +6.1
+ruido/rnd40/torque_estocastico         cc_lqg  pitch        2,26/2,47       +9.5        —/—             —      +6.8
+ruido/rnd40/torque_estocastico         cc_lqg  yaw          4,82/4,78       -0.7     1,44/1,40       -2.6      +2.9
+ruido/rnd40/torque_estocastico         cc_lqg  roll         1,49/1,73      +16.1        —/—             —      +6.2
+ruido/rnd40/torque_estocastico         cc_lqg  pitch        2,22/2,44      +10.3        —/—             —      +6.3
+ruido/rnd40/torque_estocastico         cc_lqg  yaw          4,33/4,43       +2.3     2,23/1,49      -33.3      +4.4
+ruido/rnd40/torque_estocastico         cc_lqi  roll         1,87/2,25      +19.8        —/—             —      +4.0
+ruido/rnd40/torque_estocastico         cc_lqi  pitch        2,75/2,92       +5.9        —/—             —      +5.0
+ruido/rnd40/torque_estocastico         cc_lqi  yaw          3,56/3,23       -9.3    12,82/6,50      -49.3      +0.1
+ruido/rnd40/torque_estocastico         cc_lqi  roll         1,86/2,21      +18.8        —/—             —      +4.2
+ruido/rnd40/torque_estocastico         cc_lqi  pitch        2,80/2,91       +3.8        —/—             —      +4.8
+ruido/rnd40/torque_estocastico         cc_lqi  yaw          7,93/7,96       +0.4     9,82/9,82       -0.0      -1.3
+ruido/rnd40/torque_estocastico         nativo  roll         1,79/1,80       +0.9        —/—             —      +5.9
+ruido/rnd40/torque_estocastico         nativo  pitch        2,50/2,61       +4.7        —/—             —      +7.3
+ruido/rnd40/torque_estocastico         nativo  yaw          5,24/4,96       -5.3     4,77/4,72       -1.0      +1.7
+ruido/rnd40/torque_pulso               cc_eso  roll         1,02/1,20      +17.9     0,75/2,36     +213.6     +16.2
+ruido/rnd40/torque_pulso               cc_eso  pitch        1,05/1,24      +17.7     0,87/2,36     +172.8     +14.5
+ruido/rnd40/torque_pulso               cc_eso  yaw          4,38/4,59       +4.9     1,69/1,18      -30.0      -1.0
+ruido/rnd40/torque_pulso               cc_lqg  roll         0,84/1,04      +24.1     0,17/2,38     +1322.4     +38.4
+ruido/rnd40/torque_pulso               cc_lqg  pitch        0,81/1,06      +31.0     0,20/2,38     +1102.5     +40.5
+ruido/rnd40/torque_pulso               cc_lqg  yaw          5,54/5,33       -3.9     1,11/1,39      +24.5      +7.0
+ruido/rnd40/torque_pulso               cc_lqg  roll         0,83/1,04      +25.4     0,59/2,37     +299.6     +33.8
+ruido/rnd40/torque_pulso               cc_lqg  pitch        0,89/1,07      +20.6     0,50/2,36     +372.0     +30.0
+ruido/rnd40/torque_pulso               cc_lqg  yaw          4,80/4,58       -4.5     1,01/1,34      +32.8      +2.9
+ruido/rnd40/torque_pulso               cc_lqi  roll         1,01/1,20      +18.3     0,76/2,37     +210.5     +15.7
+ruido/rnd40/torque_pulso               cc_lqi  pitch        1,04/1,24      +19.3     1,05/2,36     +124.2     +12.3
+ruido/rnd40/torque_pulso               cc_lqi  yaw          4,22/4,33       +2.7     1,75/1,57      -10.0      -4.5
+ruido/rnd40/torque_pulso               cc_lqi  roll         1,05/1,18      +12.9     0,76/2,36     +209.2     +14.6
+ruido/rnd40/torque_pulso               cc_lqi  pitch        1,02/1,22      +19.4     1,04/2,35     +125.4     +13.1
+ruido/rnd40/torque_pulso               cc_lqi  yaw          7,98/8,25       +3.4     3,18/3,31       +4.2      +0.3
+ruido/rnd40/torque_pulso               nativo  roll         0,90/1,13      +25.2     1,70/0,36      -78.6     +18.9
+ruido/rnd40/torque_pulso               nativo  pitch        0,95/1,16      +21.3     1,45/0,37      -74.6     +19.9
+ruido/rnd40/torque_pulso               nativo  yaw          6,13/6,34       +3.4     0,55/1,19     +114.9      +5.2
+ruido/rnd80/torque_degrau              cc_eso  roll         0,72/1,13      +55.9     0,66/11,05    +1580.2    +418.8
+ruido/rnd80/torque_degrau              cc_eso  pitch        0,81/1,14      +40.8     0,40/3,44     +764.2    +395.8
+ruido/rnd80/torque_degrau              cc_eso  yaw          2,36/2,64      +11.8     0,59/1,59     +169.1    +156.5
+ruido/rnd80/torque_degrau              cc_lqg  roll         0,46/1,04     +125.0     0,10/3,43     +3330.0    +362.1
+ruido/rnd80/torque_degrau              cc_lqg  pitch        0,49/1,03     +112.4     0,16/8,49     +5206.2    +345.1
+ruido/rnd80/torque_degrau              cc_lqg  yaw          3,24/1,66      -48.9        —/—             —     +38.1
+ruido/rnd80/torque_degrau              cc_lqg  roll         0,46/1,05     +131.1     0,11/3,43     +3093.0    +372.8
+ruido/rnd80/torque_degrau              cc_lqg  pitch        0,49/1,04     +111.1     0,10/3,44     +3430.8    +335.3
+ruido/rnd80/torque_degrau              cc_lqg  yaw          2,48/1,55      -37.4        —/—             —    +102.7
+ruido/rnd80/torque_degrau              cc_lqi  roll         0,71/1,10      +54.6     0,45/11,05    +2341.4    +430.1
+ruido/rnd80/torque_degrau              cc_lqi  pitch        0,72/1,10      +53.5     0,53/11,05    +1975.1    +391.0
+ruido/rnd80/torque_degrau              cc_lqi  yaw          1,70/1,95      +14.2     0,53/1,05      +97.7    +142.2
+ruido/rnd80/torque_degrau              cc_lqi  roll         0,67/1,10      +63.9     0,34/11,05    +3174.1    +427.8
+ruido/rnd80/torque_degrau              cc_lqi  pitch        0,76/1,10      +44.8     0,56/11,05    +1873.7    +390.9
+ruido/rnd80/torque_degrau              cc_lqi  yaw          5,67/7,18      +26.7     1,55/2,22      +43.6     +47.9
+ruido/rnd80/torque_degrau              nativo  roll         0,63/1,11      +76.8     2,32/11,05    +376.9    +362.2
+ruido/rnd80/torque_degrau              nativo  pitch        0,65/1,13      +72.6     2,22/11,05    +397.7    +344.3
+ruido/rnd80/torque_degrau              nativo  yaw          3,19/4,13      +29.3    10,08/12,82     +27.2     +71.8
+ruido/rnd80/torque_estocastico         cc_eso  roll         1,90/2,63      +38.8        —/—             —     +13.9
+ruido/rnd80/torque_estocastico         cc_eso  pitch        3,12/3,34       +7.0        —/—             —     +14.7
+ruido/rnd80/torque_estocastico         cc_eso  yaw          3,61/4,31      +19.2     1,44/3,17     +119.8     +13.8
+ruido/rnd80/torque_estocastico         cc_lqg  roll         1,59/2,12      +33.1        —/—             —     +20.0
+ruido/rnd80/torque_estocastico         cc_lqg  pitch        2,22/2,47      +11.1        —/—             —     +20.8
+ruido/rnd80/torque_estocastico         cc_lqg  yaw          4,84/5,00       +3.4     0,13/0,22      +74.0      +5.0
+ruido/rnd80/torque_estocastico         cc_lqg  roll         1,68/2,13      +27.2        —/—             —     +20.3
+ruido/rnd80/torque_estocastico         cc_lqg  pitch        2,16/2,48      +14.8        —/—             —     +18.9
+ruido/rnd80/torque_estocastico         cc_lqg  yaw          4,01/4,47      +11.3     0,12/0,30     +158.7     +20.3
+ruido/rnd80/torque_estocastico         cc_lqi  roll         1,89/2,54      +34.1        —/—             —     +14.4
+ruido/rnd80/torque_estocastico         cc_lqi  pitch        3,02/3,35      +10.9        —/—             —     +14.7
+ruido/rnd80/torque_estocastico         cc_lqi  yaw          3,66/3,56       -2.7     6,51/7,42      +14.0      +1.5
+ruido/rnd80/torque_estocastico         cc_lqi  roll         1,95/2,69      +38.1        —/—             —     +14.2
+ruido/rnd80/torque_estocastico         cc_lqi  pitch        2,83/3,18      +12.3        —/—             —     +15.1
+ruido/rnd80/torque_estocastico         cc_lqi  yaw          7,80/8,37       +7.4     4,33/3,05      -29.5      -1.5
+ruido/rnd80/torque_estocastico         nativo  roll         1,68/2,11      +25.9        —/—             —     +20.5
+ruido/rnd80/torque_estocastico         nativo  pitch        2,30/2,58      +12.0        —/—             —     +22.2
+ruido/rnd80/torque_estocastico         nativo  yaw          5,58/4,76      -14.7     0,28/0,32      +15.5      +8.7
+ruido/rnd80/torque_pulso               cc_eso  roll         1,01/1,38      +36.7     0,68/2,38     +250.6     +54.9
+ruido/rnd80/torque_pulso               cc_eso  pitch        1,09/1,42      +29.8     0,77/2,37     +209.1     +51.0
+ruido/rnd80/torque_pulso               cc_eso  yaw          4,28/4,94      +15.3     1,25/0,32      -74.5      +0.5
+ruido/rnd80/torque_pulso               cc_lqg  roll         0,79/1,21      +54.3     0,14/2,37     +1621.8    +110.4
+ruido/rnd80/torque_pulso               cc_lqg  pitch        0,92/1,25      +35.2     0,47/2,38     +410.8     +97.7
+ruido/rnd80/torque_pulso               cc_lqg  yaw          6,00/4,83      -19.5     0,18/0,12      -33.8      +3.9
+ruido/rnd80/torque_pulso               cc_lqg  roll         0,89/1,24      +38.9     0,13/2,38     +1726.9    +101.7
+ruido/rnd80/torque_pulso               cc_lqg  pitch        0,96/1,27      +31.5     0,14/2,38     +1627.3     +88.3
+ruido/rnd80/torque_pulso               cc_lqg  yaw          4,85/4,11      -15.3     0,20/0,13      -35.8      +9.6
+ruido/rnd80/torque_pulso               cc_lqi  roll         1,00/1,39      +38.0     0,77/2,38     +209.4     +58.3
+ruido/rnd80/torque_pulso               cc_lqi  pitch        1,10/1,43      +30.2     1,11/2,38     +114.6     +48.8
+ruido/rnd80/torque_pulso               cc_lqi  yaw          4,02/4,50      +12.1     2,04/1,22      -40.2      -1.4
+ruido/rnd80/torque_pulso               cc_lqi  roll         1,04/1,38      +33.4     0,79/2,38     +201.9     +57.3
+ruido/rnd80/torque_pulso               cc_lqi  pitch        1,11/1,43      +28.4     1,01/2,38     +135.4     +49.6
+ruido/rnd80/torque_pulso               cc_lqi  yaw          7,60/8,13       +6.9     2,80/3,20      +14.7      +1.0
+ruido/rnd80/torque_pulso               nativo  roll         0,96/1,32      +38.2     1,35/2,38      +75.6     +71.1
+ruido/rnd80/torque_pulso               nativo  pitch        1,01/1,35      +33.7     1,03/2,38     +130.6     +71.3
+ruido/rnd80/torque_pulso               nativo  yaw          6,36/6,86       +7.7     0,31/0,34      +13.1     +18.4
+ruido/torque_degrau                    cc_eso  roll         0,67/0,77      +14.7     0,42/2,10     +400.6    +126.0
+ruido/torque_degrau                    cc_eso  pitch        0,70/0,80      +14.5     0,50/2,10     +320.5    +111.3
+ruido/torque_degrau                    cc_eso  yaw          1,79/1,89       +5.5     1,13/1,44      +27.9     +17.2
+ruido/torque_degrau                    cc_lqi  roll         0,65/0,76      +15.9     0,45/2,09     +367.6    +129.9
+ruido/torque_degrau                    cc_lqi  pitch        0,71/0,78       +9.8     0,66/2,09     +215.9    +102.4
+ruido/torque_degrau                    cc_lqi  yaw          1,89/1,92       +1.1     1,06/1,28      +20.0     +14.8
+ruido/torque_degrau                    cc_lqi  roll         0,66/0,77      +15.7     0,45/2,11     +373.6    +129.0
+ruido/torque_degrau                    cc_lqi  pitch        0,69/0,79      +15.1     0,70/2,10     +201.1    +102.6
+ruido/torque_degrau                    cc_lqi  yaw          6,02/6,28       +4.3     2,49/2,22      -10.7      +5.5
+ruido/torque_degrau                    cc_pid  roll         0,62/0,73      +17.8     2,78/2,40      -13.7     +88.9
+ruido/torque_degrau                    cc_pid  pitch        0,63/0,74      +18.8     2,56/2,39       -6.5     +83.3
+ruido/torque_degrau                    cc_pid  yaw          2,65/2,74       +3.4    21,64/20,77      -4.0      +3.2
+ruido/torque_degrau                    nativo  roll         0,61/0,71      +16.0     2,58/2,39       -7.3     +89.6
+ruido/torque_degrau                    nativo  pitch        0,63/0,73      +15.3     2,36/2,39       +1.2     +83.5
+ruido/torque_degrau                    nativo  yaw          2,61/2,75       +5.5    22,55/20,78      -7.8      +3.8
+ruido/torque_degrau                    nativo  roll         0,67/0,79      +18.0     0,47/2,10     +346.8    +132.3
+ruido/torque_degrau                    nativo  pitch        0,71/0,80      +13.2     0,77/2,09     +172.6    +102.3
+ruido/torque_degrau                    nativo  yaw          2,55/2,75       +7.6    22,53/20,79      -7.7      +3.6
+ruido/torque_pulso                     cc_eso  roll         1,02/1,10       +8.0     0,72/2,08     +187.9      +3.7
+ruido/torque_pulso                     cc_eso  pitch        1,03/1,15      +10.9     0,84/2,08     +148.1      +3.9
+ruido/torque_pulso                     cc_eso  yaw          4,38/4,50       +2.8     1,52/1,39       -8.6      -0.6
+ruido/torque_pulso                     cc_lqi  roll         0,98/1,08      +10.2     0,71/2,07     +193.3      +3.8
+ruido/torque_pulso                     cc_lqi  pitch        1,05/1,12       +7.4     0,93/2,06     +120.6      +3.2
+ruido/torque_pulso                     cc_lqi  yaw          4,08/4,10       +0.5     1,68/1,60       -4.3      -3.3
+ruido/torque_pulso                     cc_lqi  roll         1,00/1,08       +7.9     0,71/2,07     +191.9      +2.3
+ruido/torque_pulso                     cc_lqi  pitch        1,03/1,12       +8.9     0,90/2,05     +129.6      +3.1
+ruido/torque_pulso                     cc_lqi  yaw          8,03/8,12       +1.1     3,19/3,27       +2.7      +0.3
+ruido/torque_pulso                     cc_pid  roll         0,91/1,04      +14.1     1,39/0,52      -62.7      +3.0
+ruido/torque_pulso                     cc_pid  pitch        0,93/1,06      +14.8     1,44/0,52      -63.7      +4.1
+ruido/torque_pulso                     cc_pid  yaw          5,93/6,04       +1.8     0,56/0,36      -36.9      +2.4
+ruido/torque_pulso                     nativo  roll         0,90/1,03      +14.1     1,38/0,53      -61.5      +2.6
+ruido/torque_pulso                     nativo  pitch        0,93/1,05      +12.7     1,45/0,53      -63.1      +4.1
+ruido/torque_pulso                     nativo  yaw          6,15/6,25       +1.6     0,35/0,36       +1.4      +1.5
+ruido/torque_pulso                     nativo  roll         1,01/1,12      +11.3     0,78/2,07     +167.4      +4.7
+ruido/torque_pulso                     nativo  pitch        1,04/1,15      +10.4     0,87/2,06     +136.7      +3.5
+ruido/torque_pulso                     nativo  yaw          5,91/5,96       +0.9     0,58/0,35      -39.0      +1.3
+saturacao/guinada/torque_degrau        cc_eso  yaw         11,09/10,81      -2.5     1,00/1,03       +3.5      -2.6
+saturacao/guinada/torque_degrau        cc_lqg  yaw         13,98/13,69      -2.1     1,21/1,28       +6.2      -2.6
+saturacao/guinada/torque_degrau        cc_lqg  yaw         11,72/11,46      -2.2     1,48/1,54       +3.9      -2.2
+saturacao/guinada/torque_degrau        cc_lqi  yaw         11,55/11,25      -2.6     1,10/1,13       +2.7      -2.5
+saturacao/guinada/torque_degrau        cc_lqi  yaw         37,67/36,89      -2.1     2,27/2,31       +1.7      -2.1
+saturacao/guinada/torque_degrau        nativo  yaw         16,14/15,82      -2.0    22,28/22,47      +0.9      -2.1
+saturacao/guinada/torque_pulso         cc_eso  yaw         34,71/21,54     -37.9     1,52/1,56       +2.5     -34.8
+saturacao/guinada/torque_pulso         cc_lqg  yaw         44,60/27,33     -38.7     0,62/1,70     +176.0     -39.7
+saturacao/guinada/torque_pulso         cc_lqg  yaw         39,26/22,87     -41.7     0,74/1,81     +144.9     -43.1
+saturacao/guinada/torque_pulso         cc_lqi  yaw         33,34/21,96     -34.1     1,56/1,71       +9.1     -27.6
+saturacao/guinada/torque_pulso         cc_lqi  yaw         45,21/48,16      +6.5     3,38/3,25       -3.8      +4.0
+saturacao/guinada/torque_pulso         nativo  yaw         44,90/31,35     -30.2     1,05/0,46      -56.1     -37.2
+
+guinada/torque_degrau cc_pid : polo lento -0.1010 1/s (tau 9.9 s; kp/ki = 10.0 s); polos [-8.193 -2.42  -0.101]
+guinada/torque_degrau cc_pid_ff: polo lento -0.1010 1/s (tau 9.9 s; kp/ki = 10.0 s); polos [-8.194 -2.42  -0.101]
+guinada/torque_degrau nativo : polo lento -0.1010 1/s (tau 9.9 s; kp/ki = 10.0 s); polos [-8.194 -2.42  -0.101]
+guinada/torque_degrau nativo_filtro10: polo lento -0.1012 1/s (tau 9.9 s; kp/ki = 10.0 s); polos [-7.323 -2.265 -0.101]
+guinada/torque_degrau nativo_lqi: polo lento -0.1010 1/s (tau 9.9 s; kp/ki = 10.0 s); polos [-8.194 -2.42  -0.101]
