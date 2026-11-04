@@ -209,7 +209,15 @@ def main():
     ap.add_argument("--altitude", type=float, default=15.0)
     ap.add_argument("--speedup", type=int, default=10)
     ap.add_argument("--instancia", type=int, default=0)
+    ap.add_argument("--param", action="append", default=[], metavar="NOME=VALOR",
+                    help="parametro extra do veiculo, aplicado antes do reboot (repete); "
+                         "ex.: --param INS_GYRO_FILTER=10, para sintonizar o nativo com o "
+                         "giroscopio mais lento")
     args = ap.parse_args()
+    extras = {}
+    for item in args.param:
+        nome, _, valor = item.partition("=")
+        extras[nome.strip()] = float(valor)
 
     carimbo = dt.datetime.now().strftime("%Y-%m-%d_%H%M%S")
     pasta = PASTA_AUTOTUNE / carimbo
@@ -218,7 +226,9 @@ def main():
     antes = {p.name for p in LOGS_SITL.glob("*.BIN")} if LOGS_SITL.exists() else set()
 
     params_tune = {"AUTOTUNE_AXES": args.eixos, "AUTOTUNE_AGGR": args.aggr,
-                   "AUTOTUNE_MIN_D": args.min_d}
+                   "AUTOTUNE_MIN_D": args.min_d, **extras}
+    if extras:
+        log(f"parametros extras: {extras}")
     sitl = None
     diario = Diario(pasta / "autotune.txt")
     t_parede = time.monotonic()

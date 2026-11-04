@@ -15,6 +15,10 @@ a integração com o VSCode, em [`diretivas/vscode.md`](diretivas/vscode.md).
 ~/faculdade/TCC/
 ├── ardupilot/              # firmware (submódulo) — aqui mora o AC_CustomControl
 ├── ardupilot_gazebo/       # plugin ponte Gazebo ↔ SITL (submódulo)
+├── firmware/               # os backends AC_CustomControl_LQR e _LQG do TCC e o instalar.sh
+├── ensaios/                # injetor de distúrbios, cenários, controladores, análise
+├── modelagem/              # modelo do SITL, projeto do controlador, validação
+├── monografia/             # o texto do TCC (LaTeX), com as figuras e tabelas geradas
 ├── diretivas/              # roteiro do TCC, setup, guia do VSCode
 ├── .vscode/tasks.json      # tarefa "▶ Simular" (sobe Gazebo + SITL juntos)
 ├── run-gazebo.sh           # lançador do Gazebo
@@ -314,14 +318,18 @@ números da corrida.
 ```bash
 source ~/venv-ardupilot/bin/activate
 
-python ensaios/run_ensaio.py                                 # TODOS os ensaios, nos dois controladores
+firmware/instalar.sh                                         # uma vez: os backends LQR e LQG no ardupilot/
+python ensaios/run_ensaio.py                                 # TODOS os ensaios, em todos os controladores
 python ensaios/run_ensaio.py --listar                        # o que existe
 python ensaios/run_ensaio.py --cenario guinada               # uma pasta inteira
 python ensaios/run_ensaio.py --cenario guinada/torque_pulso --controlador nativo
 python ensaios/run_ensaio.py --cenario torque_pulso          # o pulso em todas as pastas
 python ensaios/run_ensaio.py --analisar ensaios/resultados --sem-gif   # reprocessa tudo
 
+python modelagem/projeto.py --figuras monografia/figuras --tabelas monografia/tabelas \
+    --escrever-yaml                                      # projeto do Cap. 5 e os YAMLs dele
 python ensaios/tabelas_monografia.py --desde 2026-10-27  # tabelas do Cap. 6 (monografia/tabelas/)
+python ensaios/figuras_monografia.py --desde 2026-10-27  # figuras do Cap. 6 (monografia/figuras/)
 python modelagem/validacao.py --desde 2026-10-27 \
     --tabela monografia/tabelas/validacao.tex --figuras monografia/figuras   # validação do Cap. 4
 ```
@@ -332,8 +340,9 @@ malha fechada com o modelo linear do Cap. 4 e o controlador que voou, alimentada
 registrado em cada voo, calcula as métricas com o mesmo código da análise e, nas varreduras,
 identifica `a` e `b` da planta no domínio da frequência.
 
-Sem argumentos, o `run_ensaio.py` roda os 16 cenários com cada controlador de
-`ensaios/controladores/` — 32 voos, um SITL por vez, ~27 min sem GIF e ~53 min com. O SITL roda
+Sem argumentos, o `run_ensaio.py` roda os 18 cenários com cada controlador de
+`ensaios/controladores/` — 8 controladores, 144 voos, um SITL por vez, ~1 h 50 sem GIF e ~3 h 40
+com (`--controlador` e `--cenario` recortam o lote). O SITL roda
 **sem janela**, com a saída do binário no `sitl.log` de cada ensaio (ver
 [O SITL sem janela](#o-sitl-sem-janela-e-por-que-alguns-voos-falhavam)). Um voo que falha é
 tentado de novo (`--tentativas`, padrão 2), e o lote segue até o fim e termina com um resumo do
@@ -374,17 +383,34 @@ sustentado continua lenta, com constante de tempo ~`P/I` = 10 s.
 
 ### Cenários
 
-Os cenários ficam em uma pasta por eixo, e cada pasta tem os mesmos ensaios:
+Os cenários ficam em uma pasta por eixo, e cada pasta tem os mesmos ensaios. As famílias de
+ensaio mais novas ganham uma pasta própria, com uma subpasta por variante:
 
 ```
 ensaios/cenarios/
-├── rolagem/           nominal (10°)   torque_pulso (15 rad/s²)  torque_degrau (10 rad/s²)  torque_chirp (0,2–10 Hz)
-├── arfagem/           nominal (10°)   torque_pulso (15 rad/s²)  torque_degrau (10 rad/s²)  torque_chirp (0,2–10 Hz)
-├── guinada/           nominal (30°)   torque_pulso (3 rad/s²)   torque_degrau (1 rad/s²)   torque_chirp (0,1–5 Hz)
+├── rolagem/           nominal (10°)   torque_pulso (15 rad/s²)  torque_degrau (10 rad/s²)  torque_chirp (0,2–10 Hz)  torque_estocastico (σ 10 rad/s²)
+├── arfagem/           nominal (10°)   torque_pulso (15 rad/s²)  torque_degrau (10 rad/s²)  torque_chirp (0,2–10 Hz)  torque_estocastico (σ 10 rad/s²)
+├── guinada/           nominal (30°)   torque_pulso (3 rad/s²)   torque_degrau (1 rad/s²)   torque_chirp (0,1–5 Hz)   torque_estocastico (σ 1 rad/s²)
 ├── rolagem_arfagem_guinada/
-│                     nominal         torque_pulso              torque_degrau              (os três eixos juntos)
-└── vento/             rajada (10 m/s, meio cosseno de 3 s, de lado)
+│                     nominal         torque_pulso              torque_degrau              torque_estocastico   (os três eixos juntos)
+├── ruido/             rnd10/ rnd20/ rnd40/ rnd80/: torque_pulso, torque_degrau, torque_estocastico
+│                                     (os três eixos, giroscópio com SIM_GYRn_RND = 10 … 80)
+├── vento/             rajada (10 m/s, meio cosseno de 3 s, de lado)
+├── grande/            30graus/ 45graus/: nominal (degrau de rolagem), combinado (rolagem + arfagem + 90° de guinada)
+├── saturacao/guinada/ torque_pulso (12 rad/s² × 0,5 s), torque_degrau (6 rad/s²): além da autoridade do mixer
+├── erro_modelo/       empuxo_fraco/ braco_longo/ braco_curto/: nominal, torque_pulso, torque_degrau (três eixos)
+└── falha_motor/       leve (SIM_ENGINE_MUL 0,95), severa (0,85): motor 1 fraco por 40 s
 ```
+
+Um cenário pode trazer um bloco `params:`, aplicado antes do reboot junto com os do controlador
+(os do controlador têm a palavra final). É assim que os da pasta `ruido/` ligam
+`SIM_GYR1_RND`–`SIM_GYR3_RND`: o SITL soma a cada **sub-amostra** do giroscópio um ruído uniforme
+de amplitude `SIM_GYRn_RND` °/s vezes o acelerador (~0,6 no pairado) e entrega a 1 kHz a média de 8
+sub-amostras, e é também assim que os de `erro_modelo/` mudam o veículo (ver
+[O caminho do ruído](#o-caminho-do-ruído-e-o-ângulo-do-ahrs) e [O LQG](#o-lqg-e-o-portão)).
+
+Um cenário de três níveis (`ruido/rnd20/torque_pulso`) funciona como os de dois: o nome é o
+caminho, e os resultados ficam em `resultados/ruido/rnd20/torque_pulso/<controlador>/<carimbo>/`.
 
 O `vento/rajada` é o ensaio que sustenta a divisão entre as famílias do injetor: no SITL a rajada
 move a aeronave, mas quase não perturba a atitude (ver [Dois achados](#dois-achados-que-mudam-o-texto-da-monografia)).
@@ -485,24 +511,42 @@ distúrbio**, e a distinção é o eixo de todo o resto:
 | **Vento** (`SIM_WIND_*`) | força no centro de massa | **posição** — deriva metros; a atitude, centésimos de grau |
 | **Torque** (`SIM_TWIST_*`) | somado direto em `rot_accel`, em rad/s² | **atitude** — é o que exercita a malha que você projeta |
 
-O ruído de Dryden vem de um PRNG determinista semeado por `WND_SEED`, espelhado em
-[`ensaios/analise/dryden_ref.py`](ensaios/analise/dryden_ref.py): as duas implementações batem
-amostra a amostra, e é isso que sustenta a reprodutibilidade dos ensaios estocásticos.
+O ruído de Dryden e o torque estocástico vêm de um PRNG determinista semeado por `WND_SEED`,
+espelhado em [`ensaios/analise/dryden_ref.py`](ensaios/analise/dryden_ref.py): as duas
+implementações batem amostra a amostra (`comparar_com_log`; no torque estocástico, a menos de
+1e-5 rad/s², o arredondamento do float de 32 bits), e é isso que sustenta a reprodutibilidade dos
+ensaios estocásticos. O ArduPilot compila o Lua com `LUA_32BITS` (inteiros e floats de 32 bits,
+em todas as placas e no SITL): o produto direto `16807 × estado` do minstd dava a volta, e o
+gerador do Lua não era o do Python até 31/10/2026. O `vento.lua` usa desde então o método de
+Schrage, exato em 32 bits.
 
 | Parâmetro | Para que serve |
 |---|---|
-| `WND_MODE` | bitmask somável: `1`=vento médio, `2`=rajada, `4`=Dryden, `8`=torque em pulso, `16`=torque em meio cosseno, `32`=torque em degrau, `64`=torque em varredura (chirp) |
+| `WND_MODE` | bitmask somável: `1`=vento médio, `2`=rajada, `4`=Dryden, `8`=torque em pulso, `16`=torque em meio cosseno, `32`=torque em degrau, `64`=torque em varredura (chirp), `128`=torque estocástico, `256`=evento de planta |
 | `WND_SPD`, `WND_DIR`, `WND_DIRZ` | vento médio: módulo (m/s), direção **de onde vem** (°), ângulo vertical (°) |
 | `WND_GA`, `WND_GT0`, `WND_GDUR` | rajada: amplitude (m/s), início (s) e duração (s) |
 | `WND_TSIG`, `WND_TLU` | Dryden: intensidade σ (m/s) e escala longitudinal Lu (m); a lateral é Lu/2 |
 | `WND_TQX`, `WND_TQY`, `WND_TQZ` | torque: amplitude em **rad/s²** por eixo do corpo (rolagem, arfagem, guinada) |
 | `WND_TQT0`, `WND_TQDUR` | torque: início (s) e duração (s); o degrau ignora a duração |
+| `WND_TQTC` | torque estocástico: tempo de correlação (s) do processo de Gauss-Markov; com o bit 128, `WND_TQX/Y/Z` são o **desvio padrão** |
+| `WND_EVT`, `WND_EVM`, `WND_EVK` | evento de planta (bit 256), aplicado em `WND_TQT0` e desfeito em `WND_TQT0 + WND_TQDUR`: `1` = motor fraco (`SIM_ENGINE_FAIL = EVM`, `SIM_ENGINE_MUL = EVK`), `2` = perda de empuxo (`SIM_FRM_HOVR_THR = EVK`) |
 | `WND_SEED` | semente do PRNG — é o que torna dois ensaios idênticos |
 | `WND_T0` | espera após o armamento; **negativo** = modo de bancada, começa sem armar |
 
 O torque em rad/s² **é** o "termo aditivo de perturbação na equação da dinâmica de rotação" da
 `proposta.tex` — não uma emulação por assimetria de rotor. O impulso angular de um pulso é
 exatamente amplitude × duração, e sai calculado em `metricas.json`.
+
+O torque **estocástico** (bit 128) é a turbulência que gera momento, que o vento deste simulador não
+gera: em cada eixo, um processo de Gauss-Markov de variância unitária, discretizado exatamente, que
+corre desde o início do perfil e só é aplicado na janela; as normais saem do mesmo minstd, depois
+das do Dryden. A métrica é o RMSE na janela, o que um LQG minimiza. **Não use `math.random` no
+Lua**: no ArduPilot ele é o `rand()` da libc, que divide o estado com o ruído do IMU do SITL.
+
+O **evento de planta** (bit 256) muda um parâmetro da física em pleno voo e o desfaz antes do
+pouso. O SITL relê `SIM_ENGINE_FAIL`/`SIM_ENGINE_MUL` e os `SIM_FRM_*` a cada passo. O motor fraco
+é não linear: `MUL` escala `PWM - 1000`, e 0,95 tira ~10 % do empuxo daquele motor no pairado
+(~8 rad/s² em rolagem e arfagem). O campo `Ev` da `WND` registra o estado do evento.
 
 > **Três armadilhas do vento nativo do SITL**, todas tratadas pelo `run_ensaio.py` e que
 > precisam entrar como ressalva na monografia:
@@ -519,9 +563,166 @@ exatamente amplitude × duração, e sai calculado em `metricas.json`.
 
 Os controladores são configuração, não código: cada arquivo em
 [`ensaios/controladores/`](ensaios/controladores/) diz quais parâmetros aplicar e o que esperar
-no log. Para o terceiro controlador (`AC_CustomControl` não padrão), há um modelo pronto em
-`controladores/cc_lqr.yaml.exemplo` — do lado dos ensaios basta renomeá-lo; do lado do firmware
-ele lista as quatro edições necessárias em `AC_CustomControl.{h,cpp}`.
+no log. Um controlador novo do lado do firmware é um backend do `AC_CustomControl`; os do TCC
+estão descritos nas seções seguintes.
+
+Um YAML de controlador pode trazer a chave `cenarios:`, uma lista de prefixos de cenário
+(`rolagem`, `ruido/rnd20`, `guinada/torque_degrau`). Sem ela, o controlador voa todos os cenários;
+com ela, só os que começam por algum prefixo. Os controladores de verificação (`cc_pid`,
+`cc_pid_ff`, `cc_lqi_sem_ff`, `nativo_lqi`) a usam para ficar nos 18 cenários do lote original,
+para os quais existem; assim o lote sem argumentos continua sendo "tudo o que faz sentido".
+
+### O controlador proposto: LQI e LQR + ESO
+
+O backend `AC_CustomControl_LQR` (`CC_TYPE 3`) tem duas variantes, escolhidas por `CC3_MODO`:
+
+| | lei de controle |
+|---|---|
+| `0` — LQI | `u = u_ff + k_I·x_I + k_θ·e_θ + k_ω·e_ω`, com `x_I` a integral de `e_θ` |
+| `1` — LQR + ESO | `u = u_ff + k_θ·e_θ + k_ω·e_ω − d̂/b`, com `d̂` de um observador de estado estendido de `[ω, d]` |
+
+Nas duas, `u_ff = (α_t + a·ω_t)/b` inverte o modelo do Cap. 4 (`ω̇ = −a·ω + b·u + d`), e o alvo
+de taxa passa pelo mesmo passa-baixas do giroscópio (`CC3_FLTW`) antes de virar `e_ω` — sem isso,
+o atraso do filtro do giroscópio vira, num degrau, um erro de taxa que não existe.
+
+O caminho, do projeto ao voo:
+
+1. **Projeto** — [`modelagem/projeto.py`](modelagem/projeto.py) calcula os ganhos (LQR discreto
+   pela equação de Riccati; ESO por Ackermann) com a regra: mesma frequência de cruzamento do
+   nativo, margem de fase não menor que a dele, amortecimento dominante ≥ 0,7, e, entre os pontos
+   que passam, o modo mais lento mais rápido. A análise linear não transcreve equações: lineariza
+   os espelhos em Python de [`modelagem/controladores.py`](modelagem/controladores.py) por
+   perturbação e fecha a malha com o modelo, o passa-baixas do giroscópio e o segurador de ordem
+   zero. Saem as figuras e tabelas `projeto_*` do Cap. 5 e, com `--escrever-yaml`, os YAMLs
+   `cc_lqi`, `cc_eso`, `cc_lqi_mesmo_ruido` (a guinada com o ganho de ruído do nativo, no lugar
+   da mesma banda), `nativo_lqi` (a cascata do nativo com os ganhos do LQI — a prova de
+   equivalência; só existe em rolagem e arfagem) e o par da alimentação direta, abaixo. O modelo
+   do projeto é o de um voo fixo (`VOO_DO_PROJETO`), para os YAMLs regerados serem os que voaram.
+2. **Firmware** — o backend vive em [`firmware/`](firmware/), não num fork do ArduPilot.
+   [`firmware/instalar.sh`](firmware/instalar.sh) cria os links simbólicos dos dois arquivos em
+   `ardupilot/libraries/AC_CustomControl/` e aplica [`ardupilot.patch`](firmware/ardupilot.patch)
+   (as quatro edições do frontend: `CUSTOMCONTROL_MAX_TYPES 3`, `CONT_LQR`, o `case` em `init()` e
+   o grupo `3_` dos `CC3_*`; e a alimentação direta opcional do `cc_pid`, `CC2_FF*`). Roda quantas vezes quiser; `--remover` devolve o submódulo ao commit
+   original. O `run_ensaio.py` recusa um controlador `espera_cc_tipo: 3` sem o backend instalado.
+3. **Voo e conferência** — o backend registra `CCLR`/`CCLP`/`CCLY` (integral, `u_ff`, `ω̂`, `d̂`),
+   que viram as colunas `x_i_*`, `u_ff_*`, `w_hat_*` e `d_hat_*` do `series.csv`; o painel
+   sobrepõe `d̂` ao torque injetado nos voos com ESO. O `validacao.py` simula cada voo com o
+   espelho em Python e escreve `validacao_proposto.tex`: é a conferência de que o C++ faz a mesma
+   conta (desvio máximo: LQI e ESO a ±1,9 % do modelo; LQG a −1,6…+4,9 %, média +2 %, em rolagem
+   e arfagem, e a ±1,8 % em guinada).
+
+O espelho em Python é a referência: para mudar a lei de controle, mude
+`modelagem/controladores.py`, depois o `firmware/AC_CustomControl_LQR.cpp` na mesma ordem.
+
+#### A alimentação direta e a comparação justa
+
+No degrau de atitude, quase toda a vantagem do LQI vem da alimentação direta, e não da
+realimentação: o nativo voa com `ATC_RAT_*_FF = D_FF = 0`. Ligar esses dois não seria a correção
+certa, porque o `AC_PID` os multiplica pelo alvo de taxa **inteiro**
+([`AC_PID.cpp`](ardupilot/libraries/AC_PID/AC_PID.cpp), `_target * _kff` e a derivada dele), que
+inclui a correção do erro de ângulo — mudariam também a realimentação e a resposta a torque. Por
+isso o `ardupilot.patch` dá ao backend PID de exemplo a **mesma** alimentação direta pura do LQI
+(`CC2_FF`, `CC2_FF_A`, `CC2_FF_B_*`, desligada por padrão), e dois controladores fecham um 2×2:
+
+| | sem alimentação direta | com alimentação direta |
+|---|---|---|
+| **PID** (ganhos do AutoTune) | `cc_pid` | `cc_pid_ff` |
+| **LQI** | `cc_lqi_sem_ff` (`CC3_FF = 0`, `CC3_FLTW = 0`) | `cc_lqi` |
+
+O `cc_lqi_sem_ff` desliga também o filtro do alvo de taxa, que só faz sentido junto com a
+alimentação direta: sozinho, ele só atrasa a referência. Nos ensaios de torque o alvo fica parado,
+`u_ff = 0`, e os dois são idênticos ao `cc_pid` e ao `cc_lqi`; a comparação muda só nos nominais
+(`resultados_alimentacao_direta.tex` e `comparacao_ff.pdf`).
+
+### O caminho do ruído e o ângulo do AHRS
+
+Quatro fatos do SITL, conferidos no código e nos logs (`python modelagem/validacao.py --ruido
+--figuras monografia/figuras`, figura `validacao_ruido_ahrs.pdf`), mudam o modelo de medida e de
+atuação:
+
+1. **O giroscópio do IMU0 é a média de 8 sub-amostras** (`INS_FAST_SAMPLE`,
+   `AP_InertialSensor_SITL::generate_gyro`, `gyro_accum /= nsamples`): o desvio padrão do ruído a
+   1 kHz é `SIM_GYRn_RND × acelerador / √3 / √8`, e não `/ √3`. O `validacao.ruido_do_voo`
+   superestimava o ruído em 2,8×; a RND 20 ele é ~2,5 °/s. As razões entre controladores (o
+   2,4×/2,5× do LQI) não mudam.
+2. **O ângulo do AHRS integra o mesmo ruído, sem o passa-baixas de 20 Hz**: o EKF3 propaga a
+   atitude com os delta-ângulos crus (`AP_InertialSensor_Backend.cpp:333-365`). A derivada do
+   ângulo tem o ruído branco que o giroscópio filtrado não tem; o modelo com isso bate com o SITL
+   a ±9 % (giroscópio filtrado, derivada do ângulo e esforço, nos três eixos), e sem isso erraria
+   3×. Contra a atitude verdadeira (mensagem `SIM`), o erro do ângulo tem autocorrelação de 2 a
+   3,7 s, mais uma deriva lenta do próprio EKF, maior na guinada.
+3. **O backend lê a atitude de um laço atrás**: `run_custom_controller` roda antes de `read_AHRS`
+   (`Copter.cpp:115-127`). No log, o `CCLR.Eth` casa com `ANG.DesRoll − ANG.Roll` deslocado de
+   exatamente um laço (resíduo de 2–3 mdeg contra 5–14 nos vizinhos).
+
+4. **O esforço vale no mesmo laço**: enquanto o laço principal espera o próximo período,
+   `SITL_State::_fdm_input_step` integra o modelo físico com a última saída dos motores e só então
+   gera a amostra seguinte do giroscópio; o `u` calculado no laço k age já em [t_k, t_k+1]. Até
+   01/11, o `malha.simular` o aplicava um laço depois (a fila de atuação tinha `atraso_lacos + 1`
+   posições), e a validação só dava ao LQG o ângulo atrasado do item 3. Nos controladores que só
+   usam o giroscópio, um erro compensava o outro (o Cap. 4 ficava 1,4–3,4 % abaixo do SITL); no
+   LQG, que prevê o efeito do próprio `u`, não: o replay ficava 5–10 % pessimista em rolagem e
+   arfagem. Corrigidos os dois, a validação do Cap. 4 bate a 2,3 % no desvio máximo e a 0,08 dB
+   (mediana) e 1,2 dB (máximo) na resposta em frequência, contra 1,9 dB antes. Um laço a mais de
+   atuação piora a frequência para 0,57 dB e 2,2 dB. O projeto (a planta linear e o portão) já
+   tinha a temporização certa: os pontos escolhidos e os YAMLs que voaram não mudam (conferido a
+   20 e a 10 Hz).
+
+`malha.simular` (`ruido_angulo`, `tau_ahrs`, `atraso_angulo`, `vies_giro`) e
+`projeto.planta_com_filtro` (`ruido_angulo`, `tau_c`, `atraso_angulo`) modelam os itens 2 e 3, com
+as opções desligadas por padrão; o item 4 é a atuação de ambos com `atraso_lacos = 0`.
+`projeto.PLANTA_REAL` é a planta com os itens 2 e 3 ligados: é nela que o LQG é projetado, que
+todos os controladores são comparados no portão e que todos são validados contra os voos
+(`validacao.validar`).
+
+### O LQG e o portão
+
+O backend `AC_CustomControl_LQG` (`CC_TYPE 4`, parâmetros `CC4_*`) usa a lei do LQR + ESO,
+`u = u_ff + k_θ·ê_θ + k_ω·ê_ω − d̂/b`, sobre os estados de um **filtro de Kalman em regime** que
+modela o caminho de medida acima. Em coordenadas de erro, os estados são `[e_θ, e_ω, f₁, f₂, d, η,
+b_g, z]`: o Butterworth do giroscópio (`f`), a perturbação (`d`, passeio aleatório), o erro do
+ângulo do AHRS (`η`, a integral do ruído), o viés residual que o EKF deixa no giroscópio (`b_g`) e o
+ângulo do laço anterior (`z`). As medidas são o erro de ângulo lido e o erro de taxa filtrado. O
+espelho é `controladores.LQG`; Φ e Γ são calculados a bordo a partir de `CC4_A`, `CC4_B`,
+`CC4_FLTW`, `CC4_TAUC` e do período do laço, pela mesma série de Taylor (`expm_taylor`); K e L
+(`CC4_KTH`, `CC4_KW`, `CC4_L1T…L8T`, `CC4_L1W…L8W`) vêm do projeto.
+
+O que o LQG usa e a cascata descarta: a entrada `u`, conhecida; o modelo do filtro de 20 Hz, que
+custa 33° de fase no cruzamento da rolagem; e o ângulo do AHRS, que não passa por ele (um laço
+atrasado custa só 7°). O ganho de Kalman sai da Riccati dual, com o ruído do giroscópio da física
+(item 1) e a intensidade da perturbação `q_d` como botão — subir `q_d` é a recuperação da malha
+(LTR) na entrada da planta.
+
+```bash
+python modelagem/projeto.py --portao --cache ensaios/resultados/projeto_portao_cache.pkl \
+    --escrever-yaml --tabelas monografia/tabelas --figuras monografia/figuras   # ~20 min
+```
+
+O `--portao` varre, na planta real, quatro famílias com o mesmo número de botões — **PID** (a
+cascata do nativo com ganhos livres, FLTE inclusive), **LQI**, **LQR + ESO** e **LQG** —, desenha
+as fronteiras rejeição × ruído (`projeto_fronteira.pdf`) e decide o portão (`projeto_portao.tex`):
+
+- **P1, ganho real:** o melhor LQG com ruído no esforço ≤ o do nativo (na análise com ruído
+  branco e numa simulação de 600 s no tempo), margem de fase e margem com a planta alterada ≥ as
+  do nativo, nada pior que o nativo (2 %), e ≥ 10 % melhor na métrica primária (pico do pulso na
+  rolagem, contra o LQI; pico do degrau de torque na guinada, contra o nativo);
+- **P2, atribuição:** ≥ 5 % melhor que o melhor ponto de cada família de estrutura fixa sob as
+  mesmas restrições (e, relaxado, só com ruído e margens);
+- **P3, margens:** algum ponto do LQG cumpre P1.
+
+Os achados da varredura, que entram no Cap. 5:
+
+- o **AutoTune já está no ótimo da família PID** quanto ao pico do pulso de rolagem; a
+  recuperação rápida da guinada (1–2 s em vez de 22 s) um PID ressintonizado também alcança
+  (I/P = 3 em vez de 0,1), mas não o pico do degrau de torque;
+- o ganho do LQG em rolagem vem da fase do ângulo do AHRS; em guinada, do corte de ruído com o
+  modelo, e só existe se o estimador descontar o ângulo do AHRS por ~1,5 s ou mais. Por isso o
+  `CC4_TAUC` é por eixo (0,3 s em rolagem e arfagem, 2,0 s em guinada; ver o comentário de
+  `projeto.TAU_ESTIMADOR`): com o τ físico (3 s) em todos os eixos, o estimador trocava um viés do
+  giroscópio por um erro de ângulo estático (73 mdeg em rolagem no SITL).
+
+O `cc_lqg` segue a regra do LQI e do ESO (mesma banda do nativo); o `cc_lqg_mesmo_ruido` é o
+escolhido pelo portão, nos três eixos.
 
 > **`CC_TYPE` sozinho não liga o controlador.** O `AC_CustomControl` só assume quando uma chave
 > auxiliar de RC vai para HIGH ([`RC_Channel_Copter.cpp:671`](ardupilot/ArduCopter/RC_Channel_Copter.cpp#L671),

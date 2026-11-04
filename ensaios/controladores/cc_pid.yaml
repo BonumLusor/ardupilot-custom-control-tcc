@@ -54,3 +54,25 @@ ganhos_de_interesse:
 msg_pid: PIDR
 
 espera_cc_tipo: 2
+
+# So os cenarios do lote original (run_ensaio.voa_no_cenario): o cc_pid e a
+# verificacao do caminho de integracao, feita para eles.
+cenarios:
+- rolagem/nominal
+- rolagem/torque_pulso
+- rolagem/torque_degrau
+- rolagem/torque_chirp
+- arfagem/nominal
+- arfagem/torque_pulso
+- arfagem/torque_degrau
+- arfagem/torque_chirp
+- guinada/nominal
+- guinada/torque_pulso
+- guinada/torque_degrau
+- guinada/torque_chirp
+- rolagem_arfagem_guinada/nominal
+- rolagem_arfagem_guinada/torque_pulso
+- rolagem_arfagem_guinada/torque_degrau
+- ruido/rnd20/torque_pulso
+- ruido/rnd20/torque_degrau
+- vento/rajada
