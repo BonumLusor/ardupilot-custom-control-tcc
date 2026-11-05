@@ -1,0 +1,7 @@
+esforço eficaz no trecho calmo, ruido/rnd20/torque_pulso: previsto pelo modelo com ANGULO_INDEP {'roll': 0.1766, 'pitch': 0.1766, 'yaw': 0.0411} contra medido no SITL
+rolagem  nativo             : previsto 1.464e-03, medido 1.460e-03 (medido/previsto 1.00)
+rolagem  cc_lqg             : previsto 1.350e-03, medido 1.450e-03 (medido/previsto 1.07); razão ao nativo: prevista 0.92, medida 0.99
+rolagem  cc_lqg_mesmo_ruido : previsto 1.340e-03, medido 1.418e-03 (medido/previsto 1.06); razão ao nativo: prevista 0.92, medida 0.97
+guinada  nativo             : previsto 1.683e-03, medido 1.562e-03 (medido/previsto 0.93)
+guinada  cc_lqg             : previsto 2.054e-03, medido 2.012e-03 (medido/previsto 0.98); razão ao nativo: prevista 1.22, medida 1.29
+guinada  cc_lqg_mesmo_ruido : previsto 1.644e-03, medido 1.606e-03 (medido/previsto 0.98); razão ao nativo: prevista 0.98, medida 1.03
