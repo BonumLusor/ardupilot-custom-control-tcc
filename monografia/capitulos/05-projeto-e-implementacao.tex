@@ -672,15 +672,13 @@ Seção~\ref{sec:validacao-tempo}: cada ensaio de torque é simulado no modelo
 com os ganhos lidos do próprio voo e com o torque registrado, e as métricas
 são comparadas número a número. A Tabela~\ref{tab:validacao-proposto-resumo}
 resume a comparação por controlador, e a lista completa está no
-Apêndice~\ref{ap:validacao-proposto}. O desvio máximo do LQI e do LQR com ESO é
-reproduzido a menos de 2\,\%, e o do LQG, a menos de 5\,\%; o erro
-quadrático médio do LQI e do ESO, a menos de 2,5\,\%. No LQG, o modelo fica
-de 6\,\% a 12\,\% abaixo do SITL no erro quadrático médio dos degraus de
-torque em rolagem e arfagem, em que esse erro é pequeno, de cerca de
-\ang{0.03}; a diferença absoluta é de cerca de \ang{0.003}. As exceções na
-recuperação são as do LQG no pulso de rolagem --- \SI{0.51}{\second} no SITL contra
-\SI{0.17}{\second} no modelo e, com o mesmo ruído, \SI{0.22}{\second} contra
-\SI{0.55}{\second} ---, o mesmo salto descontínuo da
+Apêndice~\ref{ap:validacao-proposto}. O desvio máximo de todos os propostos
+é reproduzido a menos de 2,1\,\%, e o erro quadrático médio do LQI e do ESO,
+a menos de 1,8\,\%. No LQG, o erro quadrático médio dos degraus de torque em
+rolagem e arfagem, que é pequeno, de cerca de \ang{0.03}, difere em até
+6\,\%, cerca de \ang{0.002} em valor absoluto. A exceção na recuperação é a
+do LQG de regra comum no degrau curto de rolagem --- \SI{0.24}{\second} no
+SITL contra \SI{0.53}{\second} no modelo ---, o mesmo salto descontínuo da
 Seção~\ref{sec:validacao-tempo}: um pequeno sobressinal próximo do limiar de
 10\,\% do pico decide se o erro volta a cruzá-lo. As
 Figuras~\ref{fig:validacao-tempo-lqi} a~\ref{fig:validacao-tempo-lqg}
@@ -696,8 +694,8 @@ controlador.}
 \input{tabelas/validacao_proposto_resumo}
 
 \fonte{Elaborada pelo autor, por \codigo{modelagem/validacao.py}.}
-\nota{\raggedright Pulso e degrau de torque nos ensaios de um eixo e de três
-eixos, sem ruído de giroscópio. Desvio máximo e RMSE: diferença relativa ao
+\nota{\raggedright Degrau curto e degrau de torque nos ensaios de um eixo e
+de três eixos, sem ruído de giroscópio. Desvio máximo e RMSE: diferença relativa ao
 SITL; recuperação: diferença em segundos. A lista completa está no
 Apêndice~\ref{ap:validacao-proposto}.}
 \end{table}
@@ -750,11 +748,14 @@ de giroscópio.}
 
 A teoria do estimador também se confirma no SITL. A estimativa da
 perturbação do filtro de Kalman chega a 50\,\% e 90\,\% de um degrau de
-torque a 0 a \SI{8}{\milli\second} dos tempos previstos pelo erro de
-estimação --- 0,028 e \SI{0.045}{\second} em rolagem e arfagem e 0,200 e
-\SI{0.310}{\second} em guinada ---, com valor final entre 0,996 e 0,999 do
-torque. E o princípio da separação vale no LQG com os parâmetros que voaram: os
-polos de malha fechada coincidem com a união dos polos da realimentação de estados e dos do
-erro de estimação a $2{,}5\cdot10^{-5}$ até $3{,}6\cdot10^{-4}$ em rolagem e
-arfagem; em guinada, a $1{,}7\cdot10^{-3}$, e a diferença é o único polo que
-sobra, o da memória da mistura dos dois estimadores.
+torque a até \SI{2}{\milli\second} dos tempos previstos pelo erro de
+estimação --- 0,025 e \SI{0.043}{\second} no LQG de regra comum e 0,028 e
+\SI{0.050}{\second} no de mesmo ruído, em rolagem e arfagem, e 0,225 e
+\SI{0.417}{\second} em guinada ---, com valor final entre 0,999 e 1,003 do
+torque. E o princípio da separação vale no código com os parâmetros que
+voaram: com a planta igual ao modelo do estimador, os polos de malha fechada
+do espelho do \textit{backend} coincidem com a união dos polos da
+realimentação de estados e dos do erro de estimação a $10^{-11}$. Em
+guinada, sobram os polos do segundo estimador, que roda com $\alpha = 0$ no
+pairado sem entrar na lei, e o da memória da mistura dos dois estimadores,
+$e^{-\Delta t/\tau_\alpha} \approx 0{,}9975$.

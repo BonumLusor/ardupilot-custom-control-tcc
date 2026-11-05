@@ -602,7 +602,7 @@ portanto, atraso de atuação apreciável além do segurador.
 
 O modelo~\eqref{eq:modelo-taxa} foi confrontado com os ensaios em SITL de
 duas formas: no domínio do tempo, simulando a malha fechada nos ensaios de
-torque em pulso e em degrau, e no domínio da frequência, nas varreduras de
+torque em degrau curto e em degrau, e no domínio da frequência, nas varreduras de
 torque, comparando a resposta em frequência da malha fechada e identificando
 os parâmetros da planta. Todos os ensaios são do mesmo lote, com os ganhos da
 Tabela~\ref{tab:ganhos}.
@@ -620,7 +620,7 @@ de velocidade angular~\eqref{eq:pid-taxa}, com os filtros e o limite do
 integrador, a \SI{400}{\hertz}. Os ganhos são lidos dos parâmetros gravados
 no próprio voo, e $a$ e $b$ vêm da linearização da
 Seção~\ref{sec:modelo-linear}, com a tensão de repouso que o firmware estimou
-naquele voo. A entrada é o torque que o injetor registrou no ensaio, e as
+naquele voo. A entrada é o torque que o simulador aplicou no ensaio, e as
 métricas são calculadas pelo mesmo código e na mesma janela da análise dos
 ensaios (Seção~\ref{sec:metricas}); modelo e SITL são comparados, assim,
 número a número. Não há ajuste: nenhum parâmetro do modelo é escolhido para
@@ -640,36 +640,38 @@ fechada.}
 \fonte{Elaborada pelo autor, por \codigo{modelagem/validacao.py}.}
 \end{table}
 
-A entrada da simulação é o torque como o injetor efetivamente o aplicou: o
-valor de cada escrita da mensagem \codigo{WND}, segurado até a escrita
-seguinte, no instante registrado. O perfil nominal não serviria, porque o laço
-do injetor roda a cerca de \SI{44}{\hertz}, e não aos \SI{50}{\hertz}
-pedidos, e a duração efetiva do pulso nominal de \SI{0.3}{\second} variou de
-300 a \SI{338}{\milli\second} entre os voos deste lote (em todos os voos
-válidos, até \SI{344}{\milli\second}; Seção~\ref{sec:injetor}).
+A entrada da simulação é o torque como o simulador o aplicou. No degrau
+sustentado e na varredura, é o valor de cada escrita da mensagem
+\codigo{WND}, segurado até a escrita seguinte, no instante registrado: o
+perfil nominal não serviria, porque o laço do injetor roda a cerca de
+\SI{44.5}{\hertz}, e não aos \SI{50}{\hertz} pedidos
+(Seção~\ref{sec:injetor}). No degrau curto e no impulso, de duração exata, é
+o próprio simulador que desliga o torque, e as escritas do injetor não
+mostram o fim do pulso: a entrada é o pulso com a duração do cenário, a
+partir da primeira escrita.
 
 A Tabela~\ref{tab:validacao} e a Figura~\ref{fig:validacao-tempo} mostram o
 resultado, em 24 comparações, que incluem os ensaios simultâneos nos três
-eixos. O desvio máximo é reproduzido com diferença de no máximo 2,3\,\%, no
-pulso e no degrau sustentado, e o erro quadrático médio, com no máximo
-2,2\,\%. Em rolagem e arfagem, o desvio máximo do modelo fica entre 2,3\,\%
-abaixo e 0,3\,\% acima do valor do SITL; em guinada, a diferença não passa de
-0,7\,\%. O tempo de recuperação concorda com diferença de no máximo 9,2\,\%
-no degrau sustentado; em guinada, a recuperação lenta é reproduzida em
-detalhe, \SI{22.8}{\second} no modelo contra \SI{22.2}{\second} no SITL. No
-pulso de rolagem e arfagem, o modelo recupera de 3\,\% a 7\,\% mais devagar.
-A recuperação do pulso é, de todas, a métrica mais sensível: quando a resposta
+eixos. O desvio máximo é reproduzido com diferença de no máximo 1,7\,\%, no
+degrau curto e no degrau sustentado, e o erro quadrático médio, com no máximo
+1,8\,\%. Em rolagem e arfagem, o desvio máximo do modelo fica até 1,7\,\%
+abaixo do valor do SITL; em guinada, a diferença não passa de 0,8\,\%. O
+tempo de recuperação concorda com diferença de no máximo 8,3\,\% no degrau
+sustentado; em guinada, a recuperação lenta é reproduzida em detalhe,
+\SI{22.8}{\second} no modelo contra \SI{22.2}{\second} no SITL. No degrau
+curto de rolagem e arfagem, o modelo recupera de 5\,\% a 10\,\% mais
+devagar. A recuperação do degrau curto é, de todas, a métrica mais sensível: quando a resposta
 tem um pequeno sobressinal de amplitude próxima ao limiar de 10\,\% do pico,
 uma diferença mínima decide se o erro volta ou não a cruzar o limiar, e a
-recuperação muda de forma descontínua --- é o que ocorre no pulso de guinada
-quando se acrescenta à simulação um laço de atraso na atuação: com o desvio
+recuperação muda de forma descontínua --- é o que ocorre no degrau curto de
+guinada quando se acrescenta à simulação um laço de atraso na atuação: com o desvio
 máximo praticamente igual, a recuperação do modelo salta de 0,35 para cerca
 de \SI{0.55}{\second}.
 
 \begin{figure}[htbp]
 \centering
 \caption{Erro de atitude no SITL e no modelo linear em malha fechada, com o
-PID nativo, nos ensaios de torque em pulso e em degrau.}
+PID nativo, nos ensaios de torque em degrau curto e em degrau.}
 \label{fig:validacao-tempo}
 \includegraphics[width=\textwidth]{figuras/validacao_tempo}
 \fonte{Elaborada pelo autor, por \codigo{modelagem/validacao.py}.}
@@ -707,9 +709,9 @@ injetor. Nos pontos em que a
 coerência do SITL é de pelo menos 0,8 --- de 0,4 a \SI{9.6}{\hertz} em
 rolagem e arfagem e de 0,2 a \SI{4.8}{\hertz} em guinada, praticamente toda
 a faixa das varreduras ---, o modelo reproduz o ganho com diferença mediana
-de no máximo \SI{0.08}{\decibel} e máxima de \SI{1.3}{\decibel}, e a fase
-com diferença máxima de \ang{5.8}, em rolagem e arfagem; em guinada, as
-diferenças são de \SI{0.05}{\decibel}, \SI{0.9}{\decibel} e \ang{3.2}
+de no máximo \SI{0.08}{\decibel} e máxima de \SI{1.1}{\decibel}, e a fase
+com diferença máxima de \ang{9.9}, em rolagem e arfagem; em guinada, as
+diferenças são de \SI{0.05}{\decibel}, \SI{0.7}{\decibel} e \ang{4.3}
 (Figura~\ref{fig:validacao-freq}), nos dois controladores.
 
 \begin{figure}[htbp]

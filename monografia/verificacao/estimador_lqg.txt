@@ -1,0 +1,9 @@
+Estimador do LQG, ganhos e voos do binário 4f669ec0c1e9.
+cc_lqg               rolagem  teoria 50/90 %: 0.025/0.043 s | SITL 0.025/0.045 s, d^ final/torque 0.999 | separação: maior diferença 6.3e-12; 1 polo(s) a mais no código: [0.]
+cc_lqg               arfagem  teoria 50/90 %: 0.025/0.043 s | SITL 0.025/0.045 s, d^ final/torque 0.999 | separação: maior diferença 4.3e-12; 1 polo(s) a mais no código: [0.]
+cc_lqg               guinada  teoria 50/90 %: 0.225/0.417 s | SITL 0.225/0.415 s, d^ final/torque 1.003 | separação: maior diferença 5.3e-13; 10 polo(s) a mais no código: [4.8497e-01 6.0000e-05 6.0000e-05 9.8796e-01 9.8796e-01 9.7912e-01
+ 9.9968e-01 0.0000e+00 0.0000e+00 9.9750e-01]
+cc_lqg_mesmo_ruido   rolagem  teoria 50/90 %: 0.028/0.050 s | SITL 0.029/0.049 s, d^ final/torque 0.999 | separação: maior diferença 2.6e-12; 1 polo(s) a mais no código: [0.]
+cc_lqg_mesmo_ruido   arfagem  teoria 50/90 %: 0.028/0.050 s | SITL 0.028/0.048 s, d^ final/torque 1.000 | separação: maior diferença 2.6e-12; 1 polo(s) a mais no código: [0.]
+cc_lqg_mesmo_ruido   guinada  teoria 50/90 %: 0.225/0.417 s | SITL 0.225/0.415 s, d^ final/torque 1.003 | separação: maior diferença 4.0e-13; 10 polo(s) a mais no código: [4.8497e-01 6.0000e-05 6.0000e-05 9.8796e-01 9.8796e-01 9.7912e-01
+ 9.9968e-01 0.0000e+00 0.0000e+00 9.9750e-01]
