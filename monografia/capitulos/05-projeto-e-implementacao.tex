@@ -277,10 +277,13 @@ O LQG foi aceito por um portão de decisão definido antes de voar (função
 \codigo{portao}). No primeiro critério, de ganho real, o melhor LQG com ruído
 no esforço não maior que o do nativo, margens de fase nominal e robusta não
 menores e nada pior que o nativo nas métricas de torque tem de ser ao menos
-10\,\% melhor que a referência na métrica primária do eixo. No segundo, de
-atribuição, ele tem de ser ao menos 5\,\% melhor que o melhor ponto de cada
-família de estrutura fixa sob as mesmas restrições. No terceiro, de margens,
-algum ponto do LQG tem de cumprir o primeiro. A
+10\,\% melhor que a referência na métrica primária do eixo --- o LQI em
+rolagem e o nativo em guinada. No segundo, de atribuição, ele tem de ser ao
+menos 5\,\% melhor que o melhor ponto de cada família de estrutura fixa sob
+as mesmas restrições. O plano previa um terceiro critério, de margens --- que
+algum ponto do LQG cumprisse as restrições do primeiro ---, mas ele está
+contido no primeiro: se o melhor LQG sob as restrições existe, ele as cumpre.
+Na prática, o portão tem dois critérios. A
 Tabela~\ref{tab:projeto-portao} mostra o resultado na planta completa: em
 rolagem, o LQG desvia \ang{0.806} no pulso de torque, contra \ang{0.900} do
 nativo, e, em guinada, \ang{1.877} no degrau sustentado, contra
@@ -299,7 +302,9 @@ estrutura fixa e o LQG, na planta completa.}
 \resizebox{\textwidth}{!}{\input{tabelas/projeto_portao}}
 
 \fonte{Elaborada pelo autor, por \codigo{modelagem/projeto.py}.}
-\nota{\raggedright Ruído: ganho de ruído relativo ao do nativo. Os
+\nota{\raggedright Planta completa: o filtro do giroscópio, o segurador, o
+ruído do AHRS no ângulo e o atraso de um laço do ângulo. Ruído: ganho de ruído
+relativo ao do nativo. Os
 ``melhores'' de cada família são escolhidos sob as mesmas restrições de
 ruído e de margens do LQG.}
 \end{table}
@@ -309,7 +314,11 @@ ruído e de margens do LQG.}
 \label{sec:projeto-margens}
 
 A Tabela~\ref{tab:projeto-margens} reúne as margens dos controladores de
-estrutura fixa na planta completa. Pela regra de sintonia, todos têm a
+estrutura fixa na planta de projeto, a mesma da regra de sintonia: com o
+filtro do giroscópio e o segurador, mas sem o laço de atraso do ângulo que a
+planta completa da Tabela~\ref{tab:projeto-portao} inclui. Por isso a margem
+de fase do nativo em rolagem é \ang{40.2} numa e \ang{38.8} na outra. Pela
+regra de sintonia, todos têm a
 frequência de cruzamento do nativo --- 48,5, 47,9 e
 \SI{6.3}{\radian\per\second} --- e, em rolagem e arfagem, praticamente a
 mesma margem de fase, de 40 a \ang{41}. O que muda é o modo mais lento: em
@@ -325,15 +334,16 @@ mais de atraso, as margens de fase continuam acima de \ang{33} em todos.
 
 \begin{table}[htbp]
 \centering
-\caption{Margens dos controladores de estrutura fixa na planta completa.}
+\caption{Margens dos controladores de estrutura fixa na planta de projeto.}
 \label{tab:projeto-margens}
 \resizebox{\textwidth}{!}{\input{tabelas/projeto_margens}}
 
 \fonte{Elaborada pelo autor, por \codigo{modelagem/projeto.py}.}
 \nota{\raggedright Malha aberta quebrada na entrada da planta, com o filtro
-do giroscópio, o segurador e o atraso do ângulo. Ruído: ganho de ruído. As
-três últimas colunas repetem a margem de fase com a eficácia $b$ alterada e
-com um laço a mais de atraso.}
+do giroscópio e o segurador, sem o atraso de um laço do ângulo (a planta
+completa da Tabela~\ref{tab:projeto-portao} o inclui). Ruído: ganho de ruído.
+As três últimas colunas repetem a margem de fase com a eficácia $b$ alterada e
+com um laço a mais de atraso na atuação.}
 \end{table}
 
 As margens da malha ideal do LQR não sobrevivem ao sensor. A malha ideal do LQR,
@@ -416,6 +426,10 @@ manobra reduz o erro máximo de \ang{0.355}, com um estimador só, para
 \resizebox{\textwidth}{!}{\input{tabelas/projeto_previsao}}
 
 \fonte{Elaborada pelo autor, por \codigo{modelagem/projeto.py}.}
+\nota{\raggedright Planta de projeto, sem o atraso de um laço do ângulo
+(Tabela~\ref{tab:projeto-margens}). Os ensaios de torque usam os perfis dos
+cenários; o degrau de atitude usa o alvo registrado no voo nominal do
+nativo.}
 \end{table}
 
 \begin{table}[htbp]
@@ -427,6 +441,10 @@ alimentação direta do LQI, o LQI e o LQG com um e com dois estimadores.}
 \input{tabelas/projeto_rastreio}
 
 \fonte{Elaborada pelo autor, por \codigo{modelagem/projeto.py}.}
+\nota{\raggedright Planta completa (Tabela~\ref{tab:projeto-portao}), com o
+atraso de um laço do ângulo, e o mesmo alvo da
+Tabela~\ref{tab:projeto-previsao}. Com o atraso, o sobressinal e o erro de
+rastreamento do nativo e do LQI são maiores que naquela tabela.}
 \end{table}
 
 \begin{figure}[htbp]

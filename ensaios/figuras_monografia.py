@@ -35,17 +35,21 @@ sys.path.insert(0, str(RAIZ.parent / "modelagem"))
 from analise import estilo as E            # noqa: E402
 
 # O LQG das comparacoes e o do portao (cc_lqg_mesmo_ruido): o candidato a ganho
-# real sobre o nativo, com o mesmo ruido no esforco; o cc_lqg (mesma banda) entra
-# nas figuras da fronteira.
+# real sobre o nativo, com o mesmo ruido no esforco; o cc_lqg entra nas figuras da
+# fronteira. Os rotulos sao os das tabelas (tabelas_monografia.NUCLEO): "LQG" e o
+# cc_lqg, "LQG (mesmo ruído)" o cc_lqg_mesmo_ruido.
 CONTROLADORES = (("nativo", "Nativo"), ("cc_lqi", "LQI"), ("cc_eso", "LQR+ESO"),
-                 ("cc_lqg_mesmo_ruido", "LQG"))
+                 ("cc_lqg_mesmo_ruido", "LQG (mesmo ruído)"))
 MESMO_RUIDO = ("cc_lqi_mesmo_ruido", "LQI (mesmo ruído)")
+# o LQI de mesmo ruido so difere do cc_lqi em guinada: como nas tabelas, so aparece la
+SO_GUINADA = {"cc_lqi_mesmo_ruido"}
 NUCLEO = (("nativo", "Nativo"), ("cc_lqi", "LQI"), ("cc_eso", "LQR+ESO"),
-          ("cc_lqi_mesmo_ruido", "LQI (mesmo ruído)"), ("cc_lqg", "LQG (mesma banda)"),
-          ("cc_lqg_mesmo_ruido", "LQG"))
+          ("cc_lqi_mesmo_ruido", "LQI (mesmo ruído)"), ("cc_lqg", "LQG"),
+          ("cc_lqg_mesmo_ruido", "LQG (mesmo ruído)"))
 COR = {"nativo": E.SERIE[0], "cc_lqi": E.SERIE[1], "cc_eso": E.SERIE[2],
        "cc_lqi_mesmo_ruido": E.SERIE[1], "cc_lqg": E.SERIE[3], "cc_lqg_mesmo_ruido": E.SERIE[3]}
-TRACO = {"cc_lqi_mesmo_ruido": "--", "cc_lqg": "--"}
+# as variantes "(mesmo ruido)" saem tracejadas (ou hachuradas), nas duas familias
+TRACO = {"cc_lqi_mesmo_ruido": "--", "cc_lqg_mesmo_ruido": "--"}
 NOMES = {"roll": "rolagem", "pitch": "arfagem", "yaw": "guinada"}
 GRUPO = {"roll": "rolagem", "pitch": "arfagem", "yaw": "guinada"}
 COL_ERRO = {"roll": "erro_roll", "pitch": "erro_pitch", "yaw": "erro_yaw"}
@@ -188,9 +192,11 @@ def fig_torque(desde, destino):
         ax.set_xlabel("Tempo desde o início do torque (s)")
         ax.set_ylabel("Erro de atitude (°)")
         _eixo_limpo(ax)
-    eixos[0, 0].legend(loc="upper right")
-    if len(eixos[0, 1].get_lines()) > 4:
-        eixos[0, 1].legend(handles=eixos[0, 1].get_lines()[3:4], loc="lower right")
+    eixos[0, 0].legend(loc="lower right")
+    # a guinada tem uma linha a mais, o LQI de mesmo ruido: so ela vai na legenda de la
+    linhas_g = [ln for ln in eixos[0, 1].get_lines() if ln.get_label() == MESMO_RUIDO[1]]
+    if linhas_g:
+        eixos[0, 1].legend(handles=linhas_g, loc="lower right")
     return _salvar(fig, destino) if algum else None
 
 
@@ -319,7 +325,7 @@ def fig_ruido(desde, destino):
         pasta = (ensaio_recente("ruido/rnd20/torque_pulso", slug, desde)
                  or ensaio_recente("ruido/torque_pulso", slug, desde))
         for eixo in ("roll", "pitch", "yaw"):
-            if pasta is None:
+            if pasta is None or (slug in SO_GUINADA and eixo != "yaw"):
                 rms_u[slug].append(np.nan)
                 rms_e[slug].append(np.nan)
                 continue
@@ -402,6 +408,7 @@ def fig_fronteira_sitl(desde, destino):
     80), com o ruido no esforco medido antes do pulso e o desvio no ensaio que
     define a metrica primaria do eixo (pulso em rolagem, degrau em guinada).
     """
+    import matplotlib.ticker as tk
     plt = _estilo()
     casos = (("roll", "torque_pulso", "Rolagem: desvio no pulso de torque"),
              ("yaw", "torque_degrau", "Guinada: desvio no degrau de torque"))
@@ -409,6 +416,8 @@ def fig_fronteira_sitl(desde, destino):
     algum = False
     for ax, (eixo, ensaio, titulo) in zip(eixos, casos):
         for slug, rotulo in NUCLEO:
+            if slug in SO_GUINADA and eixo != "yaw":
+                continue
             x, y = [], []
             for nivel, grupo in NIVEIS:
                 mp = _metricas(f"{grupo}/torque_pulso", slug, desde)
@@ -425,6 +434,8 @@ def fig_fronteira_sitl(desde, destino):
             ax.plot(x, y, color=COR[slug], ls=TRACO.get(slug, "-"), marker="o", ms=3.5,
                     label=rotulo)
         ax.set_xscale("log")
+        # sem rotulos nas marcas menores: em rolagem eles se sobrepunham
+        ax.xaxis.set_minor_formatter(tk.NullFormatter())
         ax.set_title(titulo, loc="left")
         ax.set_xlabel("Ruído no esforço, $u_{\\mathrm{rms}}$ calmo")
         _eixo_limpo(ax)
@@ -432,8 +443,14 @@ def fig_fronteira_sitl(desde, destino):
         plt.close(fig)
         return None
     eixos[0].set_ylabel("Desvio máximo (°)")
-    eixos[1].legend(loc="upper left", fontsize=7)
-    return _salvar(fig, destino)
+    # legenda abaixo dos paineis: dentro da guinada ela cobria uma curva
+    alcas, rotulos = eixos[1].get_legend_handles_labels()
+    fig.legend(alcas, rotulos, loc="lower center", ncol=3, fontsize=7, frameon=False)
+    fig.tight_layout(rect=(0, 0.13, 1, 1))
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(destino)
+    plt.close(fig)
+    return destino
 
 
 def fig_estocastico(desde, destino):
@@ -446,6 +463,9 @@ def fig_estocastico(desde, destino):
     for j, (slug, rotulo) in enumerate(NUCLEO):
         rel = []
         for eixo in ("roll", "pitch", "yaw"):
+            if slug in SO_GUINADA and eixo != "yaw":
+                rel.append(np.nan)
+                continue
             cen = f"{GRUPO[eixo]}/torque_estocastico"
             m, n = _metricas(cen, slug, desde), _metricas(cen, "nativo", desde)
             a = ((m or {}).get(f"disturbio_{eixo}") or {}).get("rmse_deg")
