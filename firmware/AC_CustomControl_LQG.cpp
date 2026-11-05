@@ -264,6 +264,13 @@ const AP_Param::GroupInfo AC_CustomControl_LQG::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("DBGANG", 44, AC_CustomControl_LQG, _dbgang, 0),
 
+    // @Param: ABL
+    // @DisplayName: Ablacao do modelo de medida do estimador
+    // @Description: Bitmask. 1: sem o filtro do giroscopio na medida de taxa (o estimador a toma como e_w - b_g, e nao f1 - b_g). 2: sem o atraso de um laco do angulo (o estimador o toma como e_th - eta, e nao z). Os ganhos de Kalman tem de ser os projetados para o mesmo modelo (modelagem/projeto.py). So para a ablacao da revisao de 3/11
+    // @Bitmask: 0:Sem filtro,1:Sem atraso do angulo
+    // @User: Advanced
+    AP_GROUPINFO("ABL", 45, AC_CustomControl_LQG, _abl, 0),
+
     AP_GROUPEND
 };
 
@@ -491,8 +498,10 @@ void AC_CustomControl_LQG::estimar(uint8_t i, uint8_t q, float e_th, float e_w, 
     }
     // medidas: o angulo do laco anterior (estado z) e o erro de taxa filtrado,
     // menos o vies do giroscopio (f1 - bg)
-    const float inov_t = e_th - x_pred[7];
-    const float inov_w = e_w - (x_pred[2] - x_pred[6]);
+    // com CC4_ABL, o modelo de medida sem o atraso do angulo (bit 2) ou sem o filtro
+    // do giroscopio (bit 1), para a ablacao; os ganhos sao os desse modelo
+    const float inov_t = (_abl & 2) ? e_th - (x_pred[0] - x_pred[5]) : e_th - x_pred[7];
+    const float inov_w = (_abl & 1) ? e_w - (x_pred[1] - x_pred[6]) : e_w - (x_pred[2] - x_pred[6]);
     const AP_Vector3f *lt = (q == 0) ? _lt : _lrt;
     const AP_Vector3f *lw = (q == 0) ? _lw : _lrw;
     for (uint8_t r = 0; r < CC_LQG_N; r++) {
@@ -592,6 +601,17 @@ void AC_CustomControl_LQG::reset(void)
     }
     _primeiro = true;
     _q_int_ok = false;
+}
+
+// O que o I do PID de taxa nativo segura em regime: -d^/b, com a estimativa usada na
+// lei (a mistura dos estimadores). Usado na volta ao nativo (CC_TRANSF).
+bool AC_CustomControl_LQG::integrador_equivalente(Vector3f &i)
+{
+    for (uint8_t k = 0; k < 3; k++) {
+        const float b = _b.get()[k];
+        i[k] = is_positive(b) ? -_x[k][4] / b : 0.0f;
+    }
+    return true;
 }
 
 #endif  // AP_COPTER_CUSTOMCONTROL_LQG_ENABLED

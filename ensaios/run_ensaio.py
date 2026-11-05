@@ -830,6 +830,10 @@ def voar_perfil(m, voo, vento, speedup, taxa_hz=10.0, rc_override=None):
     """
     duracao = float(voo["duracao_s"])
     t_degrau = float(voo.get("t_degrau_s") or 0.0)
+    # volta ao nativo no meio do perfil (cenarios comutacao/): a partir de
+    # volta_nativo_s, a chave do canal 6 vai a LOW e o backend sai
+    t_volta = voo.get("volta_nativo_s")
+    volta_avisada = False
     degraus = degraus_do_voo(voo)
     zero = {e: 0.0 for e in EIXOS_DEGRAU}
     # t_retorno_s ausente = mantem o degrau ate o fim (comportamento antigo)
@@ -904,7 +908,13 @@ def voar_perfil(m, voo, vento, speedup, taxa_hz=10.0, rc_override=None):
         m.mav.set_attitude_target_send(
             ms, m.target_system,
             m.target_component, TYPEMASK_ATITUDE, q, 0.0, 0.0, 0.0, THRUST_NEUTRO)
-        aplicar_rc_override(m, rc_override)      # os overrides expiram; renova
+        rc_agora = rc_override
+        if t_volta is not None and rc_override and 6 in rc_override and t_sim >= float(t_volta):
+            rc_agora = {**rc_override, 6: 1000}
+            if not volta_avisada:
+                log(f"  volta ao nativo (canal 6 em LOW) em t_sim={t_sim:.1f}s")
+                volta_avisada = True
+        aplicar_rc_override(m, rc_agora)         # os overrides expiram; renova
         if t_sim - ultimo_aviso >= 15:
             log(f"  perfil em t_sim={t_sim:.0f}/{duracao:.0f}s")
             ultimo_aviso = t_sim

@@ -252,4 +252,21 @@ void AC_CustomControl_LQR::reset(void)
     _primeiro = true;
 }
 
+// O que o I do PID de taxa nativo segura em regime: -d/b. No LQI, k_i x_I (a lei em
+// regime, com erros nulos); no ESO, -d_hat/b. Usado na volta ao nativo (CC_TRANSF).
+bool AC_CustomControl_LQR::integrador_equivalente(Vector3f &i)
+{
+    for (uint8_t k = 0; k < 3; k++) {
+        const float b = _b.get()[k];
+        float v;
+        if (_modo == 1) {
+            v = is_positive(b) ? -_d_hat[k] / b : 0.0f;
+        } else {
+            v = _ki.get()[k] * _x_i[k];
+        }
+        i[k] = v;
+    }
+    return true;
+}
+
 #endif  // AP_COPTER_CUSTOMCONTROL_LQR_ENABLED

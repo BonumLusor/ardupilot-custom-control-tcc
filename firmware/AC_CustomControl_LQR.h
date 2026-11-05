@@ -33,6 +33,9 @@ protected:
     // um passo de um eixo; devolve o esforco normalizado u
     float passo_lqi(uint8_t i, float e_th, float e_w, float u_ff, bool limite);
     float passo_eso(uint8_t i, float e_th, float e_w, float u_ff, float giro, bool limite);
+public:
+    bool integrador_equivalente(Vector3f &i) override;
+protected:
     void registrar(uint8_t i, float e_th, float e_w, float u_ff, float u);
 
     float _dt;

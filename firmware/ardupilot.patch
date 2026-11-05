@@ -1,5 +1,5 @@
 diff --git a/libraries/AC_CustomControl/AC_CustomControl.cpp b/libraries/AC_CustomControl/AC_CustomControl.cpp
-index e4c77513b8..63c79be015 100644
+index e4c77513b8..c590b565c7 100644
 --- a/libraries/AC_CustomControl/AC_CustomControl.cpp
 +++ b/libraries/AC_CustomControl/AC_CustomControl.cpp
 @@ -7,16 +7,21 @@
@@ -25,7 +25,21 @@ index e4c77513b8..63c79be015 100644
      // @RebootRequired: True
      // @User: Advanced
      AP_GROUPINFO_FLAGS("_TYPE", 1, AC_CustomControl, _controller_type, 0, AP_PARAM_FLAG_ENABLE),
-@@ -35,6 +40,14 @@ const AP_Param::GroupInfo AC_CustomControl::var_info[] = {
+@@ -28,6 +33,13 @@ const AP_Param::GroupInfo AC_CustomControl::var_info[] = {
+     // @User: Advanced
+     AP_GROUPINFO("_AXIS_MASK", 2, AC_CustomControl, _custom_controller_mask, 0),
+ 
++    // @Param: _TRANSF
++    // @DisplayName: Transferencia do integrador na volta ao nativo
++    // @Description: 0 zera os integradores do PID de taxa nativo na volta ao nativo (comportamento original). 1 os carrega com o integrador equivalente do backend (k_i x_I no LQI, -d_hat/b no ESO e no LQG), limitado ao IMAX, nos eixos do CC_AXIS_MASK
++    // @Values: 0:Zera,1:Transfere
++    // @User: Advanced
++    AP_GROUPINFO("_TRANSF", 10, AC_CustomControl, _transf, 0),
++
+     // parameters for empty controller. only used as a template, no need for param table 
+     // AP_SUBGROUPVARPTR(_backend, "1_", 6, AC_CustomControl, _backend_var_info[0]),
+ 
+@@ -35,6 +47,14 @@ const AP_Param::GroupInfo AC_CustomControl::var_info[] = {
      // @Path: AC_CustomControl_PID.cpp
      AP_SUBGROUPVARPTR(_backend, "2_", 7, AC_CustomControl, _backend_var_info[1]),
  
@@ -40,7 +54,7 @@ index e4c77513b8..63c79be015 100644
      AP_GROUPEND
  };
  
-@@ -65,6 +78,14 @@ void AC_CustomControl::init(void)
+@@ -65,6 +85,14 @@ void AC_CustomControl::init(void)
              _backend = NEW_NOTHROW AC_CustomControl_PID(*this, _ahrs, _att_control, _motors, _dt);
              _backend_var_info[get_type()] = AC_CustomControl_PID::var_info;
              break;
@@ -55,7 +69,7 @@ index e4c77513b8..63c79be015 100644
          default:
              return;
      }
-@@ -77,6 +98,17 @@ void AC_CustomControl::init(void)
+@@ -77,6 +105,17 @@ void AC_CustomControl::init(void)
  // run custom controller if it is activated by RC switch and appropriate type is selected
  void AC_CustomControl::update(void)
  {
@@ -73,8 +87,31 @@ index e4c77513b8..63c79be015 100644
      if (is_safe_to_run()) {
          Vector3f motor_out_rpy;
  
+@@ -115,6 +154,22 @@ void AC_CustomControl::reset_main_att_controller(void)
+     _att_control->get_rate_roll_pid().set_integrator(0.0);
+     _att_control->get_rate_pitch_pid().set_integrator(0.0);
+     _att_control->get_rate_yaw_pid().set_integrator(0.0);
++
++    // com CC_TRANSF, o nativo parte do integrador equivalente do backend nos eixos
++    // que ele controlava: sob torque sustentado, a volta fica sem salto (set_integrator
++    // limita ao IMAX)
++    Vector3f i_eq;
++    if (_transf > 0 && _backend != nullptr && _backend->integrador_equivalente(i_eq)) {
++        if (_custom_controller_mask & (uint8_t)CustomControlOption::ROLL) {
++            _att_control->get_rate_roll_pid().set_integrator(i_eq.x);
++        }
++        if (_custom_controller_mask & (uint8_t)CustomControlOption::PITCH) {
++            _att_control->get_rate_pitch_pid().set_integrator(i_eq.y);
++        }
++        if (_custom_controller_mask & (uint8_t)CustomControlOption::YAW) {
++            _att_control->get_rate_yaw_pid().set_integrator(i_eq.z);
++        }
++    }
+ }
+ 
+ void AC_CustomControl::set_custom_controller(bool enabled)
 diff --git a/libraries/AC_CustomControl/AC_CustomControl.h b/libraries/AC_CustomControl/AC_CustomControl.h
-index 8be2e6cd52..b152bc887e 100644
+index 8be2e6cd52..f859609e73 100644
 --- a/libraries/AC_CustomControl/AC_CustomControl.h
 +++ b/libraries/AC_CustomControl/AC_CustomControl.h
 @@ -14,7 +14,7 @@
@@ -95,6 +132,30 @@ index 8be2e6cd52..b152bc887e 100644
      };            // controller that should be used     
  
      enum class  CustomControlOption {
+@@ -68,6 +70,7 @@ protected:
+ 
+     AP_Enum<CustomControlType> _controller_type;
+     AP_Int8 _custom_controller_mask;
++    AP_Int8 _transf;    // volta ao nativo: transfere o integrador equivalente do backend
+ 
+ private:
+     AC_CustomControl_Backend *_backend;
+diff --git a/libraries/AC_CustomControl/AC_CustomControl_Backend.h b/libraries/AC_CustomControl/AC_CustomControl_Backend.h
+index 5be2f5bb50..d3ef79992d 100644
+--- a/libraries/AC_CustomControl/AC_CustomControl_Backend.h
++++ b/libraries/AC_CustomControl/AC_CustomControl_Backend.h
+@@ -28,6 +28,11 @@ public:
+     // set the PID notch sample rates
+     virtual void set_notch_sample_rate(float sample_rate) {};
+ 
++    // integrador equivalente do PID de taxa nativo, por eixo, na escala do esforco
++    // (o que o I nativo segura em regime: -d/b). Usado na volta ao nativo para
++    // transferir a acao integral (CC_TRANSF, revisao de 3/11). Sem ele, false.
++    virtual bool integrador_equivalente(Vector3f &i) { return false; }
++
+ protected:
+     // References to external libraries
+     AP_AHRS_View*& _ahrs;
 diff --git a/libraries/AC_CustomControl/AC_CustomControl_PID.cpp b/libraries/AC_CustomControl/AC_CustomControl_PID.cpp
 index a429aa39e8..20175dc26c 100644
 --- a/libraries/AC_CustomControl/AC_CustomControl_PID.cpp

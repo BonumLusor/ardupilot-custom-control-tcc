@@ -1,0 +1,46 @@
+# Volta ao nativo sob torque sustentado (revisao de 3/11, item 2.8).
+nome: "Volta ao nativo sob torque de 10 rad/s2 em rolagem — com transferencia"
+descricao: >
+  Degrau de torque de 10 rad/s2 em rolagem em t = 6 s, sustentado; em t = 12 s
+  a chave do canal 6 desliga o backend, e o PID nativo assume com o torque
+  ainda aplicado. Na volta, o frontend carrega os integradores do nativo com o integrador equivalente do backend (CC_TRANSF = 1).
+  Mede o transiente da comutacao: o desvio de rolagem depois de t = 12 s.
+
+params:
+  CC_TRANSF: 1
+
+vento:
+  WND_MODE: 33       # 1 (vento medio zero) + 32 (degrau de torque)
+  WND_SPD: 0
+  WND_DIR: 0
+  WND_DIRZ: 0
+  WND_GA: 0
+  WND_GT0: 0
+  WND_GDUR: 3
+  WND_TSIG: 0
+  WND_TLU: 200
+  WND_SEED: 1
+  WND_T0: 8
+  # torque so em rolagem, para casar com o resto dos ensaios
+  WND_TQX: 10.0      # rad/s2 sustentado. Em 0,4 o diferencial dos motores dava
+                     # 0,55 PWM — ruido. A aeronave tem ~220 rad/s2 de autoridade,
+                     # entao 10 e ~5% dela: visivel nos motores, longe de saturar.
+  WND_TQY: 0
+  WND_TQZ: 0
+  WND_TQT0: 6       # segundos apos o inicio do perfil; DEPOIS do retorno a 0 graus
+  WND_TQDUR: 0.3
+  WND_TQF0: 0.2      # so usados pelo chirp (bit 64); aqui ficam nos padroes
+  WND_TQF1: 10.0
+
+voo:
+  altitude_m: 15
+  espera_apos_decolagem_s: 6
+  degrau_roll_deg: 0     # sem degrau: este ensaio mede REJEICAO, nao rastreamento.
+                         # A aeronave voa nivelada e parada o tempo todo, e a
+                         # unica coisa que a tira do lugar e o disturbio. O degrau
+                         # vive no cenario rolagem/nominal, que e o ensaio de
+                         # rastreamento (grupo 1 da proposta).
+  t_degrau_s: 0
+  duracao_s: 25
+  volta_nativo_s: 12   # a chave do canal 6 vai a LOW: o backend sai e o nativo assume
+                       # com o torque ainda aplicado (6 s depois do degrau)

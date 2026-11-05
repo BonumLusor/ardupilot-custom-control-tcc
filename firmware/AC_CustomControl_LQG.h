@@ -45,6 +45,9 @@ protected:
     void estimar(uint8_t i, uint8_t q, float e_th, float e_w, bool limite);
     // um passo de um eixo; devolve o esforco normalizado u
     float passo(uint8_t i, float e_th, float e_w, float u_ff, float w_t, bool limite);
+public:
+    bool integrador_equivalente(Vector3f &i) override;
+protected:
     void registrar(uint8_t i, float e_th, float e_w, float u_ff, float u, float w_t);
 
     float _dt;
@@ -65,6 +68,7 @@ protected:
     AP_Vector3f _wman;      // velocidade alvo a partir da qual o rapido assume, graus/s (0 desliga)
     AP_Float    _tman;      // constante de tempo da volta ao lento, s
     AP_Int8     _dbgang;    // depuracao: 0 AHRS; 1 angulo do INS; 2 angulo e taxa do INS
+    AP_Int8     _abl;       // ablacao do modelo de medida: bit 1 sem filtro, bit 2 sem atraso do angulo
     AP_Vector3f _lrt[CC_LQG_N];
     AP_Vector3f _lrw[CC_LQG_N];
 
