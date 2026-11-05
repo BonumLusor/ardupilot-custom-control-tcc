@@ -83,7 +83,9 @@ alimentação direta que o próprio PID poderia usar.
 Os resultados mostram limites que vêm da informação disponível ao controlador
 e da planta, e não da lei de controle.
 
-\paragraph{A integral de Bode.} Para qualquer controlador linear e invariante
+\subsection{A integral de Bode}
+
+Para qualquer controlador linear e invariante
 no tempo, atenuar a perturbação numa faixa de frequências aumenta a
 sensibilidade em outra (Seção~\ref{sec:bode}). O que as varreduras medem é
 $P\,S$, e não $S$; como a planta $P$ é a mesma para todos os controladores, a
@@ -95,14 +97,18 @@ e arfagem, 0,052 contra 0,049 do nativo: atenua mais em baixa frequência,
 o que dá a recuperação rápida, e paga com um máximo maior perto do
 cruzamento.
 
-\paragraph{O ruído do giroscópio contra a autoridade em guinada.} A
+\subsection{O ruído do giroscópio contra a autoridade em guinada}
+
+A
 eficácia de controle em guinada é de \SI{14.37}{\radian\per\second\squared},
 30 vezes menor que em rolagem (Tabela~\ref{tab:modelo-linear}). Mais banda
 em guinada custa ruído no esforço na mesma proporção, como mostram as
 fronteiras de projeto e medida (Figuras~\ref{fig:projeto-fronteira}
 e~\ref{fig:comparacao-fronteira}).
 
-\paragraph{O filtro do giroscópio e o atraso do laço.} O filtro de
+\subsection{O filtro do giroscópio e o atraso do laço}
+
+O filtro de
 \SI{20}{\hertz} custa cerca de \ang{33} de fase no cruzamento da rolagem, em
 \SI{48.5}{\radian\per\second}, e o ângulo do AHRS chega com um laço de atraso,
 cerca de \ang{7} na mesma frequência. As margens garantidas do LQR, de 65 a
@@ -161,7 +167,9 @@ Os limites da Seção~\ref{sec:limites} valem para toda lei linear e invariante
 no tempo com a mesma informação. Outras técnicas atacariam pontos diferentes,
 e cada uma teria ganho num grupo específico dos ensaios deste trabalho.
 
-\paragraph{Inversão dinâmica não linear incremental (INDI).} A INDI controla
+\subsection{Inversão dinâmica não linear incremental (INDI)}
+
+A INDI controla
 o incremento de esforço a partir da aceleração angular medida, e com isso
 depende pouco do modelo da aeronave e absorve momentos não
 modelados~\cite{sieberling2010}; foi aplicada à atitude de multirrotores com
@@ -172,7 +180,9 @@ LQG, que também estimam a perturbação, e, em guinada, limitada pelo ruído do
 mesmo modo, porque depende da derivada do giroscópio. É a alternativa mais
 relevante para uma aeronave real.
 
-\paragraph{\texorpdfstring{Controle $H_\infty$ e \textit{loop shaping}.}{Controle H-infinito e loop shaping.}} O projeto
+\subsection{\texorpdfstring{Controle $H_\infty$ e \textit{loop shaping}}{Controle H-infinito e loop shaping}}
+
+O projeto
 $H_\infty$ trata o pior caso da sensibilidade~\cite{zames1981}, e o
 \textit{loop shaping} $H_\infty$ dá margens de robustez por
 construção~\cite{mcfarlane1992}; foi aplicado à atitude de um quadricóptero
@@ -182,7 +192,9 @@ quadrático do LQG não olha: poderia limitar por construção o máximo de
 $|P\,S|$ do LQG perto do cruzamento e garantiria margens, que o LQG não
 tem~\cite{doyle1978}, provavelmente com algum custo no pico do pulso.
 
-\paragraph{Controle adaptativo.} O controle adaptativo por modelo de
+\subsection{Controle adaptativo}
+
+O controle adaptativo por modelo de
 referência~\cite{astrom1995} e o controle adaptativo
 $\mathcal{L}_1$~\cite{hovakimyan2010} ajustam o controlador em voo; o
 primeiro foi avaliado em voo num quadricóptero com perda de
@@ -191,7 +203,9 @@ geométrico~\cite{wu2022}. Ganhariam quando a eficácia de controle varia ---
 com a bateria, a carga ou o desgaste ---, o que, no SITL, aparece só nos
 ensaios de erro de modelo e de falha de motor.
 
-\paragraph{Controle preditivo (MPC).} O MPC trata restrições
+\subsection{Controle preditivo (MPC)}
+
+O MPC trata restrições
 explicitamente~\cite{mayne2000} e foi aplicado ao rastreamento de trajetória
 de multirrotores, com vento~\cite{kamel2017}. Sem restrições ativas, a lei
 coincide com a do LQR, e o ganho ficaria nos ensaios de saturação e de
@@ -199,7 +213,9 @@ coincide com a do LQR, e o ganho ficaria nos ensaios de saturação e de
 motores pesam, e na antecipação do alvo. A \SI{400}{\hertz}, porém, o custo
 de calcular a lei a cada laço é alto para a controladora de voo.
 
-\paragraph{Modos deslizantes.} O controle por modos
+\subsection{Modos deslizantes}
+
+O controle por modos
 deslizantes~\cite{utkin1977} e o algoritmo \textit{super-twisting}, de
 segunda ordem~\cite{levant1993}, rejeitam em tempo finito as perturbações
 que entram no canal do controle e foram aplicados à atitude de um
@@ -208,7 +224,9 @@ medida: seriam piores que os propostos em guinada, onde o ruído já limita a
 banda, e produzem oscilação de alta frequência no esforço
 (\textit{chattering}).
 
-\paragraph{\texorpdfstring{Controle geométrico em $SO(3)$.}{Controle geométrico em SO(3).}} O controle formulado no grupo das
+\subsection{\texorpdfstring{Controle geométrico em $SO(3)$}{Controle geométrico em SO(3)}}
+
+O controle formulado no grupo das
 rotações~\cite{bullo1999}, aplicado ao quadricóptero em
 $SE(3)$~\cite{lee2010}, evita as singularidades e as aproximações de ângulos
 pequenos. Perto do pairado, equivale a um controle proporcional-derivativo, e

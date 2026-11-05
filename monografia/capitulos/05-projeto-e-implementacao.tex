@@ -458,7 +458,9 @@ alimentação direta opcional \codigo{CC2\_FF}, usada pela configuração
 \codigo{cc\_pid\_ff}. O resto do \textit{framework} fica como no repositório
 oficial.
 
-\paragraph{Entradas e temporização.} O \textit{backend} roda no laço rápido,
+\subsection{Entradas e temporização}
+
+O \textit{backend} roda no laço rápido,
 depois do PID de velocidade angular nativo e antes da saída para os motores e
 da atualização do estimador de atitude (Figura~\ref{fig:cascata}), com
 período fixo de \SI{2.5}{\milli\second}, o nominal do laço. Por isso a
@@ -472,7 +474,9 @@ não modelam nenhum dos quatro efeitos do caminho de medida --- o atraso do
 ângulo, o filtro do giroscópio, o erro do AHRS e a polarização ---, e o LQG
 modela todos.
 
-\paragraph{Alimentação direta.} Nos três controladores, a alimentação direta
+\subsection{Alimentação direta}
+
+Nos três controladores, a alimentação direta
 inverte o modelo de primeira ordem,
 \begin{equation}
 u_{ff} = \frac{\dot\omega_t + a\,\omega_t}{b},
@@ -483,14 +487,18 @@ $\dot\omega_t$ a sua derivada, por diferença finita. Ela é ligada por \codigo{
 \codigo{CC4\_FF}, e é diferente do termo de alimentação direta do
 \codigo{AC\_PID}, desligado nos ensaios.
 
-\paragraph{Saturação.} Nenhum \textit{backend} limita a própria saída; o corte
+\subsection{Saturação}
+
+Nenhum \textit{backend} limita a própria saída; o corte
 fica com a alocação. O LQI usa integração condicional: a integral não avança
 quando a alocação sinalizou saturação no eixo e o erro empurraria o esforço
 ainda mais na direção saturada. O ESO e o LQG recebem, no lugar de $u$, o
 esforço limitado a $\pm1$, para que a estimativa da perturbação não absorva
 um esforço que não foi aplicado.
 
-\paragraph{Erros grandes.} Em vez do controlador de raiz quadrada do nativo,
+\subsection{Erros grandes}
+
+Em vez do controlador de raiz quadrada do nativo,
 os \textit{backends} têm um limite opcional do erro de ângulo
 (\codigo{CC3\_EMAX\_*} e \codigo{CC4\_EMAX\_*}), desligado em todos os
 ensaios. Em guinada, vale ainda o limite do erro que a decomposição herda do
@@ -499,14 +507,18 @@ de \ang{45}; a atenuação da guinada acima de \ang{30} de inclinação não se
 aplica. Os ensaios de ângulo grande do Capítulo~\ref{cap:resultados} mostram
 o efeito dessa escolha.
 
-\paragraph{Comutação.} Ao assumir, o \textit{backend} parte do integrador do
+\subsection{Comutação}
+
+Ao assumir, o \textit{backend} parte do integrador do
 PID nativo, $i_n$, para uma transição sem salto: o LQI faz
 $x_I = i_n/k_i$, e o ESO e o LQG fazem $\hat d = -b\,i_n$, porque, em regime,
 o integrador nativo segura $-d/b$. Enquanto ele está ativo, o
 \textit{framework} zera o integrador nativo a cada laço; em solo, o
 \textit{backend} é reiniciado a cada laço.
 
-\paragraph{LQG a bordo.} O LQG calcula a bordo as matrizes $\Phi$ e $\Gamma$
+\subsection{LQG a bordo}
+
+O LQG calcula a bordo as matrizes $\Phi$ e $\Gamma$
 do modelo de oito estados, pela exponencial da matriz aumentada em série de
 Taylor com escala e quadratura, e só as recalcula quando um parâmetro do
 modelo muda; os ganhos $\matriz{K}$ e $\matriz{L}$ vêm do projeto. A cada
@@ -514,7 +526,9 @@ laço, o estimador prediz o estado com o esforço de realimentação efetivament
 aplicado no laço anterior, corrige-o pelas inovações do ângulo e da
 velocidade angular e entrega à lei~\eqref{eq:lei-eso} o estado estimado.
 
-\paragraph{Registro.} Os \textit{backends} gravam, a cada laço e por eixo, as
+\subsection{Registro}
+
+Os \textit{backends} gravam, a cada laço e por eixo, as
 mensagens \codigo{CCLR}, \codigo{CCLP} e \codigo{CCLY}, com os erros, a
 integral, a alimentação direta, o esforço e as estimativas de velocidade
 angular e de perturbação; o LQG grava ainda \codigo{CCKR}, \codigo{CCKP} e

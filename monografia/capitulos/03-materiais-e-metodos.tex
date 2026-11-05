@@ -575,7 +575,9 @@ um salto de \ang{360}. As métricas são calculadas por eixo, apenas nos eixos
 que o ensaio exercita, e cada uma é registrada junto com a janela de tempo em
 que foi calculada.
 
-\paragraph{Resposta ao degrau.} Na janela que vai do degrau até
+\subsection{Resposta ao degrau}
+
+Na janela que vai do degrau até
 \SI{8}{\second} depois dele, ou até \SI{0.5}{\second} antes do retorno ao
 nível ou da perturbação, o que vier antes (cerca de \SI{4.5}{\second} nos
 cenários nominais), a resposta normalizada fornece o tempo de subida, de
@@ -590,7 +592,9 @@ aeronave fica para trás do alvo e depende da realimentação e da alimentação
 direta, mas não do modelador de referência, que é o mesmo para todos os
 controladores~\cite{astrom2008}.
 
-\paragraph{Rejeição de perturbação.} A janela começa no início da
+\subsection{Rejeição de perturbação}
+
+A janela começa no início da
 perturbação e termina \SI{4}{\second} depois do início no pulso (ou oito
 vezes a sua duração, se maior), no fim do ensaio no degrau sustentado, no fim
 da perturbação no torque estocástico e na falha de motor e quatro durações
@@ -617,7 +621,9 @@ eficazes do erro e do esforço, em torno da média, medem o que o ruído do
 giroscópio produz sozinho em cada controlador, e o do esforço é o
 \emph{ruído no esforço} das tabelas de ruído.
 
-\paragraph{Esforço de controle.} Com $u$ o esforço normalizado que chega à
+\subsection{Esforço de controle}
+
+Com $u$ o esforço normalizado que chega à
 alocação no eixo --- o do controlador que estiver ativo, pedido antes do corte
 que a alocação aplica ---, calculam-se, na janela da perturbação, ou no perfil
 inteiro nos ensaios nominais, que não a têm,
@@ -630,7 +636,9 @@ u_{\max} = \max|u|,
 porque dois controladores com a mesma rejeição e esforços diferentes não são
 equivalentes.
 
-\paragraph{Resposta em frequência.} Nas varreduras, a resposta em frequência
+\subsection{Resposta em frequência}
+
+Nas varreduras, a resposta em frequência
 da perturbação para a atitude é estimada pela Equação~\eqref{eq:frf}, com o
 torque aplicado como entrada --- reconstruído da mensagem \codigo{WND} e
 segurado entre as escritas do injetor, como o modelo físico o aplica;
@@ -668,10 +676,20 @@ consolidada recebe uma linha por ensaio, com as métricas, os ganhos que
 voaram em cada eixo e a massa e as inércias da aeronave. Um voo que falha é
 repetido, e a pasta do voo malsucedido é marcada com o motivo da falha.
 
+O lote completo, com os 49 cenários e os 14 controladores (cada controlador
+voa os cenários da sua lista), tem 398 voos e leva cerca de seis horas, a
+cerca de um minuto por voo. O código, os cenários e as configurações são
+versionados; os resultados ficam fora do controle de versão, mas cada pasta
+de resultado guarda o necessário para reanalisar o ensaio e, com a versão do
+código, refazê-lo: o registro traz o próprio \textit{script} do injetor e a
+versão do firmware.
+
 Três problemas encontrados durante o desenvolvimento afetavam diretamente a
 validade dos resultados, e o procedimento os trata explicitamente.
 
-\paragraph{Temporização.} Com fator de aceleração 5, o SITL entregou
+\subsection{Temporização}
+
+Com fator de aceleração 5, o SITL entregou
 5,0 vezes o tempo real nos lotes de ensaio, mas a razão entre o tempo
 simulado e o real depende da carga do computador. Um perfil temporizado pelo
 relógio do computador terminava antes da hora, e o pouso começava no meio do
@@ -691,7 +709,9 @@ de tempo do lado do computador usam um relógio monotônico: o relógio de
 parede do sistema chegou a voltar no tempo durante uma corrida, ao se
 ressincronizar.
 
-\paragraph{Reinicialização do firmware.} Alguns voos falhavam logo depois
+\subsection{Reinicialização do firmware}
+
+Alguns voos falhavam logo depois
 da reinicialização que ativa o motor de \textit{scripts} e o
 \codigo{AC\_CustomControl}. A causa é um defeito do SITL: antes de
 reiniciar, o firmware esvazia a porta serial para garantir que a confirmação
@@ -706,18 +726,12 @@ confere que ele de fato reiniciou. Antes da correção, o travamento apareceu
 em \pendente{3 de 8 e em 2 de 7 ciclos de reinicialização: só no README;
 medir}; depois dela, em nenhum de \pendente{40 e de 30 ciclos: idem}.
 
-\paragraph{Registro.} As mensagens gravadas foram escolhidas para conter
+\subsection{Registro}
+
+As mensagens gravadas foram escolhidas para conter
 tudo o que a análise lê e um pequeno conjunto de diagnóstico (GPS, IMU na
 taxa normal, bússola e bateria); ficaram de fora as de IMU em alta taxa e as
 de ajuste de filtros (bits 18, 19 e 21 do \codigo{LOG\_BITMASK}), que
 levariam o registro de algumas dezenas de megabytes para
 \pendente{mais de um gigabyte por ensaio: só no comentário de
 \codigo{run\_ensaio.py}; medir com os bits 18, 19 e 21 ligados}.
-
-O lote completo, com os 49 cenários e os 14 controladores (cada controlador
-voa os cenários da sua lista), tem 398 voos e leva cerca de seis horas, a
-cerca de um minuto por voo. O código, os cenários e as configurações são
-versionados; os resultados ficam fora do controle de versão, mas cada pasta
-de resultado guarda o necessário para reanalisar o ensaio e, com a versão do
-código, refazê-lo: o registro traz o próprio \textit{script} do injetor e a
-versão do firmware.
