@@ -9,3 +9,6 @@ __pycache__/
 monografia/build/
 monografia/tcc.pdf
 monografia/tcc.synctex.gz
+
+# material de terceiros (PDFs do minicurso): fora do repositório público
+Material_participante/
