@@ -87,8 +87,9 @@ PARAMS_BASE = {
     # Logging: tudo que a analise le, e nada do que ela nao le.
     # bits 0,1,2,3,4,5,6,7,9,10,12,13,17 = atitude rapida e media, GPS, PM,
     # CTUN, NTUN, entrada RC, IMU, bateria, saida RC, PID, bussola, motores.
-    # Ficam DE FORA os bits 18/19/21 (Fast IMU, Raw IMU, notch harmonico), que
-    # sozinhos levam o log de dezenas de MB para mais de 1 GB por ensaio.
+    # Ficam DE FORA os bits 18/19/21 (Fast IMU, Raw IMU, notch harmonico), que a
+    # analise nao le. Medido em 4/11/2026 (verificacao_2026-11-04/fase2_medicoes.txt):
+    # num ensaio nominal de 90 s, levam o log de 22 para 36 MB (1,6x).
     "LOG_BITMASK": 145151,
     # o log comeca no armamento, que e exatamente a janela do ensaio: o perfil de
     # vento tambem so dispara ali

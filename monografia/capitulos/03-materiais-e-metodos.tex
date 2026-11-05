@@ -88,10 +88,10 @@ e reduz a constante de tempo do modelador de referência
 em uma transição suave antes que a realimentação o veja
 (Seção~\ref{sec:ardupilot}), e ele é idêntico para todos os controladores.
 Com a constante padrão, a aeronave segue o alvo modelado com erro de pico de
-\pendente{cerca de \ang{0.5}: o número só está num comentário de
-\codigo{run\_ensaio.py}; medir com \codigo{ATC\_INPUT\_TC} = 0,10}, e as
-métricas do degrau passam a caracterizar o modelador; encurtando-a, o comando
-chega mais perto de um degrau, e a malha fechada tem de trabalhar.
+\ang{0.52} no degrau nominal de rolagem do nativo, e as métricas do degrau
+passam a caracterizar o modelador; encurtando-a para \SI{0.02}{\second}, o
+erro de pico passa a \ang{3.3}: o comando chega mais perto de um degrau, e a
+malha fechada tem de trabalhar.
 
 O simulador é executado com fator de aceleração 5 em relação ao tempo real.
 Esse fator não interfere nos resultados: o relógio do firmware é o relógio
@@ -155,17 +155,8 @@ Evento de planta & \codigo{SIM\_ENGINE\_FAIL} e \codigo{SIM\_ENGINE\_MUL} (motor
 
 As formas disponíveis são selecionadas por um campo de bits
 (\codigo{WND\_MODE}) e podem ser combinadas
-(Tabela~\ref{tab:modos-injetor}). Em vento, o injetor gera o vento médio, a
-rajada do tipo ``1~$-$~cosseno''~\eqref{eq:rajada} e a turbulência de
-Dryden, com a componente longitudinal pela discretização
-exata~\eqref{eq:dryden-discreto} e a lateral pelo filtro de segunda ordem
-discretizado pela transformação de Tustin~\cite{tustin1947,franklin1998}; as
-duas normalizações foram conferidas numericamente, e ambas entregam o
-desvio-padrão especificado. Como a aeronave paira, quem desloca o campo de
-turbulência em relação a ela é o vento médio, e é a sua velocidade, com piso
-de \SI{1}{\metre\per\second}, que o injetor usa no lugar de $V$; a escala
-lateral é metade da longitudinal. Nenhum ensaio deste trabalho usa a
-turbulência. Em torque, cada eixo tem amplitude própria, em
+(Tabela~\ref{tab:modos-injetor}). Os modos de vento e os ajustes do modelo de
+vento do SITL estão no Apêndice~\ref{ap:vento}. Em torque, cada eixo tem amplitude própria, em
 \si{\radian\per\second\squared} (\codigo{WND\_TQX}, \codigo{WND\_TQY} e
 \codigo{WND\_TQZ}), e cinco formas: o pulso retangular, cujo impulso angular
 é a amplitude multiplicada pela duração; o pulso do tipo
@@ -214,21 +205,9 @@ ensaios atuais, que não usam a turbulência, a conferência cobre o torque
 estocástico, e o perfil coincide com o registrado amostra a amostra. É essa
 coincidência que sustenta a reprodutibilidade dos ensaios estocásticos.
 
-Três características do modelo de vento do SITL obrigaram a ajustar os seus
-parâmetros, e o procedimento os fixa em todos os ensaios. Primeiro, o perfil
-vertical de vento padrão (\codigo{SIM\_WIND\_T} = 0) reduz o vento perto do
-solo segundo uma lei de raiz quadrada, e a \SI{5}{\metre} de altura chegariam
-apenas 29\,\% do vento comandado; os ensaios usam o perfil sem redução.
-Segundo, o vento passa por um filtro passa-baixas de primeira ordem cuja
-constante de tempo (\codigo{SIM\_WIND\_TC}) vale \SI{5}{\second} por padrão,
-o que apagaria qualquer rajada; os ensaios usam o piso imposto pelo firmware,
-\SI{0.1}{\second}, e mesmo assim o vento fica atenuado acima de cerca de
-\SI{1.6}{\hertz}. O torque não passa por esse filtro, e a varredura de torque
-pode chegar a \SI{10}{\hertz} sem distorção. Terceiro, o SITL ignora o vento
-nos primeiros \SI{5}{\second} de simulação; como o perfil só é disparado
-depois da decolagem, mais de \SI{70}{\second} após a inicialização, essa
-folga é sempre respeitada. A turbulência nativa do simulador fica desligada,
-e a única turbulência é a do injetor.
+O torque entra pelos parâmetros \codigo{SIM\_TWIST\_*} sem passar pelo
+filtro do vento do SITL (Apêndice~\ref{ap:vento}), e a varredura de torque
+pode chegar a \SI{10}{\hertz} sem distorção.
 
 O laço do \textit{script} não entrega exatamente os \SI{50}{\hertz} pedidos:
 medido nos voos, ele roda de 43,6 a \SI{44.3}{\hertz}. O perfil não perde
@@ -237,7 +216,7 @@ quantos forem necessários para alcançar o relógio, salvo se o
 \textit{script} ficar parado mais de \SI{0.5}{\second}, o que não ocorreu nos
 ensaios, e a sequência gerada é sempre a mesma ---, mas os instantes em que
 cada valor passa a valer variam de um voo para outro em até um ciclo do
-\textit{script}, cerca de \SI{30}{\milli\second} em cada borda. O efeito mais
+\textit{script}, cerca de \SI{23}{\milli\second}, em cada borda. O efeito mais
 visível é na duração efetiva do pulso de torque, que variou de 300 a
 \SI{344}{\milli\second} (média de \SI{318}{\milli\second}) para o pulso
 nominal de \SI{0.3}{\second}; o impulso efetivamente aplicado ficou entre 0 e
@@ -694,17 +673,19 @@ Com fator de aceleração 5, o SITL entregou
 simulado e o real depende da carga do computador. Um perfil temporizado pelo
 relógio do computador terminava antes da hora, e o pouso começava no meio do
 ensaio. O perfil passou a ser marcado no relógio simulado, lido das mensagens
-do próprio veículo; mesmo assim, lendo a mensagem mais antiga da fila de
-recepção, o atraso crescia ao longo do voo, porque o procedimento consumia as
-mensagens um pouco mais devagar do que o veículo as produzia --- o degrau
-chegava com \pendente{cerca de \SI{0.50}{\second}: só no comentário de
-\codigo{voar\_perfil}; medir} de atraso e o retorno, com
-\pendente{cerca de \SI{1.82}{\second}: idem}. Esvaziando a fila antes de cada
-leitura, os atrasos caíram para cerca de \SI{0.1}{\second} (de 0,07 a
-\SI{0.22}{\second} nos voos válidos), o piso imposto pela taxa de comando de
-\SI{10}{\hertz}. A perturbação, temporizada pelo relógio do injetor, que roda
-dentro do firmware, não depende do computador: o seu atraso é de no máximo
-um ciclo do \textit{script}, cerca de \SI{30}{\milli\second}. Os intervalos
+do próprio veículo, e a leitura usa sempre a mensagem mais recente: a fila de
+recepção é esvaziada antes de cada leitura. Lendo a mais antiga, o relógio do
+procedimento ficaria para trás sempre que ele consumisse as mensagens mais
+devagar do que o veículo as produz, o que depende da carga do computador; num
+voo de verificação com o computador livre, essa leitura não atrasou
+(\SI{0.10}{\second} no degrau e \SI{0.08}{\second} no retorno), mas nada a
+protege de uma carga maior. Com a fila esvaziada, o atraso fica em cerca de
+\SI{0.1}{\second} (de 0,07 a \SI{0.22}{\second} nos voos válidos), o piso
+imposto pela taxa de comando de \SI{10}{\hertz}. A perturbação, temporizada
+pelo relógio do injetor, que roda dentro do firmware, não depende do
+computador: ela começa no primeiro ciclo do \textit{script} depois do instante
+programado, e, com ciclos de cerca de \SI{23}{\milli\second} (43,6 a
+\SI{44.3}{\hertz}), o atraso medido ficou abaixo de \SI{30}{\milli\second}. Os intervalos
 de tempo do lado do computador usam um relógio monotônico: o relógio de
 parede do sistema chegou a voltar no tempo durante uma corrida, ao se
 ressincronizar.
@@ -720,11 +701,13 @@ o \textit{buffer} ou até passar um segundo de tempo
 \emph{simulado}~\cite{ardupilot2026}. Nada nesse laço faz o tempo simulado
 avançar, e, se o cliente já fechou a conexão, o \textit{buffer} nunca se
 esvazia: o simulador fica preso, a 100\,\% de processamento, sem reiniciar. O
-procedimento antigo fechava a conexão logo depois de pedir a reinicialização.
-O novo espera a confirmação, lê até que o próprio simulador feche a conexão e
-confere que ele de fato reiniciou. Antes da correção, o travamento apareceu
-em \pendente{3 de 8 e em 2 de 7 ciclos de reinicialização: só no README;
-medir}; depois dela, em nenhum de \pendente{40 e de 30 ciclos: idem}.
+procedimento antigo fechava a conexão logo depois de pedir a reinicialização;
+conforme o lado que chegava primeiro, o simulador travava ou descartava o
+pedido e não reiniciava. O novo espera a confirmação, lê até que o próprio
+simulador feche a conexão e confere que ele de fato reiniciou. Num teste de 30
+ciclos com cada procedimento, alternados, o antigo falhou em todos --- o
+simulador travou em 10 e descartou o pedido em 20 ---, e o novo reiniciou em
+todos.
 
 \subsection{Registro}
 
@@ -732,6 +715,5 @@ As mensagens gravadas foram escolhidas para conter
 tudo o que a análise lê e um pequeno conjunto de diagnóstico (GPS, IMU na
 taxa normal, bússola e bateria); ficaram de fora as de IMU em alta taxa e as
 de ajuste de filtros (bits 18, 19 e 21 do \codigo{LOG\_BITMASK}), que
-levariam o registro de algumas dezenas de megabytes para
-\pendente{mais de um gigabyte por ensaio: só no comentário de
-\codigo{run\_ensaio.py}; medir com os bits 18, 19 e 21 ligados}.
+levariam o registro de um ensaio nominal, de \SI{90}{\second}, de 22 para 36
+megabytes (1,6 vez) sem acrescentar nada que a análise leia.
