@@ -35,8 +35,9 @@ contra \ang{0.60}. Eles recuperam mais depressa --- \SI{0.44}{\second} e
 o LQI é, nesses eixos, a própria cascata nativa com outros ganhos: o nativo
 voado com os ganhos do LQI o reproduz (\ang{0.99} contra \ang{0.98} no pulso;
 \ang{0.66} contra \ang{0.65} no degrau). O que o projeto muda é a sintonia, e
-não a estrutura. O AutoTune, por sua vez, já está no ótimo da família PID
-quanto ao pico do pulso de rolagem (Tabela~\ref{tab:projeto-portao}).
+não a estrutura. No modelo, sob as mesmas restrições de ruído e de margem e
+no espaço de ganhos varrido, nenhum PID em cascata supera o AutoTune no pico
+do pulso de rolagem (Tabela~\ref{tab:projeto-portao}).
 
 O LQG é o único que melhora o pico em rolagem e arfagem: \ang{0.81} e
 \ang{0.79} no pulso de rolagem (10\,\% e 12\,\% abaixo do nativo) e de
@@ -92,7 +93,7 @@ $P\,S$, e não $S$; como a planta $P$ é a mesma para todos os controladores, a
 diferença entre os $\ln|P\,S|$ de dois deles é a diferença entre os seus
 $\ln|S|$, e o argumento vale para a comparação. No modelo, a integral
 discreta de $\ln|S|$ é nula em todos os controladores, com as áreas negativa
-e positiva iguais~\cite{iglesias2001}; o LQG tem as maiores áreas em rolagem
+e positiva iguais~\cite{sung1988,mohtadi1990}; o LQG tem as maiores áreas em rolagem
 e arfagem, 0,052 contra 0,049 do nativo: atenua mais em baixa frequência,
 o que dá a recuperação rápida, e paga com um máximo maior perto do
 cruzamento.
@@ -111,12 +112,15 @@ e~\ref{fig:comparacao-fronteira}).
 O filtro de
 \SI{20}{\hertz} custa cerca de \ang{33} de fase no cruzamento da rolagem, em
 \SI{48.5}{\radian\per\second}, e o ângulo do AHRS chega com um laço de atraso,
-cerca de \ang{7} na mesma frequência. As margens garantidas do LQR, de 65 a
-\ang{73} na malha ideal, caem por isso para 37 a \ang{40} medidos no SITL;
+cerca de \ang{7} na mesma frequência. A margem de fase da malha ideal do
+LQR, de 65 a \ang{73}, cai por isso para 37 a \ang{40} medidos no SITL;
 elas não sobrevivem ao sensor (Seção~\ref{sec:projeto-margens}).
 
-O LQG já é o ótimo do critério quadrático dada essa informação. Ganhos maiores
-viriam da cadeia de sinal e de atuação, e beneficiariam também o PID: um
+O LQG é ótimo para o critério quadrático e para as estatísticas de ruído e
+de perturbação assumidas no projeto --- não para as métricas dos ensaios ---,
+e usa só o ângulo do AHRS e o giroscópio filtrado. Ganhos maiores viriam de
+mais informação e da cadeia de sinal e de atuação, e beneficiariam também o
+PID: um
 filtro \textit{notch} dinâmico no lugar do passa-baixas; a telemetria de rotação dos controladores dos motores; ou um
 giroscópio menos ruidoso ou mais bem isolado da vibração.
 
