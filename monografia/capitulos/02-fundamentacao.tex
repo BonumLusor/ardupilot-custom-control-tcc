@@ -396,7 +396,8 @@ Os sensores inerciais são integrados em incrementos de ângulo e de
 velocidade. Como rotações finitas não comutam, a simples soma dos incrementos
 do giroscópio acumula erro quando a aeronave oscila em mais de um eixo ao
 mesmo tempo (efeito de \textit{coning}); o firmware aplica a correção de
-\textit{coning} descrita por \citeonline[p.~26]{tian2010} antes de entregar os
+\textit{coning} descrita por Tian et al.\ (2010, p.~26) \textit{apud}
+\citeonline{ardupilot2026} antes de entregar os
 incrementos ao estimador.
 
 O estimador padrão é o EKF3, um filtro de Kalman estendido que funde os
