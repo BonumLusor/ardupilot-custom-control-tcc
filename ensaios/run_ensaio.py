@@ -418,6 +418,10 @@ def subir_sitl(speedup, instancia=0, limpar_eeprom=True, saida=None):
         #  ambiente Gazebo do projeto, entao os dois medem o mesmo veiculo.
         "-f", "X",
         "--no-mavproxy",
+        #  Sem recompilar: o sim_vehicle.py recompila o firmware a cada subida do
+        #  SITL, e uma edicao feita durante um lote entrava no binario no meio dele
+        #  (visto em 4/11/2026). O lote voa o binario compilado antes, por ./waf copter.
+        "--no-rebuild",
         "-I", str(instancia),
         "--speedup", str(speedup),
     ]

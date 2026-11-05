@@ -175,7 +175,9 @@ class LQRESO:
         u_apl = _limitar(u, self.u_max)
         inov = giro - self.w_hat
         w_hat = self.fi * self.w_hat + self.beta * (self.b * u_apl + self.d_hat) + self.l1 * inov
-        self.d_hat = self.d_hat + self.l2 * inov
+        # eixo saturado no laco anterior: d_hat parado (como o backend)
+        if not limite:
+            self.d_hat = self.d_hat + self.l2 * inov
         self.w_hat = w_hat
         self.sinais = {"d_hat": self.d_hat, "w_hat": self.w_hat, "u_ff": u_ff}
         return u
@@ -339,11 +341,11 @@ class LQG:
         u_ff = (a_t + self.a * w_t) / self.b if self.ff else 0.0
         y = np.array([e_th, e_w])
         x_pred = self.Phi @ self.x + self.Gam * self.u_fb_ant
-        self.x = x_pred + self.L @ (y - self.C @ x_pred)
+        self.x = x_pred + self._correcao(self.L, y - self.C @ x_pred, limite)
         alfa = 0.0
         if self.duplo:
             x_pred = self.Phi_r @ self.x_r + self.Gam_r * self.u_fb_ant
-            self.x_r = x_pred + self.L_r @ (y - self.C @ x_pred)
+            self.x_r = x_pred + self._correcao(self.L_r, y - self.C @ x_pred, limite)
             self.m = max(abs(w_t) / self.w_ref, self.decai * self.m)
             alfa = min(self.m, 1.0)
             x = alfa * self.x_r + (1.0 - alfa) * self.x
@@ -355,6 +357,14 @@ class LQG:
         self.sinais = {"d_hat": x[4], "w_hat": w_t - x[1], "th_hat": x[0],
                        "eta_hat": x[5], "bg_hat": x[6], "u_ff": u_ff, "alfa": alfa}
         return u
+
+    @staticmethod
+    def _correcao(L, inovacao, limite):
+        """L (y - C x_pred), sem a linha da perturbacao (estado 4) com o eixo saturado."""
+        c = L @ inovacao
+        if limite:
+            c[4] = 0.0
+        return c
 
     def reset(self, i_nativo=0.0, giro=0.0):
         # o integrador do nativo, em regime, segura -d/b: herda-se a estimativa;

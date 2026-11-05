@@ -172,7 +172,7 @@ Vector3f AC_CustomControl_LQR::update()
         const float b = _b.get()[i];
         const float u_ff = (_ff > 0 && is_positive(b)) ? (a_t + _a * w_t[i]) / b : 0.0f;
 
-        u[i] = (_modo == 1) ? passo_eso(i, e_th, e_w, u_ff, giro[i])
+        u[i] = (_modo == 1) ? passo_eso(i, e_th, e_w, u_ff, giro[i], limite[i])
                             : passo_lqi(i, e_th, e_w, u_ff, limite[i]);
         registrar(i, e_th, e_w, u_ff, u[i]);
     }
@@ -193,7 +193,7 @@ float AC_CustomControl_LQR::passo_lqi(uint8_t i, float e_th, float e_w, float u_
 // LQR + ESO: u = u_ff + k_th*e_th + k_w*e_w - d_hat/b, com o observador
 //   [w; d][k+1] = [[fi, beta], [0, 1]] [w; d][k] + [beta*b; 0] u_apl[k]
 //                 + [l1; l2] (giro[k] - w_hat[k])
-float AC_CustomControl_LQR::passo_eso(uint8_t i, float e_th, float e_w, float u_ff, float giro)
+float AC_CustomControl_LQR::passo_eso(uint8_t i, float e_th, float e_w, float u_ff, float giro, bool limite)
 {
     const float b = _b.get()[i];
     const float u = u_ff + _kth.get()[i] * e_th + _kw.get()[i] * e_w
@@ -203,7 +203,12 @@ float AC_CustomControl_LQR::passo_eso(uint8_t i, float e_th, float e_w, float u_
     const float beta = is_positive(_a.get()) ? (1.0f - fi) / _a : _dt;
     const float inov = giro - _w_hat[i];
     const float w_hat = fi * _w_hat[i] + beta * (b * u_apl + _d_hat[i]) + _l1.get()[i] * inov;
-    _d_hat[i] += _l2.get()[i] * inov;
+    // com o eixo saturado na alocacao (sinal do laco anterior), o esforco aplicado nao
+    // e o u_apl que o observador supoe: d_hat fica parado, para nao absorver a
+    // diferenca como perturbacao (windup do observador, revisao de 3/11)
+    if (!limite) {
+        _d_hat[i] += _l2.get()[i] * inov;
+    }
     _w_hat[i] = w_hat;
     return u;
 }

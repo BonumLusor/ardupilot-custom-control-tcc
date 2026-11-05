@@ -259,8 +259,8 @@ const AP_Param::GroupInfo AC_CustomControl_LQG::var_info[] = {
 
     // @Param: DBGANG
     // @DisplayName: Depuracao: fonte do angulo medido
-    // @Description: 0 usa o angulo do AHRS. 1 usa a integral dos incrementos de angulo nao filtrados do INS, sem as correcoes do EKF, um laco atrasada como o AHRS que o backend le. So para a ablacao do diagnostico do ruido (revisao de 3/11)
-    // @Values: 0:AHRS,1:Integral do INS
+    // @Description: 0 usa o angulo e a taxa do AHRS. 1 usa como angulo a integral dos incrementos de angulo nao filtrados do INS, sem as correcoes do EKF, um laco atrasada como o AHRS que o backend le. 2 usa tambem a taxa do INS, sem a deriva estimada pelo EKF. So para a ablacao do diagnostico do ruido (revisao de 3/11)
+    // @Values: 0:AHRS,1:Angulo do INS,2:Angulo e taxa do INS
     // @User: Advanced
     AP_GROUPINFO("DBGANG", 44, AC_CustomControl_LQG, _dbgang, 0),
 
@@ -438,7 +438,9 @@ Vector3f AC_CustomControl_LQG::update()
     _att_control->thrust_heading_rotation_angles(attitude_target, attitude_body, attitude_error, thrust_angle_rad, thrust_error_angle_rad);
     const Quaternion rotation_target_to_body = attitude_body.inverse() * attitude_target;
     const Vector3f w_t = rotation_target_to_body * _att_control->get_attitude_target_ang_vel();
-    const Vector3f giro = _ahrs->get_gyro_latest();
+    // a taxa do AHRS e a do INS mais a deriva estimada pelo EKF (AP_AHRS::get_gyro_latest);
+    // com _dbgang = 2, a do INS pura (ablacao)
+    const Vector3f giro = (_dbgang >= 2) ? AP::ins().get_gyro() : _ahrs->get_gyro_latest();
 
     if (_primeiro) {
         // sem historico: aceleracao alvo nula e filtro partindo do alvo atual
@@ -449,6 +451,9 @@ Vector3f AC_CustomControl_LQG::update()
         }
         _primeiro = false;
     }
+
+    // o motor saturou no laco anterior? (a perturbacao estimada fica parada)
+    const bool limite[3] = {_motors->limit.roll, _motors->limit.pitch, _motors->limit.yaw};
 
     Vector3f u;
     for (uint8_t i = 0; i < 3; i++) {
@@ -467,14 +472,14 @@ Vector3f AC_CustomControl_LQG::update()
         const float b = _b.get()[i];
         const float u_ff = (_ff > 0 && is_positive(b)) ? (a_t + _a * w_t[i]) / b : 0.0f;
 
-        u[i] = passo(i, e_th, e_w, u_ff, w_t[i]);
+        u[i] = passo(i, e_th, e_w, u_ff, w_t[i], limite[i]);
         registrar(i, e_th, e_w, u_ff, u[i], w_t[i]);
     }
     return u;
 }
 
 // x_pred = Phi x + Gam u_fb_ant;  x = x_pred + L (y - C x_pred), y = [e_th, e_w]
-void AC_CustomControl_LQG::estimar(uint8_t i, uint8_t q, float e_th, float e_w)
+void AC_CustomControl_LQG::estimar(uint8_t i, uint8_t q, float e_th, float e_w, bool limite)
 {
     float x_pred[CC_LQG_N];
     for (uint8_t r = 0; r < CC_LQG_N; r++) {
@@ -491,6 +496,13 @@ void AC_CustomControl_LQG::estimar(uint8_t i, uint8_t q, float e_th, float e_w)
     const AP_Vector3f *lt = (q == 0) ? _lt : _lrt;
     const AP_Vector3f *lw = (q == 0) ? _lw : _lrw;
     for (uint8_t r = 0; r < CC_LQG_N; r++) {
+        // com o eixo saturado na alocacao (sinal do laco anterior), a perturbacao
+        // (estado 4) nao e corrigida: o esforco aplicado nao e o que o estimador
+        // supoe, e a diferenca viraria perturbacao (windup, revisao de 3/11)
+        if (limite && r == 4) {
+            _xe[q][i][r] = x_pred[r];
+            continue;
+        }
         _xe[q][i][r] = x_pred[r] + lt[r].get()[i] * inov_t + lw[r].get()[i] * inov_w;
     }
     if (q == 0) {
@@ -501,13 +513,13 @@ void AC_CustomControl_LQG::estimar(uint8_t i, uint8_t q, float e_th, float e_w)
 
 // Os dois estimadores rodam com o mesmo u; a lei usa a mistura
 // alfa*x_rapido + (1 - alfa)*x_lento, e u = u_ff + k_th x[0] + k_w x[1] - x[4]/b
-float AC_CustomControl_LQG::passo(uint8_t i, float e_th, float e_w, float u_ff, float w_t)
+float AC_CustomControl_LQG::passo(uint8_t i, float e_th, float e_w, float u_ff, float w_t, bool limite)
 {
-    estimar(i, 0, e_th, e_w);
+    estimar(i, 0, e_th, e_w, limite);
     const float w_ref = radians(_wman.get()[i]);
     float alfa = 0.0f;
     if (is_positive(w_ref)) {
-        estimar(i, 1, e_th, e_w);
+        estimar(i, 1, e_th, e_w, limite);
         const float decai = expf(-_dt / MAX(_tman.get(), 0.01f));
         _m[i] = MAX(fabsf(w_t) / w_ref, decai * _m[i]);
         alfa = MIN(_m[i], 1.0f);

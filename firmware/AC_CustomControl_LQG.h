@@ -42,9 +42,9 @@ protected:
     // b, fc, tau_c ou dt mudaram
     void calcular_modelo(uint8_t i, uint8_t q);
     // um passo de um estimador
-    void estimar(uint8_t i, uint8_t q, float e_th, float e_w);
+    void estimar(uint8_t i, uint8_t q, float e_th, float e_w, bool limite);
     // um passo de um eixo; devolve o esforco normalizado u
-    float passo(uint8_t i, float e_th, float e_w, float u_ff, float w_t);
+    float passo(uint8_t i, float e_th, float e_w, float u_ff, float w_t, bool limite);
     void registrar(uint8_t i, float e_th, float e_w, float u_ff, float u, float w_t);
 
     float _dt;
@@ -64,7 +64,7 @@ protected:
     AP_Vector3f _taur;      // erro do angulo do AHRS no estimador rapido, s
     AP_Vector3f _wman;      // velocidade alvo a partir da qual o rapido assume, graus/s (0 desliga)
     AP_Float    _tman;      // constante de tempo da volta ao lento, s
-    AP_Int8     _dbgang;    // depuracao: 0 angulo do AHRS, 1 integral dos incrementos do INS
+    AP_Int8     _dbgang;    // depuracao: 0 AHRS; 1 angulo do INS; 2 angulo e taxa do INS
     AP_Vector3f _lrt[CC_LQG_N];
     AP_Vector3f _lrw[CC_LQG_N];
 

@@ -1,0 +1,3 @@
+fração de ruído independente no ângulo que reproduz o esforço do cc_lqg no SITL (RND 20)
+rolagem : f = 0.1766; u do modelo 1.840e-03, SITL 1.839e-03
+guinada : f = 0.0411; u do modelo 7.805e-03, SITL 7.802e-03
