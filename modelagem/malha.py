@@ -42,7 +42,8 @@ def escada_em(t_sim, escada):
 
 def simular(ctl, a, b, t_grade, escada=None, ref=None, fs_fisica=1200.0, fs_laco=400.0,
             fc_giro=20.0, atraso_lacos=0, ruido_giro=0.0, semente=0, u_max=None,
-            ruido_angulo=False, tau_ahrs=None, atraso_angulo=0, vies_giro=0.0):
+            ruido_angulo=False, tau_ahrs=None, atraso_angulo=0, vies_giro=0.0,
+            angulo_indep=0.0):
     """Simula de t_grade[0] a t_grade[-1] e devolve um dict com as series.
 
     ``escada`` = (t, valor): o torque em rad/s2 como o injetor o escreveu.
@@ -53,6 +54,11 @@ def simular(ctl, a, b, t_grade, escada=None, ref=None, fs_fisica=1200.0, fs_laco
     ``ruido_angulo``, ``tau_ahrs`` e ``atraso_angulo``: ver a docstring do modulo.
     ``vies_giro`` (rad/s) soma ao giroscopio filtrado o vies residual que a
     correcao do EKF deixa (o angulo do AHRS nao o integra).
+    ``angulo_indep`` (fracao da potencia do ruido do giroscopio, padrao 0): o angulo
+    medido integra, alem do ruido do giroscopio, um ruido independente dele com essa
+    fracao da potencia. No SITL, a derivada do erro do angulo e o erro da taxa nao
+    sao perfeitamente coerentes (0,93 a 0,98 de 1 a 10 Hz, diagnostico da revisao de
+    3/11); com 0, o modelo os supoe identicos.
 
     Chaves: t, theta, w, u (na taxa da fisica), d, angulo_deg (theta na grade,
     em graus) e, por laco de controle, t_laco, giro (o giroscopio filtrado),
@@ -69,6 +75,8 @@ def simular(ctl, a, b, t_grade, escada=None, ref=None, fs_fisica=1200.0, fs_laco
     d = escada_em(t_sim, escada)
     ruido = (np.random.default_rng(semente).standard_normal(n) * ruido_giro
              if ruido_giro > 0 else None)
+    ruido_ang = (np.random.default_rng(semente + 7919).standard_normal(n) * ruido_giro
+                 * np.sqrt(angulo_indep) if ruido_giro > 0 and angulo_indep > 0 else None)
 
     i_laco = np.arange(0, n, passos_por_laco)
     if ref is not None:
@@ -99,6 +107,8 @@ def simular(ctl, a, b, t_grade, escada=None, ref=None, fs_fisica=1200.0, fs_laco
         w_f = giro.aplicar(w if ruido is None else w + ruido[k])
         if ruido_angulo and ruido is not None:
             eta += ruido[k] * dt - eta * vaza
+            if ruido_ang is not None:
+                eta += ruido_ang[k] * dt
         if k % passos_por_laco == 0:
             th_med = th + eta
             if alvo is None:

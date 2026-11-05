@@ -1,0 +1,7 @@
+erros eficazes das medidas no trecho calmo, RND 20 (ângulo em graus, taxa em graus/s)
+rolagem  modelo        : ângulo 0.0723; taxa 0.5197
+rolagem  SITL, AHRS    : ângulo 0.0774; taxa 0.5366
+rolagem  SITL, sem EKF : ângulo 0.2276; taxa 0.5381
+guinada  modelo        : ângulo 0.0722; taxa 0.5054
+guinada  SITL, AHRS    : ângulo 0.3886; taxa 0.5029
+guinada  SITL, sem EKF : ângulo 0.3754; taxa 0.5030

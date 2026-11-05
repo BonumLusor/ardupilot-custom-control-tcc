@@ -1,0 +1,13 @@
+perturbação verdadeira d = (w[k+1] - phi w[k])/beta - b u[k], no trecho calmo (rad/s²)
+rolagem, RND 0   nativo        : d verdadeiro eficaz 0.2511
+rolagem, RND 0   LQG (AHRS)    : d verdadeiro eficaz 0.1405; d^ eficaz 0.6781; coerência d x d^ 0.5-3 Hz 0.48, 3-7 Hz 0.14, 7-15 Hz 0.21
+rolagem, RND 0   LQG (sem EKF) : d verdadeiro eficaz 0.1389; d^ eficaz 0.6877; coerência d x d^ 0.5-3 Hz 0.47, 3-7 Hz 0.19, 7-15 Hz 0.23
+rolagem, RND 20  nativo        : d verdadeiro eficaz 0.1122
+rolagem, RND 20  LQG (AHRS)    : d verdadeiro eficaz 0.2105; d^ eficaz 0.6045; coerência d x d^ 0.5-3 Hz 0.25, 3-7 Hz 0.09, 7-15 Hz 0.21
+rolagem, RND 20  LQG (sem EKF) : d verdadeiro eficaz 0.2128; d^ eficaz 0.6017; coerência d x d^ 0.5-3 Hz 0.19, 3-7 Hz 0.17, 7-15 Hz 0.30
+guinada, RND 0   nativo        : d verdadeiro eficaz 0.0029
+guinada, RND 0   LQG (AHRS)    : d verdadeiro eficaz 0.0039; d^ eficaz 0.0042; coerência d x d^ 0.5-3 Hz 0.10, 3-7 Hz 0.05, 7-15 Hz 0.10
+guinada, RND 0   LQG (sem EKF) : d verdadeiro eficaz 0.0055; d^ eficaz 0.0013; coerência d x d^ 0.5-3 Hz 0.51, 3-7 Hz 0.10, 7-15 Hz 0.19
+guinada, RND 20  nativo        : d verdadeiro eficaz 0.0039
+guinada, RND 20  LQG (AHRS)    : d verdadeiro eficaz 0.0043; d^ eficaz 0.0756; coerência d x d^ 0.5-3 Hz 0.29, 3-7 Hz 0.61, 7-15 Hz 0.25
+guinada, RND 20  LQG (sem EKF) : d verdadeiro eficaz 0.0047; d^ eficaz 0.0747; coerência d x d^ 0.5-3 Hz 0.36, 3-7 Hz 0.52, 7-15 Hz 0.21

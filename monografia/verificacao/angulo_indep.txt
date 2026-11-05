@@ -1,0 +1,5 @@
+u eficaz no modelo com RND 20, por fração independente (0.0, 0.02, 0.05, 0.1); SITL = medido nos voos de RND 20
+rolagem  LQG   : 0.00 -> 1.34e-03; 0.02 -> 1.41e-03; 0.05 -> 1.50e-03; 0.10 -> 1.64e-03 | SITL 1.84e-03
+rolagem  nativo: 0.00 -> 1.45e-03; 0.02 -> 1.45e-03; 0.05 -> 1.46e-03; 0.10 -> 1.46e-03 | SITL 1.47e-03
+guinada  LQG   : 0.00 -> 1.22e-03; 0.02 -> 5.51e-03; 0.05 -> 8.59e-03; 0.10 -> 1.21e-02 | SITL 7.80e-03
+guinada  nativo: 0.00 -> 1.68e-03; 0.02 -> 1.68e-03; 0.05 -> 1.68e-03; 0.10 -> 1.69e-03 | SITL 1.57e-03
