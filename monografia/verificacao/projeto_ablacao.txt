@@ -1,0 +1,122 @@
+modelo: ensaios/resultados/vento/rajada/nativo/2026-10-27_214349  a = 1.9881 1/s  b = 430.02 / 430.02 / 14.367 rad/s2  BAT.VoltR = 12.44 V  Ts = 2.50 ms
+
+eixo     ctl            param      wc     MF     MG   lento  zeta   ruido   ganhos
+rolagem  nativo             — 48.45   40.2    9.3   -1.00  0.67  0.0464   P 0.08616 I 0.08616 D 0.000375 ang 26.71
+rolagem  lqi        T_I 0.171 48.45   40.2    9.4   -6.30  1.00  0.0415   k_i 7.129 k_th 1.707 k_w 0.09311
+rolagem  eso         w_o 9.09 48.45   40.5    9.5   -8.73  0.99  0.0418   k_th 1.555 k_w 0.09516 l1 0.03997 l2 0.2024
+arfagem  nativo             — 47.92   41.2    9.4   -1.00  0.69  0.0460   P 0.08616 I 0.08616 D 0.000375 ang 25.44
+arfagem  lqi        T_I 0.263 47.92   41.2    9.7   -3.90  1.00  0.0406   k_i 4.911 k_th 1.625 k_w 0.09231
+arfagem  eso         w_o 7.86 47.92   41.3    9.6   -7.68  0.99  0.0409   k_th 1.524 k_w 0.0939 l1 0.03396 l2 0.1519
+guinada  nativo             — 6.28   37.5   19.6   -0.10  1.00  0.0573   P 0.6075 I 0.06075 D 0 ang 2.295
+guinada  lqi        T_I 0.404 6.28   64.9   27.9   -2.71  0.78  0.1360   k_i 2.174 k_th 1.762 k_w 0.3959
+guinada  eso         w_o 4.40 6.28   56.7   29.5   -3.64  0.86  0.1138   k_th 1.138 k_w 0.3239 l1 0.01693 l2 0.04802
+guinada  lqi_ruido  T_I 0.827 2.74   68.0   35.4   -1.51  0.84  0.0573   k_i 0.3334 k_th 0.5312 k_w 0.1701
+
+robustez (margem de fase; '—' = instavel):
+  rolagem  nativo    b -20 %: 40.8  b +20 %: 37.7  +1 laço: 33.2
+  rolagem  lqi       b -20 %: 43.1  b +20 %: 36.1  +1 laço: 33.3
+  rolagem  eso       b -20 %: 43.6  b +20 %: 36.3  +1 laço: 33.6
+  arfagem  nativo    b -20 %: 41.9  b +20 %: 38.7  +1 laço: 34.3
+  arfagem  lqi       b -20 %: 44.3  b +20 %: 37.1  +1 laço: 34.4
+  arfagem  eso       b -20 %: 44.5  b +20 %: 37.1  +1 laço: 34.5
+  guinada  nativo    b -20 %: 41.9  b +20 %: 33.9  +1 laço: 36.6
+  guinada  lqi       b -20 %: 61.4  b +20 %: 67.2  +1 laço: 64.0
+  guinada  eso       b -20 %: 54.1  b +20 %: 58.4  +1 laço: 55.8
+  guinada  lqi_ruido b -20 %: 64.8  b +20 %: 70.3  +1 laço: 67.6
+
+equivalencia LQI -> cascata do nativo (FLTT, FLTE e D desligados):
+  rolagem  P 0.09311  I 0.599  ang 11.9  (maior distancia entre polos: 5.70 rad/s)
+  arfagem  P 0.09231  I 0.3576  ang 13.73  (maior distancia entre polos: 3.30 rad/s)
+  guinada  sem cascata equivalente: k_th^2 = 3.105 < 4 k_w k_i = 3.442
+
+previsao do modelo (perfis de torque dos cenarios; degrau com o alvo do voo nominal):
+  rolagem  nativo    pulso 0.87 graus / 1.19 s | degrau 0.58 graus / 2.24 s | nominal sobressinal 19.6 %, erro de rastreamento 2.80 graus
+  rolagem  lqi       pulso 0.95 graus / 0.73 s | degrau 0.63 graus / 0.45 s | nominal sobressinal 1.5 %, erro de rastreamento 0.25 graus
+  rolagem  eso       pulso 0.97 graus / 0.72 s | degrau 0.65 graus / 0.43 s | nominal sobressinal 2.4 %, erro de rastreamento 0.34 graus
+  guinada  nativo    pulso 5.69 graus / 0.35 s | degrau 2.57 graus / 23.72 s | nominal sobressinal 10.8 %, erro de rastreamento 7.70 graus
+  guinada  lqi       pulso 3.98 graus / 1.68 s | degrau 1.86 graus / 1.14 s | nominal sobressinal 0.0 %, erro de rastreamento 0.06 graus
+  guinada  eso       pulso 4.07 graus / 1.52 s | degrau 1.79 graus / 1.05 s | nominal sobressinal 0.0 %, erro de rastreamento 0.18 graus
+  guinada  lqi_ruido pulso 7.59 graus / 3.25 s | degrau 6.13 graus / 2.32 s | nominal sobressinal 0.0 %, erro de rastreamento 0.05 graus
+yaml: /home/gustavo/faculdade/TCC/ensaios/controladores/cc_lqi.yaml
+yaml: /home/gustavo/faculdade/TCC/ensaios/controladores/cc_eso.yaml
+yaml: /home/gustavo/faculdade/TCC/ensaios/controladores/cc_lqi_mesmo_ruido.yaml
+yaml: /home/gustavo/faculdade/TCC/ensaios/controladores/cc_lqi_sem_ff.yaml
+yaml: /home/gustavo/faculdade/TCC/ensaios/controladores/cc_pid_ff.yaml
+yaml: /home/gustavo/faculdade/TCC/ensaios/controladores/nativo_lqi.yaml
+
+== portao: rolagem (primaria: torque_pulso desvio_max_deg) ==
+  nativo (planta real): ruido 0.0538 (no tempo, u 0.00148)  MF 38.8  MF robusta ['39.0', '36.9', '32.1']  primaria 0.900  | primaria 0.900 (+0.0 % x nativo)  ruido 0.0538 (tempo 1.00x)  MF 38.8  pulso 0.900/0.225/1.23  degrau 0.600/2.20  {}
+  referencia do ganho: 0.978  (P1 exige <= 0.880); teto de recuperacao 0.79 s
+  -- sob todas as restricoes (ruido confirmado no tempo):
+  PID (cascata, ganhos livres)   (  51 viaveis): nenhum ponto cumpre
+  LQI                            ( 559 viaveis): nenhum ponto cumpre
+  LQR+ESO                        ( 602 viaveis): nenhum ponto cumpre
+  LQG                            ( 945 viaveis): primaria 0.824 (-8.4 % x nativo)  ruido 0.0499 (tempo 0.91x)  MF 41.5  pulso 0.824/0.192/0.53  degrau 0.550/0.21  {'q_d': 17.78279410038923, 'r': 10000.0, 'pw': 0.5}
+  -- relaxado (so MF, MF robusta e ruido <= nativo, na analise):
+  PID (cascata, ganhos livres)  : primaria 0.900 (+0.0 % x nativo)  ruido 0.0538  MF 38.8  pulso 0.900/0.225/1.23  degrau 0.600/2.20  {'kp': 1.0, 'ki_kp': 1.0, 'ang_p': 1.0, 'flte': 0.0}
+  LQI                           : primaria 1.059 (+17.7 % x nativo)  ruido 0.0526  MF 42.2  pulso 1.059/0.310/0.65  degrau 0.706/0.32  {'t_i': 0.07254313490733948, 'r': 10000.0, 'pw': 0.25}
+  LQR+ESO                       : primaria 1.125 (+24.9 % x nativo)  ruido 0.0439  MF 40.8  pulso 1.125/0.299/0.64  degrau 0.750/0.32  {'w_o': 16.231795551220046, 'r': 3162.2776601683795, 'pw': 0.5}
+  LQG                           : primaria 0.824 (-8.4 % x nativo)  ruido 0.0499 (tempo 0.91x)  MF 41.5  pulso 0.824/0.192/0.53  degrau 0.550/0.21  {'q_d': 17.78279410038923, 'r': 10000.0, 'pw': 0.5}
+  torque estocastico (sigma 10, tau 0.1 s): RMS theta nativo 0.5206, LQG 0.5066 (-2.7 %), oraculo 0.2164 (-58.4 %; ruido 0.1953, MF 54.1)
+  P1 (ganho real) PASSA   P2 (atribuicao) PASSA (relaxado PASSA)   P3 (margens) PASSA
+
+== portao: guinada (primaria: torque_degrau desvio_max_deg) ==
+  nativo (planta real): ruido 0.0610 (no tempo, u 0.00167)  MF 37.5  MF robusta ['41.8', '33.9', '36.6']  primaria 2.584  | primaria 2.584 (+0.0 % x nativo)  ruido 0.0610 (tempo 1.00x)  MF 37.5  pulso 5.977/1.649/0.35  degrau 2.584/23.67  {}
+  referencia do ganho: 2.584  (P1 exige <= 2.326); teto de recuperacao 3.00 s
+  -- sob todas as restricoes (ruido confirmado no tempo):
+  PID (cascata, ganhos livres)   (1070 viaveis): nenhum ponto cumpre
+  LQI                            ( 779 viaveis): nenhum ponto cumpre
+  LQR+ESO                        (1310 viaveis): nenhum ponto cumpre
+  LQG                            (1570 viaveis): nenhum ponto cumpre
+  -- relaxado (so MF, MF robusta e ruido <= nativo, na analise):
+  PID (cascata, ganhos livres)  : primaria 2.515 (-2.7 % x nativo)  ruido 0.0579  MF 42.0  pulso 5.839/1.830/1.72  degrau 2.515/1.91  {'kp': 0.6324555320336759, 'ki_kp': 3.0, 'ang_p': 0.5, 'flte': 2.0}
+  LQI                           : primaria 6.144 (+137.8 % x nativo)  ruido 0.0591  MF 65.6  pulso 8.160/3.632/3.06  degrau 6.144/1.91  {'t_i': 0.5383104653267835, 'r': 3162.2776601683795, 'pw': 1.0}
+  LQR+ESO                       : primaria 3.267 (+26.4 % x nativo)  ruido 0.0591  MF 61.4  pulso 6.056/2.092/2.60  degrau 3.267/2.56  {'w_o': 6.800133267363675, 'r': 3162.2776601683795, 'pw': 0.25}
+  LQG                           : primaria 2.325 (-10.0 % x nativo)  ruido 0.0602  MF 43.6  pulso 5.504/1.825/1.47  degrau 2.325/0.96  {'q_d': 0.0031622776601683794, 'r': 316.22776601683796, 'pw': 1.0}
+  P1 (ganho real) falha   P2 (atribuicao) falha (relaxado falha)   P3 (margens) falha
+  guinada: LQG pelo criterio relaxado (ruido, MF e MF robusta)
+
+LQG projetados (planta real):
+  rolagem  lqg      : q_d 31.62 r 2.689e+04 pw 1  k_th 0.3424 k_w 0.03718
+  rolagem  lqg_ruido: q_d 17.78 r 1e+04 pw 0.5  k_th 0.5548 k_w 0.05843
+  arfagem  lqg      : q_d 31.62 r 3.35e+04 pw 1  k_th 0.3072 k_w 0.03484
+  arfagem  lqg_ruido: q_d 17.78 r 1e+04 pw 0.5  k_th 0.5548 k_w 0.05843
+  guinada  lqg      : q_d 0.003162 r 90.59 pw 1  k_th 1.197 k_w 0.3367
+  guinada  lqg_ruido: q_d 0.003162 r 316.2 pw 1  k_th 0.642 k_w 0.2081
+yaml: /home/gustavo/faculdade/TCC/ensaios/controladores/cc_lqg.yaml
+yaml: /home/gustavo/faculdade/TCC/ensaios/controladores/cc_lqg_mesmo_ruido.yaml
+
+ablacao do LQG de mesmo ruido (rolagem):
+  ablacao sem_filtro: nenhum ponto viavel
+  ablacao sem_z     : primaria 0.824 (-8.5 % x nativo)  ruido 0.0531  MF 40.9  {'q_d': 17.78279410038923, 'r': 10000.0, 'pw': 0.5}
+  ablacao sem_eta: nenhum ponto viavel
+  ablacao sem_bg    : primaria 0.824 (-8.4 % x nativo)  ruido 0.0499  MF 41.5  {'q_d': 17.78279410038923, 'r': 10000.0, 'pw': 0.5}
+yaml: /home/gustavo/faculdade/TCC/ensaios/controladores/cc_lqg_sem_z.yaml
+yaml: /home/gustavo/faculdade/TCC/ensaios/controladores/cc_lqg_sem_bg.yaml
+
+rastreamento (degrau de atitude, planta real): sobressinal % / erro max / eficaz
+  rolagem  Nativo                22.8 / 3.219 / 0.346
+  rolagem  PID + FF               4.0 / 0.688 / 0.061
+  rolagem  LQI                    4.9 / 0.485 / 0.045
+  rolagem  LQG, um estimador      3.3 / 0.323 / 0.040
+  rolagem  LQG, com manobra       3.3 / 0.323 / 0.040
+  guinada  Nativo                11.1 / 7.812 / 2.198
+  guinada  PID + FF               0.0 / 0.157 / 0.043
+  guinada  LQI                    0.3 / 0.117 / 0.036
+  guinada  LQG, um estimador      0.2 / 0.154 / 0.046
+  guinada  LQG, com manobra       0.0 / 0.112 / 0.028
+tabela: monografia/tabelas/projeto_portao.tex
+tabela: monografia/tabelas/projeto_rastreio.tex
+figura: monografia/figuras/projeto_fronteira.pdf
+figura: monografia/figuras/projeto_ltr.pdf
+tabela: monografia/tabelas/projeto_ganhos.tex
+tabela: monografia/tabelas/projeto_margens.tex
+tabela: monografia/tabelas/projeto_previsao.tex
+figura: monografia/figuras/projeto_polos.pdf
+figura: monografia/figuras/projeto_malha.pdf
+figura: monografia/figuras/projeto_sensibilidade.pdf
+figura: monografia/figuras/projeto_tempo_torque.pdf
+figura: monografia/figuras/projeto_degrau.pdf
+figura: monografia/figuras/projeto_eso.pdf
+figura: monografia/figuras/projeto_compromisso.pdf
+figura: monografia/figuras/projeto_robustez.pdf

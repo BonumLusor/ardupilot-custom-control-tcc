@@ -263,7 +263,7 @@ def expm_taylor(M, ordem=12):
     return E
 
 
-def modelo_lqg(a, b, fc, dt, tau_c, tau_d=None):
+def modelo_lqg(a, b, fc, dt, tau_c, tau_d=None, abl=0):
     """(Phi, Gam, C) do estimador do LQG, discretizado com segurador de ordem zero.
 
     Os sete estados de matrizes_lqg ganham um oitavo, z, o erro de angulo medido
@@ -282,8 +282,16 @@ def modelo_lqg(a, b, fc, dt, tau_c, tau_d=None):
     Gam = np.zeros(N_LQG)
     Gam[:n] = E[:n, n]
     C = np.zeros((2, N_LQG))
-    C[0, n] = 1.0
-    C[1, 2], C[1, 6] = 1.0, -1.0
+    # abl (CC4_ABL): bit 2 tira o atraso do angulo (y_th = e_th - eta, e nao z);
+    # bit 1 tira o filtro da taxa (y_w = e_w - bg, e nao f1 - bg). Para a ablacao.
+    if abl & 2:
+        C[0, 0], C[0, 5] = 1.0, -1.0
+    else:
+        C[0, n] = 1.0
+    if abl & 1:
+        C[1, 1], C[1, 6] = 1.0, -1.0
+    else:
+        C[1, 2], C[1, 6] = 1.0, -1.0
     return Phi, Gam, C
 
 
@@ -316,12 +324,13 @@ class LQG:
     """
 
     def __init__(self, k_th, k_w, L, a, b, dt, fc, tau_c, ff=True, e_max=None, u_max=1.0,
-                 fc_alvo=0.0, tau_d=None, L_r=None, tau_r=None, w_ref=None, tau_alfa=1.0):
+                 fc_alvo=0.0, tau_d=None, L_r=None, tau_r=None, w_ref=None, tau_alfa=1.0,
+                 abl=0):
         self.k_th, self.k_w = k_th, k_w
         self.L = np.asarray(L, dtype=float).reshape(N_LQG, 2)
         self.a, self.b, self.dt = a, b, dt
         self.ff, self.e_max, self.u_max = ff, e_max, u_max
-        self.Phi, self.Gam, self.C = modelo_lqg(a, b, fc, dt, tau_c, tau_d)
+        self.Phi, self.Gam, self.C = modelo_lqg(a, b, fc, dt, tau_c, tau_d, abl)
         self.filtro_alvo = PassaBaixas2p(1.0 / dt, fc_alvo)
         self.x = np.zeros(N_LQG)
         self.duplo = L_r is not None and bool(w_ref)

@@ -1236,8 +1236,62 @@ def voa_no_cenario(nome_controlador, id_cenario):
                for pr in prefixos)
 
 
-def rodar(id_cenario, nome_controlador, speedup, instancia, gerar_gif=True):
+_VERSAO = None
+
+
+def _sha256(caminho):
+    import hashlib
+    h = hashlib.sha256()
+    with open(caminho, "rb") as f:
+        for bloco in iter(lambda: f.read(1 << 20), b""):
+            h.update(bloco)
+    return h.hexdigest()
+
+
+def versao_firmware():
+    """O que identifica a versao voada: o binario do SITL, o injetor e os commits.
+
+    O sim_vehicle.py roda com --no-rebuild, entao o binario e o mesmo o lote inteiro;
+    o hash dele e o que as tabelas usam para separar os voos do lote congelado.
+    """
+    global _VERSAO
+    if _VERSAO is None:
+        def git(*args):
+            r = subprocess.run(["git", *args], capture_output=True, text=True)
+            return r.stdout.strip()
+        binario = ARDUPILOT / "build" / "sitl" / "bin" / "arducopter"
+        _VERSAO = {
+            "binario_sha256": _sha256(binario) if binario.exists() else None,
+            "lua_sha256": _sha256(RAIZ / "lua" / "vento.lua"),
+            "tcc_commit": git("-C", str(PROJETO), "rev-parse", "HEAD"),
+            "tcc_alterado": bool(git("-C", str(PROJETO), "status", "--porcelain", "--untracked-files=no")),
+            "ardupilot_commit": git("-C", str(ARDUPILOT), "rev-parse", "HEAD"),
+        }
+    return _VERSAO
+
+
+def voos_feitos(id_cenario, slug, semente=None):
+    """Voos validos deste par com o binario atual (e a mesma semente, se dada)."""
+    import json
+    base = RESULTADOS / id_cenario / slug
+    if not base.exists():
+        return 0
+    sha = versao_firmware()["binario_sha256"]
+    n = 0
+    for pasta in base.iterdir():
+        v = pasta / "versao.json"
+        if pasta.name.endswith("_falhou") or not v.exists() or not (pasta / "metricas.json").exists():
+            continue
+        d = json.loads(v.read_text())
+        if d.get("binario_sha256") == sha and d.get("semente") == semente:
+            n += 1
+    return n
+
+
+def rodar(id_cenario, nome_controlador, speedup, instancia, gerar_gif=True, semente=None,
+          repeticao=None):
     """Um ensaio: resultados/<pasta>/<ensaio>/<controlador>/<carimbo>/."""
+    import json
     cen, p_cen = carregar_cenario(id_cenario)
     ctl, p_ctl = carregar_controlador(nome_controlador)
     conferir_firmware(ctl)
@@ -1245,8 +1299,18 @@ def rodar(id_cenario, nome_controlador, speedup, instancia, gerar_gif=True):
     carimbo = dt.datetime.now().strftime("%Y-%m-%d_%H%M%S")
     pasta = RESULTADOS / id_cenario / ctl["slug"] / carimbo
     pasta.mkdir(parents=True, exist_ok=True)
-    shutil.copy(p_cen, pasta / "cenario.yaml")
+    if semente is not None:
+        # a semente do torque estocastico (e do Dryden) muda: a pasta guarda o
+        # cenario efetivamente voado, que e o que a conferencia do perfil le
+        cen.setdefault("vento", {})["WND_SEED"] = int(semente)
+        (pasta / "cenario.yaml").write_text(
+            f"# {p_cen.relative_to(CENARIOS)} com WND_SEED = {int(semente)} (run_ensaio --sementes)\n"
+            + yaml.safe_dump(cen, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    else:
+        shutil.copy(p_cen, pasta / "cenario.yaml")
     shutil.copy(p_ctl, pasta / "controlador.yaml")
+    (pasta / "versao.json").write_text(json.dumps(
+        {**versao_firmware(), "semente": semente, "repeticao": repeticao}, indent=1), encoding="utf-8")
     log(f"resultado em {_rel(pasta)}")
 
     try:
@@ -1271,7 +1335,7 @@ def rodar(id_cenario, nome_controlador, speedup, instancia, gerar_gif=True):
 
 
 def rodar_lote(cenarios, controladores, speedup, instancia, gerar_gif=True,
-               tentativas=2):
+               tentativas=2, repeticoes=1, sementes=None, pular_feitos=False):
     """Roda todos os pares cenario x controlador, um SITL por vez.
 
     Uma falha nao derruba o lote: o par e tentado de novo e, se falhar outra vez,
@@ -1282,21 +1346,35 @@ def rodar_lote(cenarios, controladores, speedup, instancia, gerar_gif=True,
 
     Devolve True se todos os pares terminaram.
     """
-    plano = [(c, k) for c in cenarios for k in controladores if voa_no_cenario(k, c)]
+    pares = [(c, k) for c in cenarios for k in controladores if voa_no_cenario(k, c)]
+    # cada par voa uma vez por semente (--sementes) e repeticoes vezes cada uma
+    plano = [(c, k, s, r) for c, k in pares for s in (sementes or [None])
+             for r in range(max(repeticoes, 1))]
     log(f"{len(plano)} ensaio(s): {len(cenarios)} cenario(s) x "
-        f"{len(controladores)} controlador(es) ({', '.join(controladores)})")
+        f"{len(controladores)} controlador(es) ({', '.join(controladores)})"
+        + (f", sementes {sementes}" if sementes else "")
+        + (f", {repeticoes} repeticoes" if repeticoes > 1 else ""))
     for c in cenarios:
         log(f"  {c}")
 
     situacao = []
     t0 = time.monotonic()
-    for i, (cenario, controlador) in enumerate(plano, 1):
+    for i, (cenario, controlador, semente, rep) in enumerate(plano, 1):
+        rotulo = (f"{cenario} x {controlador}" + (f" semente {semente}" if semente is not None else "")
+                  + (f" repeticao {rep + 1}" if repeticoes > 1 else ""))
+        if pular_feitos:
+            slug = carregar_controlador(controlador)[0]["slug"]
+            if voos_feitos(cenario, slug, semente) > rep:
+                log(f"===== [{i}/{len(plano)}] {rotulo}: ja voado com este binario, pulado =====")
+                situacao.append((cenario, controlador, "ok", "ja voado"))
+                continue
         for tentativa in range(1, tentativas + 1):
-            log(f"===== [{i}/{len(plano)}] {cenario} x {controlador}"
+            log(f"===== [{i}/{len(plano)}] {rotulo}"
                 + (f" (tentativa {tentativa}/{tentativas})" if tentativa > 1 else "")
                 + " =====")
             try:
-                rodar(cenario, controlador, speedup, instancia, gerar_gif=gerar_gif)
+                rodar(cenario, controlador, speedup, instancia, gerar_gif=gerar_gif,
+                      semente=semente, repeticao=rep)
                 situacao.append((cenario, controlador, "ok", ""))
                 break
             except FalhaDeAnalise as exc:
@@ -1392,6 +1470,14 @@ def main():
     ap.add_argument("--ganho", action="append", default=[], metavar="NOME=VALOR",
                     help="parametro do backend (CC2_*, CC3_*, CC4_*) aplicado depois dos ganhos "
                          "do controlador (repete). So para voos de medicao: use com --destino")
+    ap.add_argument("--repeticoes", type=int, default=1,
+                    help="voos por par (e por semente), para a estatistica (padrao 1)")
+    ap.add_argument("--sementes",
+                    help="sementes do torque estocastico (WND_SEED), como 1-5 ou 1,3,5; cada "
+                         "par voa uma vez por semente")
+    ap.add_argument("--pular-feitos", action="store_true",
+                    help="pula pares (e repeticoes) ja voados com este binario do SITL: o lote "
+                         "retoma de onde parou sem repetir voo")
     ap.add_argument("--fila-antiga", action="store_true",
                     help="le a mensagem mais antiga da fila no laco do perfil, como antes "
                          "da correcao da temporizacao (Cap. 3). So para medir o atraso")
@@ -1444,10 +1530,17 @@ def main():
             sys.exit(1)
         return
 
+    sementes = None
+    if args.sementes:
+        sementes = []
+        for parte in args.sementes.split(","):
+            a, _, b = parte.partition("-")
+            sementes += list(range(int(a), int(b) + 1)) if b else [int(a)]
     ok = rodar_lote(selecionar_cenarios(args.cenario),
                     selecionar_controladores(args.controlador),
                     args.speedup, args.instancia, gerar_gif=not args.sem_gif,
-                    tentativas=max(args.tentativas, 1))
+                    tentativas=max(args.tentativas, 1), repeticoes=args.repeticoes,
+                    sementes=sementes, pular_feitos=args.pular_feitos)
     if not ok:
         sys.exit(1)
 

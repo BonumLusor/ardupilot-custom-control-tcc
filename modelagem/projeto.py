@@ -596,7 +596,8 @@ def intensidade_ruido(rnd=RND_PROJETO, acel=ACEL_PAIRADO, sub=8):
     return sigma * sigma * 1e-3
 
 
-def ganhos_kalman(a, b, ts, fc, tau_c, q_n, q_d, r=R_KALMAN, tau_d=None, q_b=Q_VIES, q_a=0.0):
+def ganhos_kalman(a, b, ts, fc, tau_c, q_n, q_d, r=R_KALMAN, tau_d=None, q_b=Q_VIES, q_a=0.0,
+                  abl=0, sem_eta=False):
     """Ganho L (8 x 2) do Kalman em regime, na forma corrente, pela Riccati dual.
 
     Q discreta pelo metodo de Van Loan sobre o modelo continuo de
@@ -612,6 +613,10 @@ def ganhos_kalman(a, b, ts, fc, tau_c, q_n, q_d, r=R_KALMAN, tau_d=None, q_b=Q_V
     g_a = np.zeros((n, 1))
     g_a[5, 0] = 1.0
     G = np.hstack([G, g_a])
+    if sem_eta:
+        # ablacao: o estimador supoe o angulo do AHRS sem erro (eta sem ruido)
+        G[5, 0] = 0.0
+        q_a = 0.0
     M = np.zeros((2 * n, 2 * n))
     M[:n, :n] = -Ac
     M[:n, n:] = G @ np.diag([q_n, q_d, q_b, q_a]) @ G.T
@@ -621,7 +626,7 @@ def ganhos_kalman(a, b, ts, fc, tau_c, q_n, q_d, r=R_KALMAN, tau_d=None, q_b=Q_V
     Q = np.zeros((C.N_LQG, C.N_LQG))
     Q[:n, :n] = Phi_c @ E[:n, n:]
     Q = 0.5 * (Q + Q.T)
-    Phi, _, Cm = C.modelo_lqg(a, b, fc, ts, tau_c, tau_d)
+    Phi, _, Cm = C.modelo_lqg(a, b, fc, ts, tau_c, tau_d, abl)
     R = np.diag(r)
     P = linalg.solve_discrete_are(Phi.T, Cm.T, Q, R)
     return P @ Cm.T @ np.linalg.inv(Cm @ P @ Cm.T + R)
@@ -749,6 +754,15 @@ def _controlador_da_familia(mod, eixo, familia, par):
     if familia == "eso":
         g = ganhos_fixa(mod, eixo, "eso", par)
         return C.LQRESO(g["k_th"], g["k_w"], g["l1"], g["l2"], a, b, ts)
+    if familia.startswith("lqg_abl:"):
+        opc = ABLACOES[familia.split(":", 1)[1]]
+        chave = (familia, eixo, par["q_d"])
+        cache = _CTX.setdefault("kalman", {})
+        if chave not in cache:
+            cache[chave] = kalman_ablacao(mod, eixo, par["q_d"], opc)
+        k = ganhos_lqr(a, b, ts, [1.0 / th_m ** 2, 1.0 / w_m ** 2], par["r"])
+        return C.LQG(k[0], k[1], cache[chave], a, b, ts, mod.fc_giro, TAU_ESTIMADOR[eixo],
+                     fc_alvo=mod.fc_giro, abl=opc.get("abl", 0))
     if familia == "lqg":
         chave = (eixo, par["q_d"], ANGULO_INDEP[eixo])
         cache = _CTX.setdefault("kalman", {})
@@ -804,7 +818,8 @@ def tarefas_familia(familia, eixo):
     if familia == "eso":
         return [("eso", eixo, {"w_o": float(w), "r": float(r), "pw": pw}) for w in GRADE_W_O_V
                 for r in GRADE_R for pw in GRADE_PW]
-    return [("lqg", eixo, {"q_d": float(q), "r": float(r), "pw": pw}) for q in GRADE_Q_D_V
+    # o LQG e as suas variantes de ablacao (lqg_abl:<nome>) varrem a mesma grade
+    return [(familia, eixo, {"q_d": float(q), "r": float(r), "pw": pw}) for q in GRADE_Q_D_V
             for r in GRADE_R for pw in GRADE_PW]
 
 
@@ -882,13 +897,13 @@ def pareto(pontos, x="ruido", y=None):
     return frente
 
 
-def fronteiras(pontos, eixo):
+def fronteiras(pontos, eixo, familias=FAMILIAS):
     """Por familia, os pontos viaveis e a frente de Pareto (ruido x metrica primaria)."""
     nat = next(p for p in pontos if p["familia"] == "nativo" and p["eixo"] == eixo)
     zeta_min = min(ZETA_MIN, nat["zeta"])
     ens, chave = CRITERIO[eixo]["primaria"]
     res = {"nativo": nat, "zeta_min": zeta_min}
-    for f in FAMILIAS:
+    for f in familias:
         vi = [p for p in pontos if p["familia"] == f and p["eixo"] == eixo
               and viavel(p, nat, zeta_min)]
         for p in vi:
@@ -1133,6 +1148,100 @@ def projetar_lqg(mod, proj, pontos, relaxar=False):
                      "lqg_ruido": None if p is None else
                      {"ponto": p, "ganhos": ganhos_lqg(mod, eixo, p["par"]), "relaxado": relaxado}}
     return res
+
+
+# Ablacao do LQG (revisao de 3/11, item 2.9): o LQG de mesmo ruido sem uma parte do
+# modelo do caminho de medida, cada variante reprojetada pela mesma regra (o portao).
+# abl e o CC4_ABL do backend (bit 1 sem filtro, bit 2 sem atraso do angulo); sem_eta
+# tira o ruido de eta; q_b ~ 0 tira o vies do giroscopio. So em rolagem.
+# sem_bg: q_b = 1e-8 do nominal, e nao 0 — com 0, b_g vira um integrador sem
+# excitacao e a Riccati discreta nao tem solucao estabilizante; com 1e-8, o ganho
+# sobre b_g e desprezivel, e o estado sai na pratica.
+ABLACOES = {"sem_filtro": {"abl": 1}, "sem_z": {"abl": 2}, "sem_eta": {"sem_eta": True},
+            "sem_bg": {"q_b": Q_VIES * 1e-8}}
+
+
+def kalman_ablacao(mod, eixo, q_d, opc):
+    """O ganho de Kalman de uma variante de ablacao (ABLACOES)."""
+    q_n = intensidade_ruido()
+    return ganhos_kalman(mod.a, mod.b[eixo], mod.ts, mod.fc_giro, TAU_ESTIMADOR[eixo], q_n, q_d,
+                         q_b=opc.get("q_b", Q_VIES), q_a=ANGULO_INDEP[eixo] * q_n,
+                         abl=opc.get("abl", 0), sem_eta=opc.get("sem_eta", False))
+
+
+def projetar_ablacao(mod, proj, eixo="roll", cache=None):
+    """Cada variante de ablacao escolhida pela regra do LQG de mesmo ruido (o portao).
+
+    Varre o LQG de cada variante (familias lqg_abl:<nome>) na planta real e escolhe
+    como projetar_lqg: o melhor que cumpre tudo, ou o melhor relaxado (ruido, MF e MF
+    robusta nao piores que as do nativo), marcado.
+    """
+    import pickle
+    familias = tuple(f"lqg_abl:{n}" for n in ABLACOES)
+    if cache is not None and cache.exists():
+        pontos = pickle.loads(cache.read_bytes())
+    else:
+        pontos = varrer(mod, (eixo,), familias)
+        if cache is not None:
+            cache.write_bytes(pickle.dumps(pontos))
+    _CTX["mod"] = mod
+    frs = fronteiras(pontos, eixo, familias)
+    ref_teto = referencias(mod, proj, eixo, frs["nativo"])
+    res = {}
+    for nome in ABLACOES:
+        f = f"lqg_abl:{nome}"
+        p = escolher(mod, frs, eixo, f, ref_teto)
+        relaxado = False
+        if p is None:
+            ok = [q for q in frs[f]["viaveis"] if q["ruido"] <= frs["nativo"]["ruido"]]
+            p = min(ok, key=lambda q: q["primaria"]) if ok else None
+            relaxado = p is not None
+        if p is None:
+            res[nome] = None
+            print(f"  ablacao {nome}: nenhum ponto viavel")
+            continue
+        opc = ABLACOES[nome]
+        th_m, w_m = PESOS[eixo]
+        w_m *= p["par"].get("pw", 1.0)
+        k = ganhos_lqr(mod.a, mod.b[eixo], mod.ts, [1.0 / th_m ** 2, 1.0 / w_m ** 2], p["par"]["r"])
+        g = {"k_th": float(k[0]), "k_w": float(k[1]),
+             "L": kalman_ablacao(mod, eixo, p["par"]["q_d"], opc), "q_d": p["par"]["q_d"],
+             "r": p["par"]["r"], "pw": p["par"].get("pw", 1.0), "tau_c": TAU_ESTIMADOR[eixo],
+             "L_r": None, "tau_r": TAU_RAPIDO[eixo], "w_ref": 0.0, "tau_alfa": MANOBRA_TAU}
+        res[nome] = {"ponto": p, "ganhos": g, "relaxado": relaxado, "abl": opc.get("abl", 0)}
+        print(f"  ablacao {nome:10s}: primaria {p['primaria']:.3f} "
+              f"({100 * (p['primaria'] / frs['nativo']['primaria'] - 1):+.1f} % x nativo)  "
+              f"ruido {p['ruido']:.4f}  MF {p['mf']:.1f}{'  [relaxado]' if relaxado else ''}  {p['par']}")
+    return res
+
+
+def escrever_yamls_ablacao(mod, lqg, abl, eixo="roll", destino=CONTROLADORES):
+    """cc_lqg_sem_<nome>.yaml: o LQG de mesmo ruido com o eixo da ablacao trocado."""
+    s = SUFIXO[eixo]
+    mascara = {"roll": 1, "pitch": 2, "yaw": 4}[eixo]
+    base_cc = {"CC_TYPE": 4, "CC_AXIS_MASK": mascara, "RC6_OPTION": 109}
+    com = ("\n# Ablacao: so o eixo da ablacao roda o backend (CC_AXIS_MASK); os outros ficam\n"
+           "# com o nativo. Os CC4_* sao aplicados depois do reboot.\n")
+    feitos = []
+    for nome, d in abl.items():
+        if d is None:
+            continue
+        lqg_v = {e: dict(lqg[e]) for e in EIXOS}
+        lqg_v[eixo] = {**lqg[eixo], "lqg_ruido": {"ganhos": d["ganhos"]}}
+        par = {**params_cc4(mod, lqg_v, "lqg_ruido"), **acc_max(), "CC4_ABL": d["abl"]}
+        slug = f"cc_lqg_{nome}"
+        texto = {"nome": f"AC_CustomControl — LQG de mesmo ruido, ablacao {nome.replace('_', ' ')}",
+                 "descricao": (f"O LQG de cc_lqg_mesmo_ruido.yaml sem uma parte do modelo do caminho "
+                               f"de medida ({nome.replace('_', ' ')}), reprojetado pela mesma regra "
+                               f"(o portao) so em {NOMES[eixo]}"
+                               + (", pelo criterio relaxado" if d["relaxado"] else "")
+                               + ". Revisao de 3/11, item 2.9 (ablacao)."),
+                 "interesse": [f"CC4_KTH_{s}", f"CC4_KW_{s}", "CC4_ABL"]}
+        cen = [f"{GRUPO[eixo]}/torque_impulso", f"{GRUPO[eixo]}/torque_degrau"]
+        t = yaml_controlador(slug, mod, par, base_cc, 4, com, cenarios=cen, texto=texto)
+        (destino / f"{slug}.yaml").write_text(t, encoding="utf-8")
+        feitos.append(destino / f"{slug}.yaml")
+    return feitos
 
 
 def projetar_fixas(mod, proj, pontos):
@@ -2300,6 +2409,9 @@ def main():
     ap.add_argument("--sufixo",
                     help="com --portao --escrever-yaml: grava so cc_lqi_<sufixo>, "
                          "cc_eso_<sufixo> e cc_lqg_<sufixo>")
+    ap.add_argument("--ablacao", type=Path, metavar="CACHE",
+                    help="com --portao: projeta as variantes de ablacao do LQG (rolagem) e, com "
+                         "--escrever-yaml, grava cc_lqg_sem_*.yaml; CACHE e o pickle da varredura")
     ap.add_argument("--escrever-yaml", action="store_true",
                     help="grava cc_lqi, cc_eso, cc_lqi_mesmo_ruido, cc_lqi_sem_ff, cc_pid_ff e "
                          "nativo_lqi (.yaml) em ensaios/controladores/")
@@ -2362,6 +2474,12 @@ def main():
         elif args.escrever_yaml:
             for c in escrever_yamls_lqg(mod, lqg):
                 print(f"yaml: {c}")
+        if args.ablacao and not args.sufixo:
+            print("\nablacao do LQG de mesmo ruido (rolagem):")
+            abl = projetar_ablacao(mod, proj, "roll", cache=args.ablacao)
+            if args.escrever_yaml:
+                for c in escrever_yamls_ablacao(mod, lqg, abl):
+                    print(f"yaml: {c}")
         ras = rastreio(mod, proj, lqg)
         print("\nrastreamento (degrau de atitude, planta real): sobressinal % / erro max / eficaz")
         for eixo, casos in ras.items():
