@@ -88,7 +88,7 @@ def ler_voos(binario, atitude="verdadeira"):
     for v in RESULTADOS.rglob("versao.json"):
         pasta = v.parent
         partes = pasta.relative_to(RESULTADOS).parts
-        if len(partes) < 3 or partes[0] in FORA_DO_LOTE:
+        if len(partes) < 3 or partes[0] in FORA_DO_LOTE or pasta.name.endswith("_falhou"):
             continue
         try:
             if json.loads(v.read_text(encoding="utf-8")).get("binario_sha256") != binario:
