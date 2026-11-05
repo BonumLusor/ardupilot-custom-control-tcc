@@ -64,6 +64,22 @@ no LQG ---, e as demais ponderações são as mesmas. As variantes ``mesmo
 ruído'' trocam a frequência de cruzamento pelo ganho de ruído do nativo, que
 mede quanto do ruído do giroscópio chega ao esforço de controle.
 
+Rolagem e arfagem são fisicamente iguais, mas a regra escolheu pontos
+diferentes nos dois eixos --- $T_I$ de 0,171 e \SI{0.263}{\second} no LQI e
+$\omega_o$ de 9,09 e \SI{7.86}{\radian\per\second} no ESO
+(Tabela~\ref{tab:projeto-ganhos}) ---, porque os alvos do nativo diferem um
+pouco: 48,5 e \SI{47.9}{\radian\per\second} de cruzamento e 40,2 e
+\ang{41.2} de margem de fase, reflexo dos ganhos do AutoTune, cerca de 5\,\%
+diferentes. A regra é sensível ao alvo. Projetada com o alvo da arfagem, a
+rolagem escolhe o mesmo ponto que a arfagem, e o inverso também vale; com o
+alvo médio dos dois eixos, ambos ficam com $T_I = \SI{0.228}{\second}$ e
+$\omega_o = \SI{7.86}{\radian\per\second}$; e um piso de margem 2,5\,\% mais
+alto dobra o $T_I$ escolhido em rolagem, de 0,171 para \SI{0.350}{\second}.
+Quando a restrição de margem está ativa, o ponto de modo mais lento mais
+rápido salta de um ponto da varredura, discreta e com passos de cerca de
+15\,\%, para outro distante. Os ganhos voados são os da regra aplicada a cada
+eixo com o seu próprio alvo.
+
 As métricas do projeto são as dos ensaios (Seção~\ref{sec:metricas}),
 calculadas sobre o modelo. No projeto, que simula o modelo sem ruído de
 giroscópio, o tempo de recuperação usa só o limiar de 10\,\% do pico; nesses
@@ -602,11 +618,15 @@ O código embarcado foi conferido contra o seu espelho em Python, que é o
 modelo usado no projeto, pelo mesmo procedimento da
 Seção~\ref{sec:validacao-tempo}: cada ensaio de torque é simulado no modelo
 com os ganhos lidos do próprio voo e com o torque registrado, e as métricas
-são comparadas número a número (Tabela~\ref{tab:validacao-proposto}). O
-desvio máximo do LQI e do LQR com ESO é reproduzido a $\pm1{,}9$\,\%, e o do
-LQG, de $-1{,}6$\,\% a $+4{,}9$\,\% em rolagem e arfagem; o erro quadrático
-médio e a recuperação concordam no mesmo nível. As exceções são as
-recuperações do LQG no pulso de rolagem --- \SI{0.51}{\second} no SITL contra
+são comparadas número a número. A Tabela~\ref{tab:validacao-proposto-resumo}
+resume a comparação por controlador, e a lista completa está no
+Apêndice~\ref{ap:validacao-proposto}. O desvio máximo do LQI e do LQR com ESO é
+reproduzido a menos de 2\,\%, e o do LQG, a menos de 5\,\%; o erro
+quadrático médio do LQI e do ESO, a menos de 2,5\,\%. No LQG, o modelo fica
+de 6\,\% a 12\,\% abaixo do SITL no erro quadrático médio dos degraus de
+torque em rolagem e arfagem, em que esse erro é pequeno, de cerca de
+\ang{0.03}; a diferença absoluta é de cerca de \ang{0.003}. As exceções na
+recuperação são as do LQG no pulso de rolagem --- \SI{0.51}{\second} no SITL contra
 \SI{0.17}{\second} no modelo e, com o mesmo ruído, \SI{0.22}{\second} contra
 \SI{0.55}{\second} ---, o mesmo salto descontínuo da
 Seção~\ref{sec:validacao-tempo}: um pequeno sobressinal próximo do limiar de
@@ -616,12 +636,18 @@ mostram as respostas.
 
 \begin{table}[htbp]
 \centering
-\caption{Métricas de rejeição de torque no SITL e no modelo, para os
-controladores propostos e para o nativo com os ganhos do LQI.}
-\label{tab:validacao-proposto}
-\resizebox*{!}{0.8\textheight}{\input{tabelas/validacao_proposto}}
+\caption{Confronto entre o modelo e o SITL nos ensaios de torque dos
+controladores propostos: diferença absoluta entre modelo e SITL, por
+controlador.}
+\label{tab:validacao-proposto-resumo}
+\small
+\input{tabelas/validacao_proposto_resumo}
 
 \fonte{Elaborada pelo autor, por \codigo{modelagem/validacao.py}.}
+\nota{\raggedright Pulso e degrau de torque nos ensaios de um eixo e de três
+eixos, sem ruído de giroscópio. Desvio máximo e RMSE: diferença relativa ao
+SITL; recuperação: diferença em segundos. A lista completa está no
+Apêndice~\ref{ap:validacao-proposto}.}
 \end{table}
 
 \begin{figure}[htbp]

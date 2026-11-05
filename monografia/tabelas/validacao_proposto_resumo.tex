@@ -1,0 +1,15 @@
+% Gerada por modelagem/validacao.py — nao editar a mao.
+\begin{tabular}{lrrrrrrr}
+\toprule
+ & & \multicolumn{2}{c}{Desvio máx. (\%)} & \multicolumn{2}{c}{RMSE (\%)} & \multicolumn{2}{c}{Recuperação (\si{\second})} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}
+Controlador & Ensaios & Mediana & Máx. & Mediana & Máx. & Mediana & Máx. \\
+\midrule
+nativo (ganhos do LQI) & 12 & 0,6 & 1,5 & 0,6 & 1,8 & 0,02 & 0,63 \\
+LQI & 12 & 0,3 & 0,8 & 0,7 & 2,4 & 0,01 & 0,03 \\
+LQR+ESO & 12 & 0,6 & 1,6 & 0,4 & 1,7 & 0,01 & 0,02 \\
+LQI (mesmo ruído) & 12 & 0,5 & 1,9 & 0,5 & 1,9 & 0,01 & 0,02 \\
+LQG & 12 & 1,5 & 4,9 & 2,6 & 11,3 & 0,00 & 0,33 \\
+LQG (mesmo ruído) & 12 & 1,4 & 4,5 & 2,0 & 12,1 & 0,01 & 0,33 \\
+\bottomrule
+\end{tabular}

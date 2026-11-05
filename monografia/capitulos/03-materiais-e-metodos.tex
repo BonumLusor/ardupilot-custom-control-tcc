@@ -448,9 +448,12 @@ recuperação, comandada pelo integrador fraco de guinada, leva cerca de
 \SI{22}{\second}; em \SI{40}{\second}, ela mal caberia na janela.
 
 A arfagem repete as amplitudes da rolagem. Na configuração X, os dois eixos
-têm a mesma alavanca e a mesma inércia, e os dois conjuntos de ensaios devem
-produzir os mesmos números; uma diferença entre eles indicaria assimetria no
-modelo ou no controlador. Os ensaios simultâneos nos três eixos medem o
+têm a mesma alavanca e a mesma inércia, e, com o nativo, os dois conjuntos de
+ensaios devem produzir praticamente os mesmos números; uma diferença maior
+que a dos ganhos do AutoTune nos dois eixos indicaria assimetria no modelo ou
+no controlador. Nos controladores propostos, a igualdade não vale: a regra de
+sintonia escolhe pontos diferentes em rolagem e em arfagem a partir de alvos
+que diferem pouco (Seção~\ref{sec:projeto-modelo}). Os ensaios simultâneos nos três eixos medem o
 acoplamento: rolagem e arfagem iguais somam um momento em torno da diagonal
 do X que passa pelos motores M1 e M2, e só os motores M3 e M4 têm braço em
 torno dela, cada um trabalhando o dobro do que trabalharia num ensaio de um

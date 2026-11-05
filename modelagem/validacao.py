@@ -714,8 +714,11 @@ SLUGS_PROPOSTOS = ("cc_lqi", "cc_eso", "cc_lqi_mesmo_ruido", "nativo_lqi", "cc_l
                    "cc_lqg_mesmo_ruido")
 
 
-def escrever_tabela(resultados, destino, slugs=SLUGS_CAP4):
+def escrever_tabela(resultados, destino, slugs=SLUGS_CAP4, longa=None):
     """Tabela LaTeX (booktabs) dos ensaios de pulso e degrau dos controladores ``slugs``.
+
+    Com ``longa`` = (legenda, rotulo), sai uma longtable, que quebra entre paginas,
+    com a legenda e o rotulo dentro dela (a do apendice dos propostos).
 
     Os ensaios com ruido de giroscopio (ruido/) ficam de fora: o ruido sorteado
     no modelo e outro, e a comparacao ali e estatistica, nao numero a numero.
@@ -751,6 +754,23 @@ def escrever_tabela(resultados, destino, slugs=SLUGS_CAP4):
             f"{_fmt(s.get('tempo_recuperacao_s'))} & {_fmt(m.get('tempo_recuperacao_s'))} & "
             f"{_fmt(s.get('rmse_deg'), 3)} & {_fmt(m.get('rmse_deg'), 3)} \\\\")
     corpo = "\n".join(linhas)
+    if longa:
+        cab = (" & & & \\multicolumn{2}{c}{Desvio máx. (\\si{\\degree})} & "
+               "\\multicolumn{2}{c}{Recuperação (\\si{\\second})} & "
+               "\\multicolumn{2}{c}{RMSE (\\si{\\degree})} \\\\\n"
+               "\\cmidrule(lr){4-5}\\cmidrule(lr){6-7}\\cmidrule(lr){8-9}\n"
+               "Eixo & Torque & Controlador & SITL & Modelo & SITL & Modelo & SITL & Modelo \\\\\n")
+        legenda, rotulo = longa
+        texto = (
+            "% Gerada por modelagem/validacao.py — nao editar a mao.\n"
+            "\\begin{longtable}{lllrrrrrr}\n"
+            f"\\caption{{{legenda}}}\\label{{{rotulo}}} \\\\\n"
+            "\\toprule\n" + cab + "\\midrule\n\\endfirsthead\n"
+            "\\toprule\n" + cab + "\\midrule\n\\endhead\n"
+            "\\bottomrule\n\\endlastfoot\n" + corpo + "\n\\end{longtable}\n")
+        Path(destino).parent.mkdir(parents=True, exist_ok=True)
+        Path(destino).write_text(texto, encoding="utf-8")
+        return destino
     texto = (
         "% Gerada por modelagem/validacao.py — nao editar a mao.\n"
         "\\begin{tabular}{lllrrrrrr}\n\\toprule\n"
@@ -973,7 +993,10 @@ def main():
         # o mesmo confronto modelo x SITL para os controladores propostos, que
         # confere o backend em C++ contra o espelho em Python
         d = escrever_tabela(resultados, args.tabela.with_name("validacao_proposto.tex"),
-                            slugs=SLUGS_PROPOSTOS)
+                            slugs=SLUGS_PROPOSTOS,
+                            longa=("Métricas de rejeição de torque no SITL e no modelo, para "
+                                   "os controladores propostos e para o nativo com os ganhos "
+                                   "do LQI.", "tab:validacao-proposto"))
         if d:
             print(f"tabela: {d}")
         d = escrever_resumo(resultados, args.tabela.with_name("validacao_proposto_resumo.tex"))

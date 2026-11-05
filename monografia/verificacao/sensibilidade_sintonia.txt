@@ -1,0 +1,36 @@
+rolagem: nativo wc = 48.45 rad/s, MF = 40.17 graus
+arfagem: nativo wc = 47.92 rad/s, MF = 41.20 graus
+
+LQI: T_I (s) escolhido; linhas: escala do alvo de wc; colunas: escala do piso de MF (0.95, 0.975, 1.0, 1.025, 1.05)
+  rolagem
+    wc x 0.950:   0.041   0.063   0.097   0.148   0.263
+    wc x 0.975:   0.054   0.084   0.129   0.228   0.404
+    wc x 1.000:   0.073   0.111   0.171   0.350   1.101
+    wc x 1.025:   0.097   0.148   0.263   0.717   ---  
+    wc x 1.050:   0.129   0.228   0.467   ---     ---  
+  arfagem
+    wc x 0.950:   0.054   0.084   0.129   0.228   0.467
+    wc x 0.975:   0.073   0.111   0.198   0.350   1.271
+    wc x 1.000:   0.097   0.148   0.263   0.717   ---  
+    wc x 1.025:   0.129   0.228   0.467   ---     ---  
+    wc x 1.050:   0.171   0.350   1.466   ---     ---  
+  alvo da rolagem : rolagem 0.171 (lento -6.30 1/s); arfagem 0.171 (lento -6.30 1/s)
+  alvo da arfagem : rolagem 0.263 (lento -3.90 1/s); arfagem 0.263 (lento -3.90 1/s)
+  alvo médio      : rolagem 0.228 (lento -4.54 1/s); arfagem 0.228 (lento -4.54 1/s)
+
+ESO: omega_o (rad/s) escolhido; linhas: escala do alvo de wc; colunas: escala do piso de MF (0.95, 0.975, 1.0, 1.025, 1.05)
+  rolagem
+    wc x 0.950:   14.04   12.15   10.51    9.09    7.86
+    wc x 0.975:   14.04   12.15   10.51    7.86    5.88
+    wc x 1.000:   12.15   10.51    9.09    6.80    4.40
+    wc x 1.025:   12.15   10.51    7.86    5.09   ---  
+    wc x 1.050:   10.51    9.09    5.88    1.60   ---  
+  arfagem
+    wc x 0.950:   12.15   10.51    9.09    7.86    5.88
+    wc x 0.975:   12.15   10.51    9.09    6.80    3.81
+    wc x 1.000:   10.51    9.09    7.86    5.09   ---  
+    wc x 1.025:   10.51    7.86    5.88    1.38   ---  
+    wc x 1.050:    9.09    6.80    3.81   ---     ---  
+  alvo da rolagem : rolagem 9.09 (lento -8.73 1/s); arfagem 9.09 (lento -8.73 1/s)
+  alvo da arfagem : rolagem 7.86 (lento -7.68 1/s); arfagem 7.86 (lento -7.68 1/s)
+  alvo médio      : rolagem 7.86 (lento -7.68 1/s); arfagem 7.86 (lento -7.68 1/s)
