@@ -1,0 +1,11 @@
+voo ablacao_ahrs/ruido/rnd20/torque_pulso/cc_lqg/2026-11-04_233726; espelho em malha aberta sobre as medidas gravadas
+rolagem:
+  x0: eficaz gravado 6.975e-04; erro eficaz do espelho 5.991e-05 (8.6 % do gravado)
+  x1: eficaz gravado 1.312e-02; erro eficaz do espelho 6.611e-04 (5.0 % do gravado)
+  x4: eficaz gravado 6.026e-01; erro eficaz do espelho 1.035e-01 (17.2 % do gravado)
+  u: eficaz gravado 1.838e-03; erro eficaz do espelho 2.337e-04 (12.7 % do gravado)
+guinada:
+  x0: eficaz gravado 1.842e-03; erro eficaz do espelho 6.236e-05 (3.4 % do gravado)
+  x1: eficaz gravado 1.313e-02; erro eficaz do espelho 4.506e-04 (3.4 % do gravado)
+  x4: eficaz gravado 7.586e-02; erro eficaz do espelho 2.452e-03 (3.2 % do gravado)
+  u: eficaz gravado 7.801e-03; erro eficaz do espelho 2.562e-04 (3.3 % do gravado)

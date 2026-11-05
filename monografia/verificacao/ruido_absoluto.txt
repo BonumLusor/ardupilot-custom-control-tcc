@@ -1,0 +1,5 @@
+RND 20, acelerador 0.605; simulação de 60 s, sementes (1, 2, 3)
+rolagem  nativo: u eficaz simulado 0.00145, medido 0.00147 (medido/simulado 1.01)
+rolagem  LQG   : u eficaz simulado 0.00134, medido 0.00184 (medido/simulado 1.37)
+guinada  nativo: u eficaz simulado 0.00168, medido 0.00157 (medido/simulado 0.94)
+guinada  LQG   : u eficaz simulado 0.00122, medido 0.00780 (medido/simulado 6.39)

@@ -1,0 +1,9 @@
+coerência com a saída de empuxo (RATE.AOut) nos trechos calmos: média / máxima por faixa
+rolagem, RND 0   LQG sem EKF  d^ : 0.5-3 Hz 0.08/0.09; 3-7 Hz 0.07/0.16; 7-15 Hz 0.09/0.14; 15-50 Hz 0.07/0.19
+rolagem, RND 0   nativo       u  : 0.5-3 Hz 0.12/0.15; 3-7 Hz 0.16/0.22; 7-15 Hz 0.11/0.20; 15-50 Hz 0.11/0.26
+rolagem, RND 20  LQG sem EKF  d^ : 0.5-3 Hz 0.15/0.19; 3-7 Hz 0.08/0.13; 7-15 Hz 0.08/0.19; 15-50 Hz 0.08/0.21
+rolagem, RND 20  nativo       u  : 0.5-3 Hz 0.06/0.09; 3-7 Hz 0.13/0.15; 7-15 Hz 0.06/0.11; 15-50 Hz 0.07/0.22
+guinada, RND 0   LQG sem EKF  d^ : 0.5-3 Hz 0.11/0.13; 3-7 Hz 0.08/0.10; 7-15 Hz 0.08/0.14; 15-50 Hz 0.08/0.23
+guinada, RND 0   nativo       u  : 0.5-3 Hz 0.07/0.15; 3-7 Hz 0.12/0.15; 7-15 Hz 0.09/0.17; 15-50 Hz 0.08/0.20
+guinada, RND 20  LQG sem EKF  d^ : 0.5-3 Hz 0.07/0.11; 3-7 Hz 0.06/0.11; 7-15 Hz 0.10/0.25; 15-50 Hz 0.08/0.17
+guinada, RND 20  nativo       u  : 0.5-3 Hz 0.03/0.05; 3-7 Hz 0.07/0.14; 7-15 Hz 0.05/0.11; 15-50 Hz 0.08/0.33

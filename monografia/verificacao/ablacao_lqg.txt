@@ -1,0 +1,17 @@
+razão prevista LQG/nativo para ruído branco do giroscópio: rolagem 0.94, guinada 0.75
+rolagem, RND 0: u eficaz do nativo 0.00030
+  LQG com AHRS                 : u eficaz 0.00166 (5.52x o nativo; previsto 0.94x); inovação do ângulo 0.0058 graus; pico de 5 Hz no u 1.5, na inovação 0.1
+  LQG com ângulo do INS        : u eficaz 0.00164 (5.44x o nativo; previsto 0.94x); inovação do ângulo 0.0060 graus; pico de 5 Hz no u 0.9, na inovação 0.1
+  LQG com ângulo e taxa do INS : u eficaz 0.00166 (5.51x o nativo; previsto 0.94x); inovação do ângulo 0.0058 graus; pico de 5 Hz no u 0.8, na inovação 0.1
+rolagem, RND 20: u eficaz do nativo 0.00147
+  LQG com AHRS                 : u eficaz 0.00184 (1.25x o nativo; previsto 0.94x); inovação do ângulo 0.0053 graus; pico de 5 Hz no u 1.9, na inovação 0.3
+  LQG com ângulo do INS        : u eficaz 0.00188 (1.28x o nativo; previsto 0.94x); inovação do ângulo 0.0054 graus; pico de 5 Hz no u 2.1, na inovação 0.3
+  LQG com ângulo e taxa do INS : u eficaz 0.00186 (1.27x o nativo; previsto 0.94x); inovação do ângulo 0.0053 graus; pico de 5 Hz no u 2.4, na inovação 0.3
+guinada, RND 0: u eficaz do nativo 0.00003
+  LQG com AHRS                 : u eficaz 0.00043 (15.80x o nativo; previsto 0.75x); inovação do ângulo 0.0003 graus; pico de 5 Hz no u 10460.2, na inovação 497.1
+  LQG com ângulo do INS        : u eficaz 0.00008 (2.80x o nativo; previsto 0.75x); inovação do ângulo 0.0000 graus; pico de 5 Hz no u 1095.8, na inovação 33.2
+  LQG com ângulo e taxa do INS : u eficaz 0.00013 (4.71x o nativo; previsto 0.75x); inovação do ângulo 0.0000 graus; pico de 5 Hz no u 531.1, na inovação 41.0
+guinada, RND 20: u eficaz do nativo 0.00157
+  LQG com AHRS                 : u eficaz 0.00780 (4.97x o nativo; previsto 0.75x); inovação do ângulo 0.0040 graus; pico de 5 Hz no u 1035.2, na inovação 38.4
+  LQG com ângulo do INS        : u eficaz 0.00761 (4.85x o nativo; previsto 0.75x); inovação do ângulo 0.0038 graus; pico de 5 Hz no u 656.0, na inovação 22.7
+  LQG com ângulo e taxa do INS : u eficaz 0.00768 (4.90x o nativo; previsto 0.75x); inovação do ângulo 0.0038 graus; pico de 5 Hz no u 756.5, na inovação 26.2
