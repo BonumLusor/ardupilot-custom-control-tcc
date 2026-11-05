@@ -1,0 +1,18 @@
+input_tc_002         medicoes/input_tc_002/rolagem/nominal/nativo/2026-11-04_212047
+    erro max. DesRoll-Roll no degrau: 3.258 graus
+    atraso do degrau 0.202 s, do retorno 0.096 s
+    .BIN 21.8 MB em 88 s de log (14.9 MB/min)
+input_tc_010         medicoes/input_tc_010/rolagem/nominal/nativo/2026-11-04_212140
+    erro max. DesRoll-Roll no degrau: 0.516 graus
+    atraso do degrau 0.134 s, do retorno 0.145 s
+    .BIN 22.3 MB em 90 s de log (14.9 MB/min)
+fila_antiga          medicoes/fila_antiga/rolagem/nominal/nativo/2026-11-04_212226
+    erro max. DesRoll-Roll no degrau: 3.258 graus
+    atraso do degrau 0.098 s, do retorno 0.083 s
+    .BIN 22.1 MB em 89 s de log (14.9 MB/min)
+log_bits_18_19_21    medicoes/log_bits_18_19_21/rolagem/nominal/nativo/2026-11-04_212312
+    erro max. DesRoll-Roll no degrau: 3.256 graus
+    atraso do degrau 0.094 s, do retorno 0.082 s
+    .BIN 35.7 MB em 89 s de log (24.2 MB/min)
+
+bits 18/19/21: 35.7 MB contra 21.8 MB (1.64x; taxa 24.2 contra 14.9 MB/min)
