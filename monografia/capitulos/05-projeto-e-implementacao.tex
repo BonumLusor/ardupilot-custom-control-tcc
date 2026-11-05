@@ -16,7 +16,8 @@ Capítulo~\ref{cap:modelagem} e descreve a sua implementação no firmware. São
 três controladores baseados em modelo, com a mesma alimentação direta e o
 mesmo critério de sintonia: o LQI, regulador linear quadrático com ação
 integral (Seção~\ref{sec:projeto-lqi}); o LQR com observador de estado
-estendido, que estima a perturbação em vez de integrá-la
+estendido, que estima a perturbação por um observador --- cuja atualização
+também é uma integração, agora da inovação
 (Seção~\ref{sec:projeto-eso}); e o LQG, que estima a perturbação e o caminho
 de medida por um filtro de Kalman (Seção~\ref{sec:projeto-lqg}). O projeto é
 feito por um programa em Python (\codigo{modelagem/projeto.py}), que produz
@@ -133,7 +134,7 @@ nativo.
 \label{sec:projeto-eso}
 
 O LQR com observador de estado estendido projeta o LQR só sobre
-$[e_\theta\ \ e_\omega]^{\mathsf{T}}$, sem integrador, com as mesmas
+$[e_\theta\ \ e_\omega]^{\mathsf{T}}$, sem integrador explícito, com as mesmas
 ponderações, e cancela a perturbação pela sua estimativa:
 \begin{equation}
 u_k = u_{ff,k} + k_\theta\,e_{\theta,k} + k_\omega\,e_{\omega,k}
@@ -156,6 +157,27 @@ banda $\omega_o$ de \citeonline{gao2003}, e $\omega_o$ é o parâmetro varrido
 (Tabela~\ref{tab:projeto-ganhos}). O observador mede $\omega$ pelo giroscópio
 filtrado e não modela o filtro de \SI{20}{\hertz}, cerca de dez vezes mais
 rápido que ele.
+
+A estimativa da perturbação também é uma integração, agora da inovação: pela
+Equação~\eqref{eq:eso-discreto}, $\hat d$ acumula $l_2(\omega_k -
+\hat\omega_k)$. Substituindo a lei~\eqref{eq:lei-eso} no observador, com as
+referências nulas e $e_\omega = -\omega$, o estado do controlador,
+$[\hat\omega\ \ \hat d]^{\mathsf{T}}$, evolui com a matriz
+\begin{equation}
+A_c = \begin{bmatrix} \varphi - l_1 & 0 \\ -l_2 & 1 \end{bmatrix},
+\label{eq:eso-controlador}
+\end{equation}
+triangular e com um autovalor em $z = 1$: o LQR com observador de estado
+estendido contém um integrador, como exige o princípio do modelo
+interno~\cite{francis1976}. O resíduo da função de transferência do erro de
+ângulo para $u$ nesse polo, dividido por $T_s$, é o ganho integral
+equivalente: 6,99 em rolagem, contra $k_i = 7{,}13$ do LQI (2\,\% a menos), e
+5,93 contra 4,91 em arfagem e 2,49 contra 2,17 em guinada (21\,\% e
+15\,\% a mais), com os ganhos da Tabela~\ref{tab:projeto-ganhos}. As duas
+leis têm, portanto, a mesma estrutura --- integrador e realimentação do
+ângulo e da velocidade angular ---, com um polo a mais, o do observador
+($\varphi - l_1$, de 0,955 a 0,978), e diferem nos valores; em rolagem,
+quase coincidem.
 
 A Figura~\ref{fig:projeto-eso} mostra, no modelo, a perturbação injetada e a
 sua estimativa. No SITL, a estimativa segue a teoria do observador a 1 a
@@ -202,8 +224,8 @@ o filtro são projetados à
 parte~\cite{joseph1961,athans1971}~\cite[seção~8.2]{anderson1989}.
 
 O estimador desconta o ângulo do AHRS com $\tau_c = \SI{0.3}{\second}$ em
-rolagem e arfagem e \SI{2.0}{\second} em guinada: em guinada, o ganho do LQG
-só existe se o estimador descontar o ângulo do AHRS por cerca de
+rolagem e arfagem e \SI{2.0}{\second} em guinada: em guinada, a vantagem do
+LQG só aparece se o estimador descontar o ângulo do AHRS por cerca de
 \SI{1.5}{\second} ou mais. Também em guinada, um segundo estimador, rápido,
 assume durante as manobras. Com o indicador
 $m_k = \max\left(|\omega_t|/\omega_{\mathrm{man}},\ \mathrm{e}^{-T_s/T_{\mathrm{man}}}\,m_{k-1}\right)$,
@@ -211,10 +233,26 @@ em que $\omega_t$ é o alvo de velocidade angular, o peso
 $\alpha = \min(m, 1)$ mistura os dois estimadores, e a lei usa
 $\alpha\,\hat{\vetor{x}}_{\text{rápido}} + (1-\alpha)\,\hat{\vetor{x}}_{\text{lento}}$;
 nos ensaios, $\omega_{\mathrm{man}} = \SI{5}{\degree\per\second}$ e
-$T_{\mathrm{man}} = \SI{1}{\second}$. Com $\alpha$ fixo entre 0 e 1, os polos
-de malha fechada não mudam (até $2\cdot10^{-5}$), e só as margens mudam, com
-margem de fase de \ang{43.6} a \ang{48.1}; o argumento de estabilidade vale
-no modelo linear sem saturação.
+$T_{\mathrm{man}} = \SI{1}{\second}$.
+
+Os dois estimadores recebem as mesmas medidas e o mesmo esforço aplicado e
+usam o mesmo modelo, exceto pela constante de tempo do erro do AHRS, $\eta$:
+$\tau_c = \SI{2.0}{\second}$ no lento e \SI{0.3}{\second} no rápido; por
+consequência, os ganhos de Kalman também diferem. No modelo de projeto e na
+planta usada nas margens, $\eta$ evolui sozinho, sem depender do esforço nem
+dos demais estados. O erro de cada estimador é, assim, excitado apenas por
+$\eta$, e $\alpha$ só entra no acoplamento dos erros com o restante da malha:
+com os estados ordenados como $\eta$, erros dos dois estimadores e demais
+estados, a matriz de malha fechada é triangular por blocos para qualquer
+$\alpha$. Os autovalores não dependem de $\alpha$ --- calculados com $\alpha$
+fixo entre 0 e 1, variam no máximo $2\cdot10^{-7}$, o resíduo numérico ---, e
+só as margens mudam: a margem de fase vai de \ang{43.6} a \ang{48.1} no LQG e
+de \ang{46.5} a \ang{49.5} no LQG de mesmo ruído. Como cada bloco da diagonal
+é estável e $\alpha$ fica em $[0, 1]$, a malha converge também com $\alpha$
+variando no tempo. O argumento vale no modelo linear, sem saturação. No SITL,
+o motivo do estimador rápido --- o erro do AHRS se comporta de outro modo
+durante as manobras --- está fora desse modelo, e a estabilidade com $\alpha$
+variável fica verificada pelos ensaios, não garantida.
 
 Como $d$ entra no mesmo canal que $b\,u$, subir $q_d$ é a recuperação da
 malha de \citeonline{doyle1979} na entrada da planta
@@ -247,7 +285,8 @@ Tabela~\ref{tab:projeto-portao} mostra o resultado na planta completa: em
 rolagem, o LQG desvia \ang{0.806} no pulso de torque, contra \ang{0.900} do
 nativo, e, em guinada, \ang{1.877} no degrau sustentado, contra
 \ang{2.584}, com ruído e margens dentro das restrições. A mesma tabela mostra
-que o AutoTune já está no ótimo da família PID quanto ao pico do pulso de
+que, no modelo, sob as mesmas restrições de ruído e de margem e no espaço de
+ganhos varrido, nenhum PID em cascata supera o AutoTune no pico do pulso de
 rolagem: o melhor PID de ganhos livres é o próprio nativo. O LQG do portão é
 a configuração \codigo{cc\_lqg\_mesmo\_ruido}; o \codigo{cc\_lqg} segue a
 regra de sintonia comum.
@@ -297,7 +336,7 @@ três últimas colunas repetem a margem de fase com a eficácia $b$ alterada e
 com um laço a mais de atraso.}
 \end{table}
 
-As margens garantidas do LQR não sobrevivem ao sensor. A malha ideal do LQR,
+As margens da malha ideal do LQR não sobrevivem ao sensor. A malha ideal do LQR,
 com realimentação de todos os estados, sem filtro nem atraso, tem margem de
 fase de 65 a \ang{73} em rolagem e arfagem; com o filtro de \SI{20}{\hertz}
 e o atraso de um laço, a margem prevista cai para 38 a \ang{41}, e a medida
@@ -520,7 +559,8 @@ o integrador nativo segura $-d/b$. Enquanto ele está ativo, o
 
 O LQG calcula a bordo as matrizes $\Phi$ e $\Gamma$
 do modelo de oito estados, pela exponencial da matriz aumentada em série de
-Taylor com escala e quadratura, e só as recalcula quando um parâmetro do
+Taylor com escalonamento e elevações sucessivas ao quadrado (\textit{scaling
+and squaring}), e só as recalcula quando um parâmetro do
 modelo muda; os ganhos $\matriz{K}$ e $\matriz{L}$ vêm do projeto. A cada
 laço, o estimador prediz o estado com o esforço de realimentação efetivamente
 aplicado no laço anterior, corrige-o pelas inovações do ângulo e da

@@ -1,0 +1,4 @@
+Ts = 0.002500 s, a = 1.98813
+rolagem  autovalores de A_c 1.000000 e 0.9551; k_i equivalente do ESO 6.987; k_i do LQI 7.129; diferença -2.0 %
+arfagem  autovalores de A_c 1.000000 e 0.9611; k_i equivalente do ESO 5.933; k_i do LQI 4.911; diferença +20.8 %
+guinada  autovalores de A_c 1.000000 e 0.9781; k_i equivalente do ESO 2.490; k_i do LQI 2.174; diferença +14.6 %
