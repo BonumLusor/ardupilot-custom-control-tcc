@@ -15,7 +15,8 @@
 #   firmware/instalar.sh            # instala
 #   firmware/instalar.sh --remover  # volta o submodulo ao commit original
 #
-# Depois de instalar, o proximo sim_vehicle.py (ou o run_ensaio.py) recompila.
+# Depois de instalar, compile com ./waf copter dentro de ardupilot/: o
+# run_ensaio.py nao recompila (usa --no-rebuild).
 
 set -euo pipefail
 

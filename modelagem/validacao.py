@@ -546,11 +546,31 @@ def desenhar_ruido(r, destino, eixo="roll"):
 # um ensaio
 # --------------------------------------------------------------------------
 
+# Base de atitude do lado do SITL (main, --atitude): "ahrs" (metricas.json e
+# series.csv, o padrao, a referencia de regressao) ou "verdadeira" (CCTQ:
+# metricas_verdade.json e serie_verdade.csv por cima do series.csv, de
+# ensaios/analise/verdade.py). O modelo simula a atitude verdadeira.
+ATITUDE = {"base": "ahrs"}
+
+
+def ler_voo(pasta):
+    """(metricas, colunas) do voo na base de ATITUDE."""
+    if ATITUDE["base"] == "verdadeira":
+        met = json.loads((pasta / "metricas_verdade.json").read_text(encoding="utf-8"))
+        col = ler_series(pasta / "series.csv")
+        verd = ler_series(pasta / "serie_verdade.csv")
+        for k, v in verd.items():
+            if k not in ("t", "tp"):
+                col[k] = v if len(v) == len(col["t"]) else np.interp(col["t"], verd["t"], v)
+        return met, col
+    return (json.loads((pasta / "metricas.json").read_text(encoding="utf-8")),
+            ler_series(pasta / "series.csv"))
+
+
 def validar(pasta, atraso_lacos=0):
     p = ms.ler_parm(pasta / "params.parm")
-    met = json.loads((pasta / "metricas.json").read_text(encoding="utf-8"))
+    met, col = ler_voo(pasta)
     cen = __import__("yaml").safe_load((pasta / "cenario.yaml").read_text(encoding="utf-8"))
-    col = ler_series(pasta / "series.csv")
     vento = cen["vento"]
     modo = int(vento["WND_MODE"])
 
@@ -639,23 +659,32 @@ def cenario_de(pasta):
     return "/".join(rel.parts[:-2])
 
 
-def ensaios_mais_recentes(desde=None):
+def ensaios_mais_recentes(desde=None, binario=None):
+    """Um voo por cenario de torque x controlador: o mais recente ou, com ``binario``,
+    o primeiro voo desse binario do SITL (semente 1, repeticao 1), como nas tabelas."""
     pastas = {}
     for met in RESULTADOS.rglob("metricas.json"):
         pasta = met.parent
         if pasta.name.endswith("_falhou") or "autotune" in pasta.parts:
             continue
         rel = pasta.relative_to(RESULTADOS).parts
-        # copias de seguranca (antes_*) e revoos/repeticoes da verificacao
-        # (verificacao_*) nao sao os voos das tabelas
-        if rel[0].startswith(("antes_", "verificacao_")):
+        # copias de seguranca (antes_*), revoos/repeticoes da verificacao
+        # (verificacao_*) e voos de teste (medicoes/) nao sao os voos das tabelas
+        if rel[0].startswith(("antes_", "verificacao_", "medicoes", "lote_")):
             continue
         if len(rel) < 4 or rel[-3] not in ENSAIOS_TORQUE:
             continue
         if desde and pasta.name < desde:
             continue
+        if binario:
+            v = pasta / "versao.json"
+            if not v.exists() or json.loads(v.read_text(encoding="utf-8")).get("binario_sha256") != binario:
+                continue
+            if ATITUDE["base"] == "verdadeira" and not (pasta / "metricas_verdade.json").exists():
+                continue
         chave = rel[:-1]
-        if chave not in pastas or pasta.name > pastas[chave].name:
+        if chave not in pastas or ((pasta.name < pastas[chave].name) if binario
+                                   else (pasta.name > pastas[chave].name)):
             pastas[chave] = pasta
     return [pastas[k] for k in sorted(pastas)]
 
@@ -953,6 +982,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--desde", help="so ensaios com carimbo a partir deste (AAAA-MM-DD)")
+    ap.add_argument("--binario", help="so os voos deste hash do binario do SITL (o primeiro de cada par)")
+    ap.add_argument("--atitude", choices=("ahrs", "verdadeira"), default="ahrs",
+                    help="base de atitude do SITL (padrao: ahrs)")
     ap.add_argument("--atraso", type=int, default=0,
                     help="lacos de atraso extra entre o calculo e a aplicacao de u")
     ap.add_argument("--figuras", type=Path, help="pasta onde gravar as figuras (PDF)")
@@ -961,6 +993,7 @@ def main():
                     help="so a conferencia do caminho do ruido (giroscopio e angulo do AHRS) "
                          "nos voos de ruido/torque_pulso")
     args = ap.parse_args()
+    ATITUDE["base"] = args.atitude
 
     if args.ruido:
         for slug in ("nativo", "cc_lqi", "cc_eso"):
@@ -976,7 +1009,7 @@ def main():
                 print(f"figura: {desenhar_ruido(r, args.figuras / 'validacao_ruido_ahrs.pdf')}")
         return
 
-    pastas = ensaios_mais_recentes(args.desde)
+    pastas = ensaios_mais_recentes(args.desde, args.binario)
     if not pastas:
         raise SystemExit("nenhum ensaio de torque encontrado")
     resultados = []

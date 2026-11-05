@@ -54,8 +54,13 @@ def controladores(eixo):
 CABECALHO = "% Gerada por ensaios/tabelas_monografia.py — nao editar a mao.\n"
 
 
+BINARIO_LOTE = RAIZ / "lotes" / "binario_lote.sha256"
+
+
 def binario_atual():
-    """Hash do binario do SITL compilado agora: o do lote congelado."""
+    """Hash do binario do lote congelado (lotes/binario_lote.sha256) ou, sem ele, o compilado agora."""
+    if BINARIO_LOTE.exists():
+        return BINARIO_LOTE.read_text(encoding="utf-8").split()[0]
     sys.path.insert(0, str(RAIZ))
     import run_ensaio  # noqa: E402
     return run_ensaio.versao_firmware()["binario_sha256"]
@@ -833,7 +838,7 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--atitude", choices=("verdadeira", "ahrs"), default="verdadeira",
                     help="base de atitude das metricas (padrao: verdadeira, P3c da revisao)")
-    ap.add_argument("--binario", help="hash do binario do SITL (padrao: o compilado agora)")
+    ap.add_argument("--binario", help="hash do binario do SITL (padrao: o de lotes/binario_lote.sha256)")
     ap.add_argument("--destino", type=Path, default=DESTINO)
     args = ap.parse_args()
 

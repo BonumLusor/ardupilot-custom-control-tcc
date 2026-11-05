@@ -1962,10 +1962,15 @@ def tabela_portao(veredito):
         nat = v["frs"]["nativo"]
         casos = [("Nativo (AutoTune)", nat)]
         casos += [(f"{ROTULO_FAMILIA[f]}, melhor", v["relaxados"][f]) for f in ("pid", "lqi", "eso")]
-        casos.append(("LQG (portão)", v["melhores"]["lqg"]))
+        if v["melhores"]["lqg"] is not None or v["relaxados"].get("lqg") is None:
+            casos.append(("LQG (portão)", v["melhores"]["lqg"]))
+        else:
+            # nenhum LQG cumpre todas as restricoes: o que voa e o melhor so com
+            # ruido, MF e MF robusta, como as familias de estrutura fixa acima
+            casos.append(("LQG, melhor (o que voa)", v["relaxados"]["lqg"]))
         for rot, pt in casos:
             if pt is None:
-                linhas.append(f"{NOMES[eixo].capitalize()} & {rot} & \\multicolumn{{9}}{{c}}{{---}} \\\\")
+                linhas.append(f"{NOMES[eixo].capitalize()} & {rot} & \\multicolumn{{8}}{{c}}{{---}} \\\\")
                 continue
             mt = pt["metricas"]
             rec = mt["torque_pulso"]["tempo_recuperacao_s"]

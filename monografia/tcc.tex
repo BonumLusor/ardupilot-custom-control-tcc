@@ -79,6 +79,8 @@
 % ---------- Macros do texto ----------
 \newcommand{\pendente}[1]{\textcolor{red}{[#1]}}
 \newcommand{\codigo}[1]{\texttt{#1}}            % nomes de arquivo, parâmetro, função
+\usepackage{url}
+\DeclareUrlCommand\arquivo{\def\UrlLeft{}\def\UrlRight{}\urlstyle{tt}}  % caminho de arquivo ou comando, que quebra em / e - (sem os < > do abnTeX2)
 \newcommand{\vetor}[1]{\bm{#1}}
 \newcommand{\matriz}[1]{\mathbf{#1}}
 \newcommand{\ardupilot}{ArduPilot}
@@ -224,6 +226,7 @@ pela comissão avaliadora abaixo indicada.}
 \partapendices
 \input{apendices/A-injetor-vento}
 \input{apendices/B-validacao-propostos}
+\input{apendices/C-como-reproduzir}
 \end{apendicesenv}
 % \begin{anexosenv}
 % \input{anexos/A-...}

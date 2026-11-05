@@ -547,15 +547,12 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--atitude", choices=("verdadeira", "ahrs"), default="verdadeira",
                     help="base de atitude (padrao: verdadeira, P3c da revisao)")
-    ap.add_argument("--binario", help="hash do binario do SITL (padrao: o compilado agora)")
+    ap.add_argument("--binario", help="hash do binario do SITL (padrao: o de lotes/binario_lote.sha256)")
     ap.add_argument("--destino", type=Path, default=DESTINO)
     args = ap.parse_args()
     args.desde = None
-    if args.binario:
-        BASE["binario"] = args.binario
-    else:
-        import run_ensaio
-        BASE["binario"] = run_ensaio.versao_firmware()["binario_sha256"]
+    import tabelas_monografia
+    BASE["binario"] = args.binario or tabelas_monografia.binario_atual()
     BASE["atitude"] = args.atitude
     if args.atitude == "verdadeira":
         # a Figura 26 sai tambem no AHRS: a diferenca entre as bases e resultado (rev. 2.2)

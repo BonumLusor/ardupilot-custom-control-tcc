@@ -1,0 +1,11 @@
+# Ambiente Python dos ensaios, da modelagem e das tabelas e figuras do TCC
+# (Python 3.12). As versoes sao as do ambiente que gerou os resultados.
+#   python3 -m venv ~/venv-ardupilot && ~/venv-ardupilot/bin/pip install -r requirements.txt
+matplotlib==3.11.0
+MAVProxy==1.8.74
+numpy==2.5.1
+pillow==10.2.0
+psutil==7.2.2
+pymavlink==2.4.49
+PyYAML==6.0.3
+scipy==1.18.0

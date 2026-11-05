@@ -1,0 +1,105 @@
+% ---------------------------------------------------------------------
+%  APÊNDICE C — COMO REPRODUZIR OS RESULTADOS
+%  Revisão de 3/11, item 5.2: o caminho mínimo do clone às tabelas e
+%  figuras. O README do repositório tem a instalação detalhada.
+% ---------------------------------------------------------------------
+\chapter{Como reproduzir os resultados}
+\label{ap:reproduzir}
+
+Todo o código do trabalho está no repositório
+\url{https://github.com/BonumLusor/ardupilot-custom-control}, sob a licença
+GPLv3, a mesma do ArduPilot. Isso inclui os backends dos controladores, o
+injetor de distúrbios, os cenários, a modelagem, as análises e este texto. Os
+resultados dos Capítulos~\ref{cap:modelagem} a~\ref{cap:resultados} saíram da
+versão \pendente{etiqueta e DOI do Zenodo da versão da defesa}. Este apêndice
+dá o caminho mínimo, do clone às tabelas e figuras. O \arquivo{README.md} do
+repositório traz os detalhes da instalação e os problemas conhecidos.
+
+\section{Ambiente}
+
+O trabalho rodou no Ubuntu 24.04, sob o WSL2, com Python 3.12. O ArduPilot
+entra como submódulo, fixo no \textit{commit} \arquivo{ce9c2d01a4}
+(4.8-dev). Os backends LQR e LQG ficam em \arquivo{firmware/}, fora do
+submódulo. O \arquivo{firmware/instalar.sh} os liga ao submódulo por
+link simbólico e aplica o \arquivo{firmware/ardupilot.patch}. O patch traz as
+edições do \textit{frontend}, a mensagem de log \arquivo{CCTQ} com a atitude
+verdadeira e a contagem do \arquivo{SIM_TWIST_TIME} em microssegundos.
+
+\begin{lstlisting}[language=bash,numbers=none]
+git clone --recurse-submodules \
+    https://github.com/BonumLusor/ardupilot-custom-control.git TCC
+cd TCC
+ardupilot/Tools/environment_install/install-prereqs-ubuntu.sh -y
+python3 -m venv ~/venv-ardupilot
+~/venv-ardupilot/bin/pip install -r requirements.txt
+firmware/instalar.sh
+cd ardupilot && ./waf configure --board sitl && ./waf copter && cd ..
+\end{lstlisting}
+
+O \arquivo{run_ensaio.py} chama o \arquivo{sim_vehicle.py} com
+\arquivo{--no-rebuild}, e todos os voos usam o binário compilado antes. Por isso,
+depois de qualquer mudança no firmware, é preciso compilar de novo com
+\codigo{./waf copter}. Cada voo grava em \arquivo{versao.json} o hash do binário
+do SITL, o do injetor e os \textit{commits}. O lote da monografia usou o binário
+cujo hash está em \arquivo{ensaios/lotes/binario_lote.sha256}.
+
+\section{Um ensaio}
+
+Um ensaio é um cenário (\arquivo{ensaios/cenarios/}) voado com um controlador
+(\arquivo{ensaios/controladores/}):
+
+\begin{lstlisting}[language=bash,numbers=none]
+source ~/venv-ardupilot/bin/activate
+ensaios/run_ensaio.py --cenario rolagem/torque_impulso --controlador cc_lqg
+\end{lstlisting}
+
+O resultado fica em
+\arquivo{ensaios/resultados/rolagem/torque_impulso/cc_lqg/<carimbo>/}. Lá
+estão o log \arquivo{.BIN}, os parâmetros e as métricas na atitude do AHRS
+(\arquivo{metricas.json}). Há também a série reamostrada a \SI{400}{\hertz}
+(\arquivo{series.csv}), o painel do voo e o \arquivo{versao.json}. As métricas na
+atitude verdadeira (\arquivo{metricas_verdade.json} e
+\arquivo{serie_verdade.csv}) saem de \codigo{python -m analise.verdade}, rodado
+em \arquivo{ensaios/}. Com \codigo{-{}-repeticoes N} ou \codigo{-{}-sementes 1-5}, o
+mesmo par voa várias vezes. Com \arquivo{--pular-feitos}, o que já foi voado com
+o mesmo binário é pulado.
+
+\section{O lote, as tabelas e as figuras}
+
+O lote da monografia está em \arquivo{ensaios/lotes/lote_revisao.sh}. São
+cerca de 560 voos, em umas oito horas. Ele começa pelo teste de determinismo e
+pode ser retomado: rodá-lo de novo pula os voos feitos. Depois dele, as
+métricas na atitude verdadeira, as tabelas e as figuras dos
+Capítulos~\ref{cap:modelagem} a~\ref{cap:resultados}:
+
+\begin{lstlisting}[language=bash,numbers=none]
+ensaios/lotes/lote_revisao.sh --l4-inerente
+cd ensaios
+python -m analise.verdade resultados --binario $(cat lotes/binario_lote.sha256)
+./tabelas_monografia.py
+./tabelas_monografia.py --atitude ahrs --destino /tmp/tabelas_ahrs
+./figuras_monografia.py
+\end{lstlisting}
+
+As tabelas e figuras usam só os voos do binário do lote. A base de atitude
+padrão é a verdadeira, e cada tabela grava, ao lado, a nota com a base e o
+número de voos de cada célula.
+
+\section{Modelo, projeto e confronto com o SITL}
+
+O modelo do SITL, o projeto dos controladores e o confronto entre modelo e SITL
+(Capítulos~\ref{cap:modelagem} e~\ref{cap:projeto} e
+Apêndice~\ref{ap:validacao-proposto}) saem de \arquivo{modelagem/}:
+
+\begin{lstlisting}[language=bash,numbers=none]
+cd modelagem
+./modelo_sitl.py --parm <params.parm de um voo>
+./projeto.py --figuras ../monografia/figuras --tabelas ../monografia/tabelas
+./validacao.py --binario $(cat ../ensaios/lotes/binario_lote.sha256) \
+    --figuras ../monografia/figuras --tabela ../monografia/tabelas/validacao.tex
+\end{lstlisting}
+
+O \arquivo{projeto.py} refaz a varredura e o portão da
+Seção~\ref{sec:projeto-lqg}; com \arquivo{--cache}, reaproveita a varredura já
+calculada. Os ganhos que ele escreve nos YAMLs de \arquivo{ensaios/controladores/}
+são os que o lote voa.

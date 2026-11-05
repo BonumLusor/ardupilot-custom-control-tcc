@@ -81,13 +81,22 @@ Resultado esperado: `ardupilot_gazebo/build/libArduPilotPlugin.so` — é esse d
 
 ### 2. Firmware SITL
 
-Não precisa fazer nada à mão: o `sim_vehicle.py` compila sozinho na primeira execução
-(5–15 min; nas seguintes só recompila o que mudou). Para forçar:
+Os backends LQR e LQG do TCC vivem em `firmware/`, fora do submódulo. O
+`firmware/instalar.sh` os liga ao submódulo e aplica o `firmware/ardupilot.patch` (frontend,
+mensagem `CCTQ` com a atitude verdadeira, `SIM_TWIST_TIME` em microssegundos). Depois,
+compile:
 
 ```bash
-cd ~/faculdade/TCC/ardupilot
+cd ~/faculdade/TCC
+firmware/instalar.sh
+cd ardupilot
 ./waf configure --board sitl && ./waf copter
 ```
+
+O `sim_vehicle.py` chamado à mão recompila o que mudou (5–15 min na primeira vez). O
+`ensaios/run_ensaio.py` **não** recompila (`--no-rebuild`): todo voo usa o binário compilado
+antes, e o hash dele vai no `versao.json` do voo. Depois de mexer no firmware, rode
+`./waf copter`.
 
 O build termina com `'copter' finished successfully` e produz
 `ardupilot/build/sitl/bin/arducopter` (~5,6 MB) — é esse binário que o `sim_vehicle.py` executa.
@@ -97,12 +106,44 @@ Para acompanhar um build em andamento: `pgrep -af "waf copter"` diz se ainda rod
 
 ### 3. Ambiente Python
 
-O MAVProxy vive no venv `~/venv-ardupilot`. Se o SITL reclamar
-`mavproxy.py: command not found`, ative-o antes de subir a simulação:
+O MAVProxy e as bibliotecas dos ensaios e da modelagem vivem no venv `~/venv-ardupilot`, com
+as versões de `requirements.txt` (Python 3.12):
+
+```bash
+python3 -m venv ~/venv-ardupilot
+~/venv-ardupilot/bin/pip install -r requirements.txt
+```
+
+Se o SITL reclamar `mavproxy.py: command not found`, ative-o antes de subir a simulação:
 
 ```bash
 source ~/venv-ardupilot/bin/activate
 ```
+
+### 4. Reproduzir os resultados da monografia
+
+O mesmo caminho do Apêndice C ("Como reproduzir os resultados"):
+
+```bash
+source ~/venv-ardupilot/bin/activate
+# um ensaio: cenario de ensaios/cenarios/ x controlador de ensaios/controladores/
+ensaios/run_ensaio.py --cenario rolagem/torque_impulso --controlador cc_lqg
+# o lote da monografia (~560 voos, ~8 h; retomavel: rodar de novo pula o que ja voou)
+ensaios/lotes/lote_revisao.sh --l4-inerente
+# metricas na atitude verdadeira, tabelas e figuras (so os voos do binario do lote)
+cd ensaios
+python -m analise.verdade resultados --binario $(cat lotes/binario_lote.sha256)
+./tabelas_monografia.py
+./figuras_monografia.py
+# modelo, projeto e confronto modelo x SITL
+cd ../modelagem
+./projeto.py --figuras ../monografia/figuras --tabelas ../monografia/tabelas
+./validacao.py --binario $(cat ../ensaios/lotes/binario_lote.sha256) \
+    --figuras ../monografia/figuras --tabela ../monografia/tabelas/validacao.tex
+```
+
+Deixe o computador sem dormir durante o lote: o SITL anda em passo com a física e para
+quando o Windows suspende (o lote retoma sozinho, mas perde as horas paradas).
 
 ---
 
@@ -904,3 +945,11 @@ Nessa ordem. Se o Gazebo cair primeiro, o SITL trava esperando o próximo estado
 | `No such file: modules/waf/waf-light`, ou `source not found: 'modules/littlefs/lfs.c'` | Submódulos não inicializados, ou inicializados pela metade | Ver o **passo 0** dos pré-requisitos |
 | Ensaio: "ja ha algo escutando na porta 5760" | Outro SITL aberto (o `run-sitl.sh`, por exemplo) | Feche-o, ou rode o ensaio com `--instancia 1` |
 | Ensaio: pasta `_falhou` | O voo não terminou | O motivo está no `falha.txt`, e a saída do SITL no `sitl.log` ao lado |
+
+---
+
+## Licença
+
+GPLv3 (`LICENSE`), a mesma do ArduPilot. O submódulo `ardupilot/` e o `ardupilot_gazebo/`
+seguem as licenças deles. O material do minicurso (`Material_participante/`) é de terceiros e
+fica fora do repositório.
