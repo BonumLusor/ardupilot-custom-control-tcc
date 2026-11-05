@@ -4,17 +4,17 @@ cc_lqg (guinada):
   condição 1, planta (tau_AHRS = 3.0 s): linha de eta fora da diagonal nula; Bu[eta] = 0.0e+00
   condição 1, estimador: linha de eta fora da diagonal nula; Gam[eta] = 0.0e+00
   condição 2: Phi difere em [(5, 5)] (eta = estado 5); |dGam| = 0.0e+00; |dC| = 0.0e+00; tau_c = 2.0 s, tau_r = 0.3 s
-  alfa 0.00: |polo| max 0.999690; maior distância aos polos de alfa = 0: 0.0e+00; margens {'wc': 6.261798934469809, 'mf_graus': 43.586185381075666, 'mg_db': 9.342094843783887, 'mg_reducao_db': None, 'margem_atraso_s': 0.12148624560536143}
-  alfa 0.25: |polo| max 0.999690; maior distância aos polos de alfa = 0: 4.5e-08; margens {'wc': 6.6642671515792875, 'mf_graus': 45.60245074572151, 'mg_db': 11.18158824224328, 'mg_reducao_db': None, 'margem_atraso_s': 0.11942992295901128}
-  alfa 0.50: |polo| max 0.999690; maior distância aos polos de alfa = 0: 8.9e-08; margens {'wc': 7.2181812842521, 'mf_graus': 47.342712239222806, 'mg_db': 9.340312736989286, 'mg_reducao_db': None, 'margem_atraso_s': 0.11447290845983091}
-  alfa 0.75: |polo| max 0.999690; maior distância aos polos de alfa = 0: 1.3e-07; margens {'wc': 8.015031383853852, 'mf_graus': 48.09484523881696, 'mg_db': 7.9105568266498825, 'mg_reducao_db': None, 'margem_atraso_s': 0.1047298959234843}
-  alfa 1.00: |polo| max 0.999690; maior distância aos polos de alfa = 0: 1.8e-07; margens {'wc': 9.139592764512027, 'mf_graus': 46.30066126950558, 'mg_db': 6.787571565584246, 'mg_reducao_db': None, 'margem_atraso_s': 0.08841739515367075}
+  alfa 0.00: |polo| max 0.999690; maior distância aos polos de alfa = 0: 0.0e+00; margens {'wc': 6.261803272870304, 'mf_graus': 40.12748741240006, 'mg_db': 36.13893777471801, 'mg_reducao_db': None, 'margem_atraso_s': 0.11184586058992062}
+  alfa 0.25: |polo| max 0.999690; maior distância aos polos de alfa = 0: 2.2e-08; margens {'wc': 6.442263617451534, 'mf_graus': 38.92757600463196, 'mg_db': 34.47541964764063, 'mg_reducao_db': None, 'margem_atraso_s': 0.10546205673122293}
+  alfa 0.50: |polo| max 0.999690; maior distância aos polos de alfa = 0: 4.4e-08; margens {'wc': 6.6104237391361735, 'mf_graus': 37.4786052867118, 'mg_db': 30.695283451870132, 'mg_reducao_db': None, 'margem_atraso_s': 0.09895357500848395}
+  alfa 0.75: |polo| max 0.999690; maior distância aos polos de alfa = 0: 6.6e-08; margens {'wc': 6.761070647744524, 'mf_graus': 35.886652974738126, 'mg_db': 22.989438201962624, 'mg_reducao_db': None, 'margem_atraso_s': 0.09263921123775616}
+  alfa 1.00: |polo| max 0.999690; maior distância aos polos de alfa = 0: 8.8e-08; margens {'wc': 6.892550445442933, 'mf_graus': 34.24854202832066, 'mg_db': 16.73731908809017, 'mg_reducao_db': None, 'margem_atraso_s': 0.0867240402711974}
 cc_lqg_mesmo_ruido (guinada):
   condição 1, planta (tau_AHRS = 3.0 s): linha de eta fora da diagonal nula; Bu[eta] = 0.0e+00
   condição 1, estimador: linha de eta fora da diagonal nula; Gam[eta] = 0.0e+00
   condição 2: Phi difere em [(5, 5)] (eta = estado 5); |dGam| = 0.0e+00; |dC| = 0.0e+00; tau_c = 2.0 s, tau_r = 0.3 s
-  alfa 0.00: |polo| max 0.999690; maior distância aos polos de alfa = 0: 0.0e+00; margens {'wc': 7.187395547229691, 'mf_graus': 46.45029999782457, 'mg_db': 10.683937458582713, 'mg_reducao_db': None, 'margem_atraso_s': 0.11279616770411834}
-  alfa 0.25: |polo| max 0.999690; maior distância aos polos de alfa = 0: 4.8e-08; margens {'wc': 7.637753061989786, 'mf_graus': 48.008239343580044, 'mg_db': 11.728405095223938, 'mg_reducao_db': None, 'margem_atraso_s': 0.10970528083722347}
-  alfa 0.50: |polo| max 0.999690; maior distância aos polos de alfa = 0: 9.6e-08; margens {'wc': 8.235090108152091, 'mf_graus': 49.22304203373068, 'mg_db': 9.616792746250091, 'mg_reducao_db': None, 'margem_atraso_s': 0.10432237413962483}
-  alfa 0.75: |polo| max 0.999690; maior distância aos polos de alfa = 0: 1.4e-07; margens {'wc': 9.055299151762847, 'mf_graus': 49.53594778931517, 'mg_db': 8.084693103211203, 'mg_reducao_db': None, 'margem_atraso_s': 0.09547618168431754}
-  alfa 1.00: |polo| max 0.999690; maior distância aos polos de alfa = 0: 1.9e-07; margens {'wc': 10.172708771002892, 'mf_graus': 47.82386811922302, 'mg_db': 6.978288804097983, 'mg_reducao_db': None, 'margem_atraso_s': 0.08205129808682228}
+  alfa 0.00: |polo| max 0.999690; maior distância aos polos de alfa = 0: 0.0e+00; margens {'wc': 5.511865803194094, 'mf_graus': 43.56003718855817, 'mg_db': 37.42581581128087, 'mg_reducao_db': None, 'margem_atraso_s': 0.13793261635487286}
+  alfa 0.25: |polo| max 0.999690; maior distância aos polos de alfa = 0: 1.5e-08; margens {'wc': 5.688789384769375, 'mf_graus': 42.975087030000594, 'mg_db': 35.45502341008395, 'mg_reducao_db': None, 'margem_atraso_s': 0.13184822187524683}
+  alfa 0.50: |polo| max 0.999690; maior distância aos polos de alfa = 0: 3.0e-08; margens {'wc': 5.869725981011683, 'mf_graus': 42.06337001135512, 'mg_db': 30.98061621743709, 'mg_reducao_db': None, 'margem_atraso_s': 0.12507301082839598}
+  alfa 0.75: |polo| max 0.999690; maior distância aos polos de alfa = 0: 4.5e-08; margens {'wc': 6.047010109789638, 'mf_graus': 40.857529328266, 'mg_db': 23.021973196890904, 'mg_reducao_db': None, 'margem_atraso_s': 0.11792578448875718}
+  alfa 1.00: |polo| max 0.999690; maior distância aos polos de alfa = 0: 6.0e-08; margens {'wc': 6.213624782422362, 'mf_graus': 39.43402698544827, 'mg_db': 17.41946710809184, 'mg_reducao_db': None, 'margem_atraso_s': 0.11076523483737827}

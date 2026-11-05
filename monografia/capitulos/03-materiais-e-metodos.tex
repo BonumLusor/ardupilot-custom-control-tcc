@@ -69,6 +69,20 @@ Git & versionamento de código, cenários e configurações \\
 \fonte{Elaborada pelo autor.}
 \end{table}
 
+O código do trabalho está no repositório
+\url{https://github.com/BonumLusor/ardupilot-custom-control}, sob a GPLv3, a
+licença do ArduPilot, na versão \pendente{etiqueta e DOI do Zenodo}; o
+Apêndice~\ref{ap:reproduzir} dá os comandos para reproduzir os resultados.
+Todas as tabelas e figuras de resultados vêm de um único lote de voos, com o
+firmware congelado. O binário do SITL foi compilado uma vez, antes do lote, e
+o hash dele vai gravado em cada voo, ao lado do hash do injetor e dos
+\textit{commits}; as tabelas e figuras recusam voos de outro binário. Três
+entradas do projeto ficam fora do lote e fixas, porque refazê-las mudaria
+todos os controladores projetados: os ganhos do AutoTune do nativo
+(Seção~\ref{sec:autotune}), o voo de pairado de onde saem os parâmetros do
+modelo (Capítulo~\ref{cap:modelagem}) e os voos do LQG que calibraram o ruído
+independente do ângulo (Seção~\ref{sec:projeto-lqg}).
+
 O ambiente também foi preparado para rodar com a física e a visualização do
 Gazebo, conectado ao firmware pela interface JSON do SITL. Os ensaios de
 perturbação, porém, rodam no SITL puro, por uma razão objetiva: com o modelo
@@ -159,7 +173,8 @@ As formas disponíveis são selecionadas por um campo de bits
 vento do SITL estão no Apêndice~\ref{ap:vento}. Em torque, cada eixo tem amplitude própria, em
 \si{\radian\per\second\squared} (\codigo{WND\_TQX}, \codigo{WND\_TQY} e
 \codigo{WND\_TQZ}), e cinco formas: o pulso retangular, cujo impulso angular
-é a amplitude multiplicada pela duração; o pulso do tipo
+é a amplitude multiplicada pela duração, também numa versão de duração
+exata, descrita adiante; o pulso do tipo
 ``1~$-$~cosseno'', com metade desse impulso; o degrau sustentado; a
 varredura em frequência, com a progressão exponencial e as janelas de
 cosseno do \textit{chirp} do ArduPilot~\eqref{eq:chirp}, para que os ensaios
@@ -187,6 +202,7 @@ Bit & Forma & Parâmetros \\
 64  & torque em varredura de frequência    & amplitude por eixo, faixa e duração \\
 128 & torque estocástico (Gauss-Markov)    & desvio-padrão por eixo, tempo de correlação, início e duração \\
 256 & evento de planta (motor fraco ou perda de empuxo) & tipo, máscara de motores, fator, início e duração \\
+512 & torque em pulso retangular de duração exata, desligado pelo próprio SITL & amplitude por eixo, início e duração \\
 \bottomrule
 \end{tabular}
 
@@ -216,14 +232,27 @@ quantos forem necessários para alcançar o relógio, salvo se o
 \textit{script} ficar parado mais de \SI{0.5}{\second}, o que não ocorreu nos
 ensaios, e a sequência gerada é sempre a mesma ---, mas os instantes em que
 cada valor passa a valer variam de um voo para outro em até um ciclo do
-\textit{script}, cerca de \SI{23}{\milli\second}, em cada borda. O efeito mais
-visível é na duração efetiva do pulso de torque, que variou de 300 a
-\SI{344}{\milli\second} (média de \SI{318}{\milli\second}) para o pulso
-nominal de \SI{0.3}{\second}; o impulso efetivamente aplicado ficou entre 0 e
-15\,\% acima do nominal, com variação de $-6$\,\% a $+8$\,\% em torno da
-média. A mensagem \codigo{WND} registra o valor e o instante de cada
-escrita, e é a partir dela que se reconstrói o torque efetivamente aplicado
+\textit{script}, cerca de \SI{23}{\milli\second}, em cada borda. A mensagem
+\codigo{WND} registra o valor e o instante de cada escrita, e é a partir dela
+que se reconstrói o torque efetivamente aplicado
 (Seções~\ref{sec:validacao-tempo} e~\ref{sec:res-torque}).
+
+Num pulso, essa incerteza mudaria o impulso aplicado: um ciclo a mais ou a
+menos em cada borda muda em até cerca de 8\,\% o impulso de um pulso de
+\SI{0.3}{\second}, e o de um pulso de \SI{20}{\milli\second}, mais que o
+dobra. Por isso, os pulsos usam um modo à parte (bit 512). No instante do
+início, o \textit{script} escreve a amplitude e a duração em
+\codigo{SIM\_TWIST\_TIME} uma única vez, e o próprio SITL desliga o torque ao
+fim da duração, contada em passos da física de \SI{1200}{\hertz}. A contagem
+original do SITL era em milissegundos inteiros, e um pulso de
+\SI{20}{\milli\second} durava 23 ou 24 passos, conforme a fase do início
+dentro do milissegundo: o impulso mudava 4\,\% de um voo para outro. O
+\textit{patch} do firmware passa a contagem a microssegundos, com meio passo
+de folga, e o pulso dura sempre o mesmo número de passos: 24 em
+\SI{20}{\milli\second} e 360 em \SI{0.3}{\second}. Nos voos do lote, o
+impulso aplicado, reconstruído da atitude verdadeira, ficou a
+\pendente{x\,\%} do pedido. O início do pulso ainda depende do instante em
+que o \textit{script} roda, mas um deslocamento no tempo não muda a resposta.
 
 O perfil de perturbação é disparado no início da janela de ensaio, e não no
 armamento. Com o vento ligado durante a decolagem, a aeronave se inclinaria
@@ -281,11 +310,12 @@ Configuração & \codigo{CC\_TYPE} & Cenários & Papel \\
 \fonte{Elaborada pelo autor, a partir de \codigo{ensaios/controladores/}.}
 \nota{\raggedright Entre parênteses, o nome com que a configuração aparece
 nas tabelas de resultados. A lista de 18 cenários reúne, em rolagem,
-arfagem e guinada, o nominal, o pulso, o degrau e a varredura de torque; nos
-três eixos, o nominal, o pulso e o degrau; o pulso e o degrau com
+arfagem e guinada, o nominal, o degrau curto, o degrau e a varredura de
+torque; nos três eixos, o nominal, o degrau curto e o degrau; o degrau curto
+e o degrau com
 \codigo{SIM\_GYR*\_RND} = 20; e a rajada. A de 8 reúne, em rolagem e
-guinada, o nominal, o pulso e o degrau; o torque estocástico nos três eixos;
-e o pulso com \codigo{SIM\_GYR*\_RND} = 20.}
+guinada, o nominal, o degrau curto e o degrau; o torque estocástico nos três
+eixos; e o degrau curto com \codigo{SIM\_GYR*\_RND} = 20.}
 \end{table}
 
 O \emph{PID nativo} é a cascata padrão do ArduPilot
@@ -399,14 +429,16 @@ perturbação encontra a aeronave entre \ang{-0.02} e \ang{0.07} de rolagem
 
 Os cenários são organizados em pastas: uma por eixo exercitado --- rolagem,
 arfagem, guinada e os três ao mesmo tempo ---, com os ensaios nominal, de
-torque em pulso, em degrau sustentado, em varredura e estocástico, e grupos
-para as variações (ruído de giroscópio, erro de modelo, ângulo grande,
-saturação, falha de motor e vento). O nome de um cenário é o seu caminho,
-como \codigo{guinada/torque\_pulso} ou \codigo{ruido/rnd20/torque\_pulso}, e
-é por ele que os resultados são organizados. São 49 cenários: os 19 das
-pastas de eixo (Tabela~\ref{tab:cenarios}), a rajada de vento e 29 variações
-agrupadas por tema (Tabela~\ref{tab:variacoes}). Todos usam a mesma semente
-(\codigo{WND\_SEED} = 1). O cenário \codigo{vento/rajada} aplica uma rajada
+torque em impulso, em degrau curto, em degrau sustentado, em varredura e
+estocástico, e grupos para as variações (ruído de giroscópio, erro de
+modelo, ângulo grande, saturação, falha de motor, comutação e vento). O nome
+de um cenário é o seu caminho, como \codigo{guinada/torque\_pulso} ou
+\codigo{ruido/rnd20/torque\_impulso}, e é por ele que os resultados são
+organizados. São 55 cenários: os 22 das pastas de eixo
+(Tabela~\ref{tab:cenarios}), a rajada de vento e 32 variações agrupadas por
+tema (Tabela~\ref{tab:variacoes}). Todos usam a semente
+\codigo{WND\_SEED} = 1, salvo o torque estocástico, que voa também com as
+sementes 2 a 5 (Seção~\ref{sec:metricas}). O cenário \codigo{vento/rajada} aplica uma rajada
 lateral de \SI{10}{\metre\per\second} do tipo ``1~$-$~cosseno'', de
 \SI{3}{\second}, com a aeronave nivelada e sem torque; ele mede a deriva de
 posição e verifica que, no SITL, o vento praticamente não perturba a
@@ -422,7 +454,8 @@ atitude.
 Ensaio & Rolagem e arfagem & Guinada & Duração \\
 \midrule
 Nominal                & degrau de \ang{10}             & degrau de \ang{30}            & \SI{30}{\second} \\
-Torque em pulso        & \SI{15}{\radian\per\second\squared}, \SI{0.3}{\second} & \SI{3}{\radian\per\second\squared}, \SI{0.3}{\second} & \SI{25}{\second} \\
+Impulso de torque      & \SI{35}{\radian\per\second\squared}, \SI{20}{\milli\second} & \SI{41.5}{\radian\per\second\squared}, \SI{20}{\milli\second} & \SI{25}{\second} \\
+Degrau curto de torque & \SI{15}{\radian\per\second\squared}, \SI{0.3}{\second} & \SI{3}{\radian\per\second\squared}, \SI{0.3}{\second} & \SI{25}{\second} \\
 Torque em degrau       & \SI{10}{\radian\per\second\squared} & \SI{1}{\radian\per\second\squared} & 40 / \SI{60}{\second} \\
 Varredura de torque    & \SI{3}{\radian\per\second\squared}, 0,2--\SI{10}{\hertz} em \SI{20}{\second} & \SI{1}{\radian\per\second\squared}, 0,1--\SI{5}{\hertz} em \SI{40}{\second} & 30 / \SI{50}{\second} \\
 Torque estocástico     & $\sigma = \SI{10}{\radian\per\second\squared}$, $\tau = \SI{0.1}{\second}$ & $\sigma = \SI{1}{\radian\per\second\squared}$, idem & \SI{70}{\second} \\
@@ -431,7 +464,9 @@ Torque estocástico     & $\sigma = \SI{10}{\radian\per\second\squared}$, $\tau 
 
 \fonte{Elaborada pelo autor, a partir de \codigo{ensaios/cenarios/}.}
 \nota{\raggedright Os ensaios dos três eixos usam as amplitudes dos ensaios
-de um eixo só, nos três eixos ao mesmo tempo, e não incluem a varredura. Na
+de um eixo só, nos três eixos ao mesmo tempo, e não incluem a varredura nem o
+impulso, que nos três eixos voa com ruído de giroscópio
+(Tabela~\ref{tab:variacoes}). Na
 coluna de duração, o primeiro valor é o de rolagem e arfagem e o segundo, o
 de guinada; o degrau sustentado nos três eixos dura \SI{60}{\second}. No
 torque estocástico, $\sigma$ é o desvio-padrão e $\tau$, o tempo de
@@ -441,9 +476,23 @@ correlação, e a perturbação vai de 6 a \SI{66}{\second}.}
 As amplitudes de guinada são menores de propósito. A guinada não tem braço de
 alavanca: o momento vem do torque de reação dos rotores, e a eficácia de
 controle em guinada é cerca de 30 vezes menor que em rolagem
-(Seção~\ref{sec:modelo-linear}). O pulso de \SI{15}{\radian\per\second\squared}
-da rolagem saturaria a alocação em guinada, e o ensaio mediria saturação, e
-não rejeição. O degrau sustentado de guinada dura \SI{60}{\second} porque a
+(Seção~\ref{sec:modelo-linear}). O degrau curto de
+\SI{15}{\radian\per\second\squared} da rolagem saturaria a alocação em
+guinada, e o ensaio mediria saturação, e não rejeição.
+
+O degrau curto e o impulso respondem a perguntas diferentes. No degrau curto,
+de \SI{0.3}{\second}, o pico em rolagem vem durante o próprio torque: ele mede
+quanto o controlador segura um torque que dura mais que a resposta dele. O
+impulso, de \SI{20}{\milli\second}, termina antes de o controlador reagir, e
+o pico vem depois: ele mede a recuperação depois de um choque. A amplitude do
+impulso foi escolhida no modelo, antes dos voos
+(\codigo{escolher\_impulso.py}): em rolagem e arfagem, para o desvio do
+nativo ficar abaixo de \ang{1}, o limite da faixa linear do controlador de
+raiz quadrada, com margem (\ang{0.79} previstos); em guinada, para o maior
+esforço entre todos os controladores caber na folga da alocação, de cerca de
+0,5 no pairado, com margem ($|u| \le 0{,}35$). Os impulsos são de
+\SI{0.70}{\radian\per\second} em rolagem e arfagem e
+\SI{0.83}{\radian\per\second} em guinada. O degrau sustentado de guinada dura \SI{60}{\second} porque a
 recuperação, comandada pelo integrador fraco de guinada, leva cerca de
 \SI{22}{\second}; em \SI{40}{\second}, ela mal caberia na janela.
 
@@ -473,7 +522,8 @@ indistinguíveis.
 Grupo & Ensaios & O que muda \\
 \midrule
 \codigo{ruido/rnd10}, \codigo{rnd20}, \codigo{rnd40}, \codigo{rnd80}
-  & pulso, degrau e estocástico, nos três eixos
+  & degrau curto, degrau e estocástico, nos três eixos; no \codigo{rnd20},
+    também o impulso
   & \codigo{SIM\_GYR*\_RND} = 10, 20, 40 e 80 \\
 \codigo{erro\_modelo/}\allowbreak\codigo{empuxo\_fraco}
   & nominal, pulso e degrau, nos três eixos
@@ -498,6 +548,11 @@ Grupo & Ensaios & O que muda \\
 \codigo{falha\_motor/}\allowbreak\codigo{leve} e \codigo{severa}
   & evento de planta de 6 a \SI{46}{\second}
   & \codigo{SIM\_ENGINE\_MUL} = 0,95 ou 0,85 no motor 1 \\
+\codigo{comutacao/}\allowbreak\codigo{sem\_transferencia} e
+  \codigo{com\_transferencia}
+  & degrau de \SI{10}{\radian\per\second\squared} em rolagem em
+    $t = \SI{6}{\second}$; volta ao nativo em $t = \SI{12}{\second}$
+  & \codigo{CC\_TRANSF} = 0 ou 1 (Seção~\ref{sec:implementacao}) \\
 \bottomrule
 \end{tabular}
 
@@ -521,7 +576,7 @@ aprendizado em voo não convergiria antes do ensaio. Os degraus de \ang{30} e
 raiz quadrada do nativo, que os \textit{backends} não têm. A autoridade em
 guinada é de cerca de \SI{7}{\radian\per\second\squared} --- a folga de
 guinada da alocação, de cerca de 0,5 no pairado, vezes $b_z$ ---; nos ensaios
-de saturação, o pulso leva a guinada além dela, e o degrau, a cerca de
+de saturação, o degrau curto leva a guinada além dela, e o degrau, a cerca de
 85\,\% dela, e os dois medem o \textit{windup} de cada controlador. Na falha de motor, o motor 1 perde cerca
 de 10\,\% (leve) ou 28\,\% (severa) do empuxo, o que produz um momento
 sustentado e não linear nos três eixos, de cerca de 8 ou
@@ -556,6 +611,42 @@ antes da interpolação, para que um degrau que cruze o norte não apareça como
 um salto de \ang{360}. As métricas são calculadas por eixo, apenas nos eixos
 que o ensaio exercita, e cada uma é registrada junto com a janela de tempo em
 que foi calculada.
+
+Toda métrica de atitude sai em duas bases. A primeira é a atitude estimada
+pelo AHRS, a da mensagem \codigo{ANG}, que é a que o controlador enxerga. A
+segunda é a atitude verdadeira do modelo físico do simulador, gravada no
+mesmo laço pela mensagem \codigo{CCTQ} (Seção~\ref{sec:implementacao}). A
+convenção do quatérnio foi conferida contra a atitude que o próprio
+simulador grava a \SI{10}{\hertz} (mensagem \codigo{SIM}): nos mesmos
+instantes, as duas diferem em até \ang{0.01}, a resolução do \codigo{SIM}.
+As bases diferem por um viés quase constante e pela dinâmica do estimador.
+O viés vem do rumo, porque o alvo de guinada é travado no rumo do AHRS, que
+difere do verdadeiro, e, em rolagem e arfagem, é da ordem de \ang{0.1}. Na
+base verdadeira, a atitude medida é a da \codigo{CCTQ} menos o viés médio
+entre as bases no trecho calmo, definido abaixo (sem perturbação, no
+pairado antes do perfil). Assim, as métricas têm a mesma definição nas duas
+bases, e só a dinâmica difere. As tabelas dos Capítulos~\ref{cap:modelagem}
+a~\ref{cap:resultados} usam a base verdadeira, uma base por tabela, e o
+Apêndice~\ref{ap:bases} compara as duas. A diferença importa sobretudo para
+o LQG, que age sobre o próprio caminho de medida: avaliado na atitude que ele
+mesmo estima, mistura estimação com controle.
+
+Os ensaios sem semente e sem ruído de giroscópio só não são determinísticos
+porque o \textit{script}, os comandos de voo e a física não andam
+sincronizados (Seção~\ref{sec:automacao}). Em três voos repetidos do impulso
+e do degrau de rolagem, o pico e o erro eficaz variaram até
+\pendente{L4: \% no nativo} no nativo e até \pendente{L4: \% no LQG} no LQG,
+na atitude verdadeira. Por isso, esses ensaios voam uma vez, exceto o
+impulso e o degrau de rolagem e de arfagem do nativo e dos dois LQG, que voam
+três vezes e entram nas tabelas pela média. O torque estocástico voa com
+cinco sementes, as mesmas para todos os controladores. A diferença ao nativo
+é a média das diferenças semente a semente, com intervalo de confiança de
+95\,\% pareado ($t$ de Student, quatro graus de liberdade). O impulso com
+ruído de giroscópio, cujo ruído não tem semente, voa cinco vezes com o
+nativo e com os dois LQG. A diferença ao nativo é a das médias, com o
+intervalo de confiança de 95\,\% de \citeonline{welch1947}, de cerca de oito
+graus de liberdade. A nota de cada tabela diz a base, o número de voos e o
+tipo de intervalo.
 
 \subsection{Resposta ao degrau}
 

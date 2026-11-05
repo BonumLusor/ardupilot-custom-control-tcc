@@ -1,0 +1,31 @@
+% ---------------------------------------------------------------------
+%  APÊNDICE D — ATITUDE VERDADEIRA E ATITUDE DO AHRS
+%  Revisão de 3/11, item 2.2 (P3c): as tabelas usam a atitude verdadeira;
+%  aqui, as duas bases nos mesmos voos. Tabela gerada por
+%  ensaios/tabelas_monografia.py (apendice_bases.tex).
+% ---------------------------------------------------------------------
+\chapter{Atitude verdadeira e atitude do AHRS}
+\label{ap:bases}
+
+As tabelas de resultados medem a atitude verdadeira do modelo físico do SITL
+(mensagem \codigo{CCTQ}), menos o viés médio entre as bases no trecho calmo
+(Seção~\ref{sec:metricas}). A Tabela~\ref{tab:bases} mostra, nos mesmos
+voos, o desvio máximo e o erro eficaz nas duas bases, para o nativo e os dois
+LQG nos ensaios em que a diferença mais pesa: o impulso, o degrau e o torque
+estocástico, sem ruído e com o ruído de giroscópio de
+\codigo{SIM\_GYR*\_RND} = 20.
+
+\pendente{Fase 6: comentar a tabela com os voos do lote (onde as bases
+divergem, e se a ordem entre os controladores muda).}
+
+\begin{table}[htbp]
+\centering
+\caption{Desvio máximo e erro eficaz na atitude do AHRS e na atitude
+verdadeira, nos mesmos voos.}
+\label{tab:bases}
+\resizebox{\textwidth}{!}{\input{tabelas/apendice_bases}}
+
+\fonte{Elaborada pelo autor, por \codigo{ensaios/tabelas\_monografia.py}.}
+\nota{\raggedright $\Delta$: verdade em relação ao AHRS.
+\input{tabelas/apendice_bases_nota}}
+\end{table}

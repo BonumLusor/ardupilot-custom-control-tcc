@@ -1,0 +1,40 @@
+% Gerada por ensaios/tabelas_monografia.py — nao editar a mao.
+\begin{tabular}{lllrrrrrr}
+\toprule
+ & & & \multicolumn{3}{c}{Desvio máx. (\si{\degree})} & \multicolumn{3}{c}{RMSE (\si{\degree})} \\
+\cmidrule(lr){4-6}\cmidrule(lr){7-9}
+Ensaio & Eixo & Controlador & AHRS & verdade & $\Delta$ (\%) & AHRS & verdade & $\Delta$ (\%) \\
+\midrule
+impulso de rolagem & Rolagem & nativo & 0,789 & 0,802 & +2 & 0,080 & 0,081 & +2 \\
+impulso de rolagem & Rolagem & LQG & 0,731 & 0,744 & +2 & 0,088 & 0,091 & +4 \\
+impulso de rolagem & Rolagem & LQG (mesmo ruído) & --- & --- & --- & --- & --- & --- \\
+\addlinespace
+degrau de rolagem & Rolagem & nativo & 0,599 & 0,614 & +2 & 0,070 & 0,086 & +23 \\
+degrau de rolagem & Rolagem & LQG & 0,597 & 0,612 & +3 & 0,039 & 0,059 & +52 \\
+degrau de rolagem & Rolagem & LQG (mesmo ruído) & --- & --- & --- & --- & --- & --- \\
+\addlinespace
+estocástico de rolagem & Rolagem & nativo & --- & --- & --- & --- & --- & --- \\
+estocástico de rolagem & Rolagem & LQG & --- & --- & --- & --- & --- & --- \\
+estocástico de rolagem & Rolagem & LQG (mesmo ruído) & --- & --- & --- & --- & --- & --- \\
+\addlinespace
+impulso de guinada & Guinada & nativo & --- & --- & --- & --- & --- & --- \\
+impulso de guinada & Guinada & LQG & --- & --- & --- & --- & --- & --- \\
+impulso de guinada & Guinada & LQG (mesmo ruído) & --- & --- & --- & --- & --- & --- \\
+\addlinespace
+degrau de guinada & Guinada & nativo & --- & --- & --- & --- & --- & --- \\
+degrau de guinada & Guinada & LQG & --- & --- & --- & --- & --- & --- \\
+degrau de guinada & Guinada & LQG (mesmo ruído) & --- & --- & --- & --- & --- & --- \\
+\addlinespace
+estocástico de guinada & Guinada & nativo & --- & --- & --- & --- & --- & --- \\
+estocástico de guinada & Guinada & LQG & --- & --- & --- & --- & --- & --- \\
+estocástico de guinada & Guinada & LQG (mesmo ruído) & --- & --- & --- & --- & --- & --- \\
+\addlinespace
+impulso (ruido/rnd20) & Rolagem & nativo & --- & --- & --- & --- & --- & --- \\
+impulso (ruido/rnd20) & Rolagem & LQG & --- & --- & --- & --- & --- & --- \\
+impulso (ruido/rnd20) & Rolagem & LQG (mesmo ruído) & --- & --- & --- & --- & --- & --- \\
+\addlinespace
+impulso (ruido/rnd20) & Guinada & nativo & --- & --- & --- & --- & --- & --- \\
+impulso (ruido/rnd20) & Guinada & LQG & --- & --- & --- & --- & --- & --- \\
+impulso (ruido/rnd20) & Guinada & LQG (mesmo ruído) & --- & --- & --- & --- & --- & --- \\
+\bottomrule
+\end{tabular}

@@ -233,9 +233,21 @@ a polarização. O ganho $\matriz{L}$, de dimensão $8 \times 2$, é o do filtro
 de Kalman em regime, na forma corrente, pela equação de Riccati dual
 (Seção~\ref{sec:lqg})~\cite{kalman1960b}; a covariância do ruído de processo
 é discretizada pelo método de \citeonline{vanloan1978} sobre o modelo
-contínuo. Os ruídos são o do giroscópio, de intensidade $q_n$ dada pelo nível
-de ruído (Seção~\ref{sec:projeto-modelo}), e o da perturbação, de intensidade
-$q_d$, o parâmetro de projeto. Pelo princípio da separação, a realimentação e
+contínuo. Os ruídos são três. O do giroscópio tem intensidade $q_n$, dada
+pelo nível de ruído (Seção~\ref{sec:projeto-modelo}). O da perturbação tem
+intensidade $q_d$, o parâmetro de projeto. O terceiro é um ruído independente
+no erro do ângulo do AHRS, $\eta$, de intensidade $q_a = \kappa\,q_n$. Sem
+ele, o modelo supõe o ângulo e a velocidade angular medidos perfeitamente
+coerentes: o ângulo seria a integral exata do giroscópio. Como as medidas
+quase não têm ruído próprio, o filtro confia nas duas por inteiro e lê
+qualquer diferença entre elas como perturbação. No SITL, as duas medidas não
+são perfeitamente coerentes, e o filtro sem esse ruído levava a diferença ao
+esforço de controle, sobretudo em guinada, em que $b$ é cerca de trinta vezes
+menor e o esforço que cancela a mesma perturbação, trinta vezes maior
+(Seção~\ref{sec:res-ruido}). O fator $\kappa$ foi calibrado pelo esforço
+eficaz que o LQG projetado sem ele produziu no SITL: $\kappa = 0{,}177$ em
+rolagem e arfagem e $0{,}041$ em guinada. A mesma intensidade entra na planta
+usada nas análises de ruído. Pelo princípio da separação, a realimentação e
 o filtro são projetados à
 parte~\cite{joseph1961,athans1971}~\cite[seção~8.2]{anderson1989}.
 
@@ -261,9 +273,11 @@ $\eta$, e $\alpha$ só entra no acoplamento dos erros com o restante da malha:
 com os estados ordenados como $\eta$, erros dos dois estimadores e demais
 estados, a matriz de malha fechada é triangular por blocos para qualquer
 $\alpha$. Os autovalores não dependem de $\alpha$ --- calculados com $\alpha$
-fixo entre 0 e 1, variam no máximo $2\cdot10^{-7}$, o resíduo numérico ---, e
-só as margens mudam: a margem de fase vai de \ang{43.6} a \ang{48.1} no LQG e
-de \ang{46.5} a \ang{49.5} no LQG de mesmo ruído. Como cada bloco da diagonal
+fixo entre 0 e 1, variam no máximo $9\cdot10^{-8}$, o resíduo numérico ---, e
+só as margens mudam. A margem de fase cai de \ang{40.1}, com $\alpha = 0$,
+para \ang{34.2}, com $\alpha = 1$, no LQG, e de \ang{43.6} para \ang{39.4}
+no LQG de mesmo ruído. Durante as manobras, portanto, a margem do LQG fica
+abaixo da do nativo em guinada (\ang{37.5}). Como cada bloco da diagonal
 é estável e $\alpha$ fica em $[0, 1]$, a malha converge também com $\alpha$
 variando no tempo. O argumento vale no modelo linear, sem saturação. No SITL,
 o motivo do estimador rápido --- o erro do AHRS se comporta de outro modo
@@ -300,15 +314,24 @@ as mesmas restrições. O plano previa um terceiro critério, de margens --- que
 algum ponto do LQG cumprisse as restrições do primeiro ---, mas ele está
 contido no primeiro: se o melhor LQG sob as restrições existe, ele as cumpre.
 Na prática, o portão tem dois critérios. A
-Tabela~\ref{tab:projeto-portao} mostra o resultado na planta completa: em
-rolagem, o LQG desvia \ang{0.806} no pulso de torque, contra \ang{0.900} do
-nativo, e, em guinada, \ang{1.877} no degrau sustentado, contra
-\ang{2.584}, com ruído e margens dentro das restrições. A mesma tabela mostra
+Tabela~\ref{tab:projeto-portao} mostra o resultado na planta completa. Em
+rolagem, o LQG passa: desvia \ang{0.824} no degrau curto de torque, contra
+\ang{0.900} do nativo ($-8{,}4$\,\%), com ruído de 0,91 vez o do nativo e
+margem de fase de \ang{41.5}. Em guinada, o LQG não passa: nenhum ponto
+cumpre todas as restrições. O de menor pico no degrau sustentado com ruído e
+margens dentro delas desvia \ang{2.325}, contra \ang{2.584} do nativo
+($-10{,}0$\,\%), mas recupera do degrau curto em \SI{1.47}{\second}, contra
+\SI{0.35}{\second} do nativo. É esse o LQG de mesmo ruído que voa em guinada,
+pelo critério relaxado (só ruído e margens), o mesmo que escolhe o melhor
+ponto de cada família de estrutura fixa na tabela. A mesma tabela mostra
 que, no modelo, sob as mesmas restrições de ruído e de margem e no espaço de
-ganhos varrido, nenhum PID em cascata supera o AutoTune no pico do pulso de
-rolagem: o melhor PID de ganhos livres é o próprio nativo. O LQG do portão é
-a configuração \codigo{cc\_lqg\_mesmo\_ruido}; o \codigo{cc\_lqg} segue a
-regra de sintonia comum.
+ganhos varrido, nenhum PID em cascata supera o AutoTune no pico do degrau
+curto de rolagem: o melhor PID de ganhos livres é o próprio nativo. Em
+guinada, o melhor PID de ganhos livres desvia $-2{,}7$\,\% no degrau
+sustentado; com os ganhos dele, a configuração \codigo{nativo\_guinada} é a
+linha de base de guinada ressintonizada (Seção~\ref{sec:controladores}). O
+LQG do portão é a configuração \codigo{cc\_lqg\_mesmo\_ruido}; o
+\codigo{cc\_lqg} segue a regra de sintonia comum.
 
 \begin{table}[htbp]
 \centering
@@ -567,7 +590,16 @@ fica com a alocação. O LQI usa integração condicional: a integral não avan�
 quando a alocação sinalizou saturação no eixo e o erro empurraria o esforço
 ainda mais na direção saturada. O ESO e o LQG recebem, no lugar de $u$, o
 esforço limitado a $\pm1$, para que a estimativa da perturbação não absorva
-um esforço que não foi aplicado.
+um esforço que não foi aplicado. Isso não basta: com a alocação saturada, o
+esforço que chega aos motores é menor que o limitado a $\pm1$, a velocidade
+angular cresce mais do que o modelo prevê, e $\hat d$ cresce junto, como uma
+integral que acumula durante a saturação. Por isso, enquanto a alocação
+sinaliza saturação no eixo, a estimativa da perturbação fica congelada: o ESO
+não atualiza $\hat d$, e o LQG não aplica a correção da linha de $d$ no
+filtro. O sinal de saturação chega com um laço de atraso, o mesmo do
+integrador condicional do LQI. As demais linhas do filtro seguem corrigindo,
+e, quando a saturação acaba, $\hat d$ volta a ser atualizado a partir do
+valor congelado, sem salto (Seção~\ref{sec:res-saturacao}).
 
 \subsection{Erros grandes}
 
@@ -589,6 +621,18 @@ o integrador nativo segura $-d/b$. Enquanto ele está ativo, o
 \textit{framework} zera o integrador nativo a cada laço; em solo, o
 \textit{backend} é reiniciado a cada laço.
 
+A volta ao nativo é o caminho inverso, e o \textit{framework} original não o
+trata: o PID nativo reassume com o integrador zerado, e uma perturbação
+sustentada que o \textit{backend} vinha cancelando passa, de uma vez, ao
+erro de atitude. O parâmetro \codigo{CC\_TRANSF}, acrescentado ao
+\textit{frontend} (padrão 0, o comportamento original), faz a transferência
+na volta: cada \textit{backend} informa o seu integrador equivalente ---
+$k_i\,x_I$ no LQI e $-\hat d/b$ no ESO e no LQG --- e o \textit{frontend} o
+carrega no integrador do PID de taxa do nativo, limitado ao máximo do
+próprio integrador, nos eixos do \codigo{CC\_AXIS\_MASK}. Os ensaios de
+comutação (Seção~\ref{sec:cenarios}) medem o transitório da volta com e sem
+a transferência.
+
 \subsection{LQG a bordo}
 
 O LQG calcula a bordo as matrizes $\Phi$ e $\Gamma$
@@ -609,6 +653,11 @@ angular e de perturbação; o LQG grava ainda \codigo{CCKR}, \codigo{CCKP} e
 \codigo{CCKY}, com os estados do estimador, as inovações e o peso $\alpha$.
 As mensagens \codigo{PIDR}, \codigo{PIDP} e \codigo{PIDY} continuam a mostrar
 o PID nativo, que roda com a saída descartada (Seção~\ref{sec:metricas}).
+Só no SITL, o \textit{frontend} grava ainda, no início de cada laço, a
+mensagem \codigo{CCTQ}, com o quatérnio da atitude verdadeira do modelo
+físico do simulador. É dela que saem as métricas na atitude verdadeira
+(Seção~\ref{sec:metricas}), qualquer que seja o controlador em uso, inclusive
+o nativo.
 
 % ----------------------------------------------------------------------
 \section{Verificação da implementação}
