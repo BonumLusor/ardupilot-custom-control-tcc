@@ -1,0 +1,86 @@
+% ---------------------------------------------------------------------
+%  APÊNDICE A — INJETOR DE VENTO
+%  Movido dos Caps. 2 e 3 na revisão de 3/11 (item 3.7): nenhum ensaio de
+%  atitude usa o vento, que no SITL quase não gera momento.
+% ---------------------------------------------------------------------
+\chapter{Injetor de vento}
+\label{ap:vento}
+
+O injetor de perturbações (Seção~\ref{sec:injetor}) também gera vento. No
+modelo de multirrotor do SITL, o vento uniforme age como força no centro de
+massa e quase não produz momento de atitude
+(Seções~\ref{sec:sitl} e~\ref{sec:res-vento}); por isso, os ensaios de
+rejeição de perturbação usam o torque, e o vento entra só no ensaio de rajada
+da Seção~\ref{sec:res-vento}. Este apêndice reúne os modelos de vento, a sua
+implementação no injetor e os ajustes do modelo de vento do SITL.
+
+\section{Modelos de vento}
+\label{ap:vento-modelos}
+
+O vento que atua sobre a aeronave é usualmente decomposto em uma parcela
+constante e uma parcela de rajadas, modelada como processo
+estocástico~\cite{beard2012}; a rajada discreta da norma
+MIL-F-8785C~\cite{mil8785c} é acrescentada aqui como terceira parcela. O
+\emph{vento médio} é um vetor constante no referencial inercial; exige do
+controlador ação integral ou compensação explícita. A \emph{rajada} discreta
+é modelada por um perfil do tipo ``1~$-$~cosseno'', adaptado da
+norma~\cite{mil8785c},
+\begin{equation}
+v_g(t) = \frac{A_g}{2}\left[1 - \cos\left(\frac{2\pi\,(t - t_0)}{T_g}\right)\right],
+\qquad t_0 \le t \le t_0 + T_g,
+\label{eq:rajada}
+\end{equation}
+de amplitude $A_g$ e duração $T_g$ conhecidas. Na norma, a rajada sobe ao
+longo de uma distância $d_m$ e se mantém; aqui ela sobe em $T_g/2$ e volta a
+zero, o que equivale a $d_m = V\,T_g/2$ para uma aeronave à velocidade $V$.
+A \emph{turbulência} é um
+processo estocástico obtido pela filtragem de ruído branco por funções de
+conformação espectral. No modelo de Dryden, as densidades espectrais das
+componentes longitudinal e lateral, em função da frequência espacial
+$\Omega$, são~\cite[seção~3.7.1.2]{mil8785c}
+\begin{equation}
+\Phi_u(\Omega) = \sigma_u^2\,\frac{2L_u}{\pi}\,\frac{1}{1 + (L_u\Omega)^2},
+\qquad
+\Phi_v(\Omega) = \sigma_v^2\,\frac{L_v}{\pi}\,
+\frac{1 + 3(L_v\Omega)^2}{\left[1 + (L_v\Omega)^2\right]^2},
+\label{eq:dryden}
+\end{equation}
+em que $\sigma$ é a intensidade e $L$ a escala de comprimento da turbulência,
+tabeladas em função da altitude e da severidade. Para uma aeronave à
+velocidade $V$, a frequência temporal é $\omega = \Omega V$. A componente
+longitudinal é um processo de Gauss-Markov de primeira ordem, de constante de
+tempo $L_u/V$, discretizado exatamente pela
+Equação~\eqref{eq:gauss-markov-discreto}, com $\tau = L_u/V$ e
+$\sigma = \sigma_u$~\cite{gillespie1996}. A
+componente lateral exige um filtro de segunda ordem~\cite{beard2012},
+discretizado pela transformação de Tustin~\cite{tustin1947}.
+
+\section{Implementação no injetor}
+\label{ap:vento-injetor}
+
+Em vento, o injetor gera o vento médio, a rajada do tipo
+``1~$-$~cosseno''~\eqref{eq:rajada} e a turbulência de Dryden, com a
+componente longitudinal pela discretização
+exata~\eqref{eq:gauss-markov-discreto} e a lateral pelo filtro de segunda
+ordem discretizado pela transformação de Tustin~\cite{tustin1947,franklin1998};
+as duas normalizações foram conferidas numericamente, e ambas entregam o
+desvio-padrão especificado. Como a aeronave paira, quem desloca o campo de
+turbulência em relação a ela é o vento médio, e é a sua velocidade, com piso
+de \SI{1}{\metre\per\second}, que o injetor usa no lugar de $V$; a escala
+lateral é metade da longitudinal. Nenhum ensaio deste trabalho usa a
+turbulência; o único ensaio de vento é a rajada da Seção~\ref{sec:res-vento}.
+
+Três características do modelo de vento do SITL obrigaram a ajustar os seus
+parâmetros, e o procedimento os fixa em todos os ensaios. Primeiro, o perfil
+vertical de vento padrão (\codigo{SIM\_WIND\_T} = 0) reduz o vento perto do
+solo segundo uma lei de raiz quadrada, e a \SI{5}{\metre} de altura chegariam
+apenas 29\,\% do vento comandado; os ensaios usam o perfil sem redução.
+Segundo, o vento passa por um filtro passa-baixas de primeira ordem cuja
+constante de tempo (\codigo{SIM\_WIND\_TC}) vale \SI{5}{\second} por padrão,
+o que apagaria qualquer rajada; os ensaios usam o piso imposto pelo firmware,
+\SI{0.1}{\second}, e mesmo assim o vento fica atenuado acima de cerca de
+\SI{1.6}{\hertz}. Terceiro, o SITL ignora o vento
+nos primeiros \SI{5}{\second} de simulação; como o perfil só é disparado
+depois da decolagem, mais de \SI{70}{\second} após a inicialização, essa
+folga é sempre respeitada. A turbulência nativa do simulador fica desligada,
+e a única turbulência é a do injetor.

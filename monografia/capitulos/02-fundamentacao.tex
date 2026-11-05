@@ -635,9 +635,12 @@ entrada pelo seu valor máximo admissível (regra de Bryson; ver
 de malha fechada. Com realimentação de todos os estados, o LQR de tempo
 contínuo tem margens de estabilidade garantidas em cada canal de entrada:
 tolera aumento ilimitado ou redução de até 50\,\% do ganho e tem margem de
-fase de ao menos \ang{60}~\cite{safonov1977}. Na versão discreta, com
-estimador e com os atrasos da planta real, essas garantias deixam de
-valer~\cite{doyle1978}, e as margens devem ser verificadas.
+fase de ao menos \ang{60}~\cite{safonov1977}. Em tempo discreto, mesmo com
+realimentação de todos os estados, as margens garantidas são menores e
+dependem de $\matriz{R}$ e de $\matriz{B}_d^{\mathsf{T}}\matriz{P}\matriz{B}_d$~\cite{shaked1986};
+com estimador, deixam de existir~\cite{doyle1978}; e os filtros e atrasos da
+planta real as reduzem ainda mais. Por isso as margens são verificadas em
+cada projeto.
 
 A realimentação de estados pura não anula o erro em regime diante de uma
 perturbação constante, que é o caso de $\vetor{\tau}_d$ em degrau. A solução
@@ -736,7 +739,7 @@ sensibilidade à perturbação na entrada da planta~\cite{landau2011}, e não po
 $S(z)$: é essa a grandeza que as varreduras de torque deste trabalho estimam
 (Seção~\ref{sec:identificacao}). Para $L(z)$ estritamente própria e sem polos
 fora do círculo unitário, como nos eixos deste trabalho, a sensibilidade em
-tempo discreto obedece a~\cite{iglesias2001}
+tempo discreto obedece a~\cite{sung1988,mohtadi1990}
 \begin{equation}
 \frac{1}{\pi}\int_0^{\pi}\ln\left|S\!\left(\mathrm{e}^{\mathrm{j}\vartheta}\right)\right|
 \mathrm{d}\vartheta = 0,
@@ -748,7 +751,12 @@ versão discreta da integral de sensibilidade de
 passa a ser positivo~\cite{freudenberg1985}. A atenuação da perturbação numa
 faixa de frequências ($|S| < 1$) é paga com amplificação em outra
 ($|S| > 1$), em áreas iguais de $\ln|S|$: é o efeito conhecido como colchão
-d'água, que nenhuma lei de controle linear e invariante no tempo contorna.
+d'água, que nenhuma lei de controle linear e invariante no tempo contorna;
+\citeonline{iglesias2001} estende a restrição a sistemas lineares variantes no
+tempo. Em tempo discreto, a integral cobre uma faixa finita, de 0 à
+frequência de Nyquist, e a amplificação não pode ser diluída numa banda
+arbitrariamente larga, como no caso contínuo; com o laço a \SI{400}{\hertz}
+e o filtro de \SI{20}{\hertz}, o compromisso fica mais apertado.
 Como a planta $P$ é a mesma para todos os controladores, a diferença entre os
 $\ln|P\,S|$ medidos com dois controladores é a diferença entre os seus
 $\ln|S|$, e a comparação das varreduras de torque herda a
@@ -757,63 +765,6 @@ restrição~\eqref{eq:bode}.
 % ----------------------------------------------------------------------
 \section{Modelos de perturbação}
 \label{sec:perturbacoes}
-
-\subsection{Vento médio, rajada e turbulência}
-
-O vento que atua sobre a aeronave é usualmente decomposto em uma parcela
-constante e uma parcela de rajadas, modelada como processo
-estocástico~\cite{beard2012}; a rajada discreta da norma
-MIL-F-8785C~\cite{mil8785c} é acrescentada aqui como terceira parcela. O
-\emph{vento médio} é um vetor constante no referencial inercial; exige do
-controlador ação integral ou compensação explícita. A \emph{rajada} discreta
-é modelada por um perfil do tipo ``1~$-$~cosseno'', adaptado da
-norma~\cite{mil8785c},
-\begin{equation}
-v_g(t) = \frac{A_g}{2}\left[1 - \cos\left(\frac{2\pi\,(t - t_0)}{T_g}\right)\right],
-\qquad t_0 \le t \le t_0 + T_g,
-\label{eq:rajada}
-\end{equation}
-de amplitude $A_g$ e duração $T_g$ conhecidas. Na norma, a rajada sobe ao
-longo de uma distância $d_m$ e se mantém; aqui ela sobe em $T_g/2$ e volta a
-zero, o que equivale a $d_m = V\,T_g/2$ para uma aeronave à velocidade $V$.
-A \emph{turbulência} é um
-processo estocástico obtido pela filtragem de ruído branco por funções de
-conformação espectral. No modelo de Dryden, as densidades espectrais das
-componentes longitudinal e lateral, em função da frequência espacial
-$\Omega$, são~\cite[seção~3.7.1.2]{mil8785c}
-\begin{equation}
-\Phi_u(\Omega) = \sigma_u^2\,\frac{2L_u}{\pi}\,\frac{1}{1 + (L_u\Omega)^2},
-\qquad
-\Phi_v(\Omega) = \sigma_v^2\,\frac{L_v}{\pi}\,
-\frac{1 + 3(L_v\Omega)^2}{\left[1 + (L_v\Omega)^2\right]^2},
-\label{eq:dryden}
-\end{equation}
-em que $\sigma$ é a intensidade e $L$ a escala de comprimento da turbulência,
-tabeladas em função da altitude e da severidade. Para uma aeronave à
-velocidade $V$, a frequência temporal é $\omega = \Omega V$. A componente
-longitudinal é um processo de Gauss-Markov de primeira ordem, de constante de
-tempo $L_u/V$, que admite discretização exata~\cite{gillespie1996}:
-\begin{equation}
-u_{k+1} = \mathrm{e}^{-V\Delta t/L_u}\,u_k
-        + \sigma_u\sqrt{1 - \mathrm{e}^{-2V\Delta t/L_u}}\;w_k,
-\qquad w_k \sim \mathcal{N}(0,1),
-\label{eq:dryden-discreto}
-\end{equation}
-que preserva a variância $\sigma_u^2$ para qualquer passo $\Delta t$. A
-componente lateral exige um filtro de segunda ordem~\cite{beard2012},
-discretizado pela transformação de Tustin~\cite{tustin1947}.
-
-Para que os ensaios sejam reprodutíveis, o ruído branco $w_k$ deve ser gerado
-de forma determinística a partir de uma semente. Neste trabalho, ele é
-obtido de um gerador congruencial linear multiplicativo,
-$x_{k+1} = 16807\,x_k \bmod (2^{31}-1)$, o padrão mínimo de
-\citeonline{park1988}, calculado sem estouro em aritmética de 32 bits pelo
-método de \citeonline{schrage1979}, cujas amostras uniformes são convertidas em amostras
-gaussianas pela transformação de \citeonline{box1958}. A mesma transformação,
-na variante polar de \citeonline{marsaglia1964}, que dispensa seno e cosseno,
-é a que o SITL usa (\codigo{Aircraft::rand\_normal}) na turbulência nativa do
-vento e no ruído dos sensores do modelo de avião; no multirrotor, o ruído dos
-sensores inerciais simulados é uniforme.
 
 \subsection{Perturbações de torque}
 
@@ -832,10 +783,39 @@ caracteriza, ao longo de uma faixa de frequências, a resposta do ângulo ao
 torque de perturbação, isto é, a sensibilidade à perturbação na entrada da
 planta (Seção~\ref{sec:bode}); e o \emph{torque estocástico}, um processo de
 Gauss-Markov de primeira ordem em cada eixo --- o processo de
-Ornstein-Uhlenbeck~\cite{uhlenbeck1930} ---, discretizado exatamente como
-em~\eqref{eq:dryden-discreto}~\cite{gillespie1996}, que representa uma
-perturbação contínua de banda limitada e é avaliado pelo erro quadrático
-médio.
+Ornstein-Uhlenbeck~\cite{uhlenbeck1930} ---, que representa uma perturbação
+contínua de banda limitada e é avaliado pelo erro quadrático médio. Com
+desvio-padrão $\sigma$ e tempo de correlação $\tau$, o processo admite
+discretização exata~\cite{gillespie1996}:
+\begin{equation}
+x_{k+1} = \mathrm{e}^{-\Delta t/\tau}\,x_k
+        + \sigma\sqrt{1 - \mathrm{e}^{-2\Delta t/\tau}}\;w_k,
+\qquad w_k \sim \mathcal{N}(0,1),
+\label{eq:gauss-markov-discreto}
+\end{equation}
+que preserva a variância $\sigma^2$ para qualquer passo $\Delta t$.
+
+Para que os ensaios sejam reprodutíveis, o ruído branco $w_k$ deve ser gerado
+de forma determinística a partir de uma semente. Neste trabalho, ele é
+obtido de um gerador congruencial linear multiplicativo,
+$x_{k+1} = 16807\,x_k \bmod (2^{31}-1)$, o padrão mínimo de
+\citeonline{park1988}, calculado sem estouro em aritmética de 32 bits pelo
+método de \citeonline{schrage1979}, cujas amostras uniformes são convertidas em amostras
+gaussianas pela transformação de \citeonline{box1958}. A mesma transformação,
+na variante polar de \citeonline{marsaglia1964}, que dispensa seno e cosseno,
+é a que o SITL usa (\codigo{Aircraft::rand\_normal}) na turbulência nativa do
+vento e no ruído dos sensores do modelo de avião; no multirrotor, o ruído dos
+sensores inerciais simulados é uniforme.
+
+\subsection{Vento}
+
+O vento que atua sobre a aeronave é usualmente decomposto em uma parcela
+constante e uma parcela de rajadas, modelada como processo
+estocástico~\cite{beard2012}. No SITL, o vento uniforme age quase só sobre a
+posição (Seção~\ref{sec:sitl}), e nenhum ensaio de atitude deste trabalho
+depende dele. Os modelos de vento do injetor --- o vento médio, a rajada
+discreta da norma MIL-F-8785C~\cite{mil8785c} e a turbulência de Dryden, com
+a sua discretização --- estão no Apêndice~\ref{ap:vento}.
 
 % ----------------------------------------------------------------------
 \section{Identificação de sistemas no domínio da frequência}
