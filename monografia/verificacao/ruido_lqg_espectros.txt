@@ -1,0 +1,24 @@
+rolagem, RND 0 (rolagem/torque_pulso/cc_lqg/2026-10-31_115704; nativo rolagem/torque_pulso/nativo/2026-10-27_212057):
+  u eficaz: LQG 0.00169, nativo 0.00030 (5.6x)
+  inovações eficazes do LQG: ângulo 0.0060 graus, taxa 0.0710 graus/s
+  resíduo AHRS - integral do giroscópio, eficaz: voo do LQG 0.0071 graus, voo do nativo 0.0021 graus
+  pico perto de 5 Hz (GPS), sobre a mediana de 2-50 Hz: u do LQG 1.0; inovação do ângulo 0.1; resíduo 34.8
+  pico perto de 30 Hz (bússola), sobre a mediana de 2-50 Hz: u do LQG 2.1; inovação do ângulo 2.4; resíduo 1.0
+rolagem, RND 20 (ruido/rnd20/torque_pulso/cc_lqg/2026-10-31_125347; nativo ruido/rnd20/torque_pulso/nativo/2026-10-31_125057):
+  u eficaz: LQG 0.00181, nativo 0.00146 (1.2x)
+  inovações eficazes do LQG: ângulo 0.0053 graus, taxa 0.1308 graus/s
+  resíduo AHRS - integral do giroscópio, eficaz: voo do LQG 0.0209 graus, voo do nativo 0.0203 graus
+  pico perto de 5 Hz (GPS), sobre a mediana de 2-50 Hz: u do LQG 2.8; inovação do ângulo 0.3; resíduo 4.6
+  pico perto de 30 Hz (bússola), sobre a mediana de 2-50 Hz: u do LQG 0.9; inovação do ângulo 1.4; resíduo 0.6
+guinada, RND 0 (guinada/torque_pulso/cc_lqg/2026-10-31_121948; nativo guinada/torque_pulso/nativo/2026-10-27_213336):
+  u eficaz: LQG 0.00042, nativo 0.00004 (11.3x)
+  inovações eficazes do LQG: ângulo 0.0003 graus, taxa 0.0038 graus/s
+  resíduo AHRS - integral do giroscópio, eficaz: voo do LQG 0.0041 graus, voo do nativo 0.0052 graus
+  pico perto de 5 Hz (GPS), sobre a mediana de 2-50 Hz: u do LQG 17901.1; inovação do ângulo 619.6; resíduo 572.2
+  pico perto de 30 Hz (bússola), sobre a mediana de 2-50 Hz: u do LQG 26.1; inovação do ângulo 32.5; resíduo 11.7
+guinada, RND 20 (ruido/rnd20/torque_pulso/cc_lqg/2026-10-31_125347; nativo ruido/rnd20/torque_pulso/nativo/2026-10-31_125057):
+  u eficaz: LQG 0.00790, nativo 0.00160 (4.9x)
+  inovações eficazes do LQG: ângulo 0.0040 graus, taxa 0.1159 graus/s
+  resíduo AHRS - integral do giroscópio, eficaz: voo do LQG 0.0742 graus, voo do nativo 0.0815 graus
+  pico perto de 5 Hz (GPS), sobre a mediana de 2-50 Hz: u do LQG 985.5; inovação do ângulo 38.0; resíduo 3.7
+  pico perto de 30 Hz (bússola), sobre a mediana de 2-50 Hz: u do LQG 0.6; inovação do ângulo 0.8; resíduo 0.8
