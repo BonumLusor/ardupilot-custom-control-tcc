@@ -765,6 +765,54 @@ def escrever_tabela(resultados, destino, slugs=SLUGS_CAP4):
     return destino
 
 
+def escrever_resumo(resultados, destino, slugs=SLUGS_PROPOSTOS):
+    """Resumo da tabela modelo x SITL: por controlador, mediana e maximo de |modelo - SITL|.
+
+    Os mesmos pares de escrever_tabela (pulso e degrau, sem os ensaios de ruido). A
+    diferenca e relativa ao SITL, em %, para o desvio maximo e o RMSE; na
+    recuperacao, que salta perto do limiar, vai em segundos.
+    """
+    def na_tabela(r):
+        grupo, ensaio = cenario_de(r["pasta"]).rsplit("/", 1)
+        return grupo in GRUPOS_TABELA and ensaio in ENSAIOS_TABELA
+
+    por_ctl = {}
+    for r in resultados:
+        if r["slug"] not in slugs or not na_tabela(r):
+            continue
+        for eixo, e in r["eixos"].items():
+            if "metricas" not in e:
+                continue
+            s, m = e["metricas"]["sitl"], e["metricas"]["sim"]
+            d = por_ctl.setdefault(r["slug"], {"desvio": [], "rmse": [], "rec": []})
+            for chave, nome in (("desvio_max_deg", "desvio"), ("rmse_deg", "rmse")):
+                if s.get(chave) and m.get(chave) is not None:
+                    d[nome].append(abs(100.0 * (m[chave] - s[chave]) / s[chave]))
+            if s.get("tempo_recuperacao_s") is not None and m.get("tempo_recuperacao_s") is not None:
+                d["rec"].append(abs(m["tempo_recuperacao_s"] - s["tempo_recuperacao_s"]))
+    if not por_ctl:
+        return None
+    linhas = []
+    for slug in sorted(por_ctl, key=_ordem_slug):
+        d = por_ctl[slug]
+        celulas = []
+        for nome, casas in (("desvio", 1), ("rmse", 1), ("rec", 2)):
+            v = np.asarray(d[nome])
+            celulas += [_fmt(float(np.median(v)), casas), _fmt(float(np.max(v)), casas)] if len(v) else ["—", "—"]
+        linhas.append(f"{ROTULOS.get(slug, slug)} & {len(d['desvio'])} & " + " & ".join(celulas) + " \\\\")
+    texto = (
+        "% Gerada por modelagem/validacao.py — nao editar a mao.\n"
+        "\\begin{tabular}{lrrrrrrr}\n\\toprule\n"
+        " & & \\multicolumn{2}{c}{Desvio máx. (\\%)} & \\multicolumn{2}{c}{RMSE (\\%)} & "
+        "\\multicolumn{2}{c}{Recuperação (\\si{\\second})} \\\\\n"
+        "\\cmidrule(lr){3-4}\\cmidrule(lr){5-6}\\cmidrule(lr){7-8}\n"
+        "Controlador & Ensaios & Mediana & Máx. & Mediana & Máx. & Mediana & Máx. \\\\\n"
+        "\\midrule\n" + "\n".join(linhas) + "\n\\bottomrule\n\\end{tabular}\n")
+    Path(destino).parent.mkdir(parents=True, exist_ok=True)
+    Path(destino).write_text(texto, encoding="utf-8")
+    return destino
+
+
 def desenhar(resultados, destino, slug="nativo"):
     """Erro de atitude no SITL e no modelo, nos ensaios de pulso e degrau de um controlador."""
     import matplotlib
@@ -926,6 +974,9 @@ def main():
         # confere o backend em C++ contra o espelho em Python
         d = escrever_tabela(resultados, args.tabela.with_name("validacao_proposto.tex"),
                             slugs=SLUGS_PROPOSTOS)
+        if d:
+            print(f"tabela: {d}")
+        d = escrever_resumo(resultados, args.tabela.with_name("validacao_proposto_resumo.tex"))
         if d:
             print(f"tabela: {d}")
     if args.figuras:
