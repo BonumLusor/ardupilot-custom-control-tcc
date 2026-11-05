@@ -7,11 +7,15 @@ resolução do SIM, nos três eixos; contra a ANG, sem atraso (5/11/2026).
 
 A base verdadeira troca a atitude medida (roll, pitch, yaw_rel) e os erros de atitude
 pelas versões da CCTQ, menos um desvio constante por eixo: a média de (verdade − AHRS)
-no trecho calmo. Com distúrbio, o trecho é o da faixa calma (do 1º s do perfil até 0,5 s
-antes da janela do distúrbio); sem distúrbio, o pairado antes do perfil. O desvio tira o
-viés estático entre as bases (o rumo verdadeiro difere do rumo do AHRS em que o alvo de
-guinada foi travado; rolagem e arfagem têm vieses de centésimos de grau). Assim as
-métricas têm a mesma definição nas duas bases, e o que difere é a dinâmica.
+no trecho de referência, o meio segundo antes da perturbação (de 0,5 a 0,05 s antes da
+janela do distúrbio); sem distúrbio, o pairado antes do perfil. O desvio tira o viés
+entre as bases no instante em que a perturbação começa: o rumo verdadeiro difere do
+rumo do AHRS em que o alvo de guinada foi travado, e rolagem e arfagem têm vieses de
+centésimos a décimos de grau. Um trecho curto, colado à perturbação, e não o trecho
+calmo inteiro: com ruído de giroscópio, a diferença entre as bases vaga devagar
+(desvio padrão de 0,06° em rolagem com SIM_GYR_RND = 20, contra 0,002° sem ruído), e a
+média de 4,5 s deixava, no instante do torque, um resto de até 0,2° somado ao pico.
+Assim, nas duas bases o erro parte do mesmo nível, e o que difere é a dinâmica.
 
 As métricas saem em ``metricas_verdade.json``, ao lado do ``metricas.json`` (AHRS), e a
 série em ``serie_verdade.csv``. Este módulo não muda nada da análise na base do AHRS.
@@ -48,15 +52,18 @@ def angulos(ct):
     return rol, arf, gui
 
 
-def trecho_calmo(grade, col, jan):
+REFERENCIA_ANTES = (0.5, 0.05)        # s antes da janela do distúrbio
+
+
+def trecho_referencia(grade, col, jan):
     """Máscara do trecho em que se mede o desvio entre as bases, ou None."""
     tp = col.get("tp")
     if tp is None or len(grade) < 2:
         return None
     dt = float(np.median(np.diff(grade)))
     if jan is not None:
-        sel = np.isfinite(tp) & (tp >= 1.0) & (grade <= jan[0] - 0.5)
-        if sel.sum() * dt >= 1.0:
+        sel = (grade >= jan[0] - REFERENCIA_ANTES[0]) & (grade <= jan[0] - REFERENCIA_ANTES[1])
+        if sel.sum() * dt >= 0.3:
             return sel
     sel = np.isfinite(tp) & (tp >= PAIRADO_ANTES[0]) & (tp <= PAIRADO_ANTES[1])
     return sel if sel.sum() * dt >= 0.5 else None
@@ -65,12 +72,12 @@ def trecho_calmo(grade, col, jan):
 def base_verdadeira(dados, grade, col, jan):
     """(col com a atitude e os erros verdadeiros, {eixo: desvio verdade − AHRS em graus}).
 
-    Devolve (None, {}) se o log não tem CCTQ ou não há trecho calmo.
+    Devolve (None, {}) se o log não tem CCTQ ou não há trecho de referência.
     """
     ct = dados.get("CCTQ")
     if ct is None or len(ct.get("t", [])) < 10:
         return None, {}
-    sel = trecho_calmo(grade, col, jan)
+    sel = trecho_referencia(grade, col, jan)
     if sel is None:
         return None, {}
     rol, arf, gui = angulos(ct)

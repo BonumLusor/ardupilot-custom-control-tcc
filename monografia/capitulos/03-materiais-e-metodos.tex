@@ -623,9 +623,11 @@ As bases diferem por um viés quase constante e pela dinâmica do estimador.
 O viés vem do rumo, porque o alvo de guinada é travado no rumo do AHRS, que
 difere do verdadeiro, e, em rolagem e arfagem, é da ordem de \ang{0.1}. Na
 base verdadeira, a atitude medida é a da \codigo{CCTQ} menos o viés médio
-entre as bases no trecho calmo, definido abaixo (sem perturbação, no
-pairado antes do perfil). Assim, as métricas têm a mesma definição nas duas
-bases, e só a dinâmica difere. As tabelas dos Capítulos~\ref{cap:modelagem}
+entre as bases no meio segundo antes da perturbação (sem perturbação, no
+pairado antes do perfil). Assim, o erro parte do mesmo nível nas duas bases,
+e só a dinâmica difere. O trecho é curto de propósito: com ruído de
+giroscópio, a diferença entre as bases vaga devagar, e o viés médio de um
+trecho longo deixaria, no instante da perturbação, um resto somado ao pico. As tabelas dos Capítulos~\ref{cap:modelagem}
 a~\ref{cap:resultados} usam a base verdadeira, uma base por tabela, e o
 Apêndice~\ref{ap:bases} compara as duas. A diferença importa sobretudo para
 o LQG, que age sobre o próprio caminho de medida: avaliado na atitude que ele

@@ -196,7 +196,24 @@ def fmt_ic(ic, casas=0):
     return f"{_virgula(ic[0], casas)} $\\pm$ {_virgula(ic[1], casas).replace('$-$', '')}"
 
 
+REC = "tempo_recuperacao_s"
+OMITIDA = r"---$^\ddagger$"
+
+
+def piso_decide(r, prefixo):
+    """A faixa de ruído do trecho calmo decide o limiar da recuperação (passa de 10 % do pico)."""
+    faixa, pico = (r or {}).get(prefixo + "faixa_calma_deg"), (r or {}).get(prefixo + "desvio_max_deg")
+    try:
+        return float(faixa) > 0.1 * float(pico)
+    except (TypeError, ValueError):
+        return False
+
+
 def num(r, chave, casas=2, escala=1.0):
+    # recuperação cujo limiar vem da faixa de ruído, e não do pico: não compara
+    # controladores (com ruído de giroscópio, sobretudo na atitude verdadeira)
+    if chave.endswith(REC) and piso_decide(r, chave[:-len(REC)]):
+        return OMITIDA
     v = (r or {}).get(chave, "")
     try:
         x = float(v) * escala
@@ -208,7 +225,10 @@ def num(r, chave, casas=2, escala=1.0):
 def tabular(colunas, linhas, cabecalho, nota=None):
     """O tabular da monografia; ``nota`` e uma nota de rodape ou uma lista delas."""
     rodape = "\\bottomrule\n"
-    for n in ([nota] if isinstance(nota, str) else (nota or [])):
+    notas = [nota] if isinstance(nota, str) else list(nota or [])
+    if any(OMITIDA in linha for linha in linhas) and not any(n.startswith(r"$^\ddagger$") for n in notas):
+        notas.append(NOTA_RECUPERACAO)
+    for n in notas:
         # nota de uma marca ($^\\dagger$ ...) que nenhuma celula usa fica de fora
         marca = n.split(" ", 1)[0] if n.startswith("$^") else None
         if marca and not any(marca in linha for linha in linhas):
@@ -478,8 +498,8 @@ NIVEIS = (("0", "rolagem_arfagem_guinada"), ("10", "ruido/rnd10"), ("20", "ruido
 # de comparar controladores. Com RND 20 o piso decide em 4 de 90 medicoes, todas
 # do LQG no degrau, e por pouco; com RND 0 e 10, em nenhuma.
 SEM_RECUPERACAO = {"40", "80"}
-NOTA_RECUPERACAO = (r"$^\ddagger$ Recuperação não citada: com \codigo{SIM\_GYR\_RND} de 40 e 80, "
-                    r"o limiar vem da faixa de ruído de cada controlador.")
+NOTA_RECUPERACAO = (r"$^\ddagger$ Recuperação não citada: o limiar vem da faixa de ruído do "
+                    r"trecho calmo de cada voo, e não de 10\,\% do pico.")
 
 
 def tabela_niveis_ruido(dados, eixo):
@@ -692,7 +712,10 @@ def tabela_nativo_guinada(dados):
             rel = _rel(_v(b, campo), _v(a, campo))
         else:
             rel = fmt_ic(ic(dados, (cen, "nativo_guinada"), (cen, "nativo"), campo))
-        linhas.append(f"{rotulo} & {num(a, campo, casas)} & {num(b, campo, casas)} & {rel} \\\\")
+        ca, cb = num(a, campo, casas), num(b, campo, casas)
+        if OMITIDA in (ca, cb):
+            rel = "---"
+        linhas.append(f"{rotulo} & {ca} & {cb} & {rel} \\\\")
 
     d = "disturbio_yaw."
     linha(r"Degrau de atitude: sobressinal (\%)", "guinada/nominal", "degrau_yaw.sobressinal_pct", 1)
