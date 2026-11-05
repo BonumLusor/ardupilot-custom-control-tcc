@@ -5,36 +5,36 @@
 \cmidrule(lr){4-6}\cmidrule(lr){7-9}
 Ensaio & Eixo & Controlador & AHRS & verdade & $\Delta$ (\%) & AHRS & verdade & $\Delta$ (\%) \\
 \midrule
-impulso de rolagem & Rolagem & nativo & 0,789 & 0,802 & +2 & 0,080 & 0,081 & +2 \\
-impulso de rolagem & Rolagem & LQG & 0,731 & 0,744 & +2 & 0,088 & 0,091 & +4 \\
-impulso de rolagem & Rolagem & LQG (mesmo ruído) & --- & --- & --- & --- & --- & --- \\
+impulso de rolagem & Rolagem & nativo & 0,789 & 0,785 & $-$0 & 0,080 & 0,079 & $-$1 \\
+impulso de rolagem & Rolagem & LQG & 0,731 & 0,728 & $-$0 & 0,088 & 0,088 & $-$0 \\
+impulso de rolagem & Rolagem & LQG (mesmo ruído) & 0,727 & 0,723 & $-$1 & 0,083 & 0,083 & +0 \\
 \addlinespace
-degrau de rolagem & Rolagem & nativo & 0,599 & 0,614 & +2 & 0,070 & 0,086 & +23 \\
-degrau de rolagem & Rolagem & LQG & 0,597 & 0,612 & +3 & 0,039 & 0,059 & +52 \\
-degrau de rolagem & Rolagem & LQG (mesmo ruído) & --- & --- & --- & --- & --- & --- \\
+degrau de rolagem & Rolagem & nativo & 0,599 & 0,598 & $-$0 & 0,070 & 0,076 & +9 \\
+degrau de rolagem & Rolagem & LQG & 0,597 & 0,596 & $-$0 & 0,039 & 0,047 & +21 \\
+degrau de rolagem & Rolagem & LQG (mesmo ruído) & 0,554 & 0,553 & $-$0 & 0,032 & 0,043 & +33 \\
 \addlinespace
-estocástico de rolagem & Rolagem & nativo & --- & --- & --- & --- & --- & --- \\
-estocástico de rolagem & Rolagem & LQG & --- & --- & --- & --- & --- & --- \\
-estocástico de rolagem & Rolagem & LQG (mesmo ruído) & --- & --- & --- & --- & --- & --- \\
+estocástico de rolagem & Rolagem & nativo & 1,773 & 1,785 & +1 & 0,520 & 0,518 & $-$0 \\
+estocástico de rolagem & Rolagem & LQG & 2,019 & 2,026 & +0 & 0,578 & 0,576 & $-$0 \\
+estocástico de rolagem & Rolagem & LQG (mesmo ruído) & 1,745 & 1,752 & +0 & 0,500 & 0,499 & $-$0 \\
 \addlinespace
-impulso de guinada & Guinada & nativo & --- & --- & --- & --- & --- & --- \\
-impulso de guinada & Guinada & LQG & --- & --- & --- & --- & --- & --- \\
-impulso de guinada & Guinada & LQG (mesmo ruído) & --- & --- & --- & --- & --- & --- \\
+impulso de guinada & Guinada & nativo & 6,004 & 5,968 & $-$1 & 1,585 & 1,588 & +0 \\
+impulso de guinada & Guinada & LQG & 5,064 & 5,029 & $-$1 & 1,504 & 1,510 & +0 \\
+impulso de guinada & Guinada & LQG (mesmo ruído) & 5,593 & 5,556 & $-$1 & 1,738 & 1,747 & +0 \\
 \addlinespace
-degrau de guinada & Guinada & nativo & --- & --- & --- & --- & --- & --- \\
-degrau de guinada & Guinada & LQG & --- & --- & --- & --- & --- & --- \\
-degrau de guinada & Guinada & LQG (mesmo ruído) & --- & --- & --- & --- & --- & --- \\
+degrau de guinada & Guinada & nativo & 2,558 & 2,518 & $-$2 & 0,847 & 0,754 & $-$11 \\
+degrau de guinada & Guinada & LQG & 1,860 & 1,823 & $-$2 & 0,179 & 0,315 & +76 \\
+degrau de guinada & Guinada & LQG (mesmo ruído) & 2,354 & 2,315 & $-$2 & 0,250 & 0,364 & +46 \\
 \addlinespace
-estocástico de guinada & Guinada & nativo & --- & --- & --- & --- & --- & --- \\
-estocástico de guinada & Guinada & LQG & --- & --- & --- & --- & --- & --- \\
-estocástico de guinada & Guinada & LQG (mesmo ruído) & --- & --- & --- & --- & --- & --- \\
+estocástico de guinada & Guinada & nativo & 5,245 & 5,164 & $-$2 & 1,560 & 1,592 & +2 \\
+estocástico de guinada & Guinada & LQG & 4,804 & 4,959 & +3 & 1,448 & 1,474 & +2 \\
+estocástico de guinada & Guinada & LQG (mesmo ruído) & 5,422 & 5,570 & +3 & 1,698 & 1,722 & +1 \\
 \addlinespace
-impulso (ruido/rnd20) & Rolagem & nativo & --- & --- & --- & --- & --- & --- \\
-impulso (ruido/rnd20) & Rolagem & LQG & --- & --- & --- & --- & --- & --- \\
-impulso (ruido/rnd20) & Rolagem & LQG (mesmo ruído) & --- & --- & --- & --- & --- & --- \\
+impulso (ruido/rnd20) & Rolagem & nativo & 0,800 & 0,755 & $-$6 & 0,082 & 0,110 & +33 \\
+impulso (ruido/rnd20) & Rolagem & LQG & 0,735 & 0,690 & $-$6 & 0,089 & 0,109 & +24 \\
+impulso (ruido/rnd20) & Rolagem & LQG (mesmo ruído) & 0,731 & 0,677 & $-$7 & 0,085 & 0,103 & +22 \\
 \addlinespace
-impulso (ruido/rnd20) & Guinada & nativo & --- & --- & --- & --- & --- & --- \\
-impulso (ruido/rnd20) & Guinada & LQG & --- & --- & --- & --- & --- & --- \\
-impulso (ruido/rnd20) & Guinada & LQG (mesmo ruído) & --- & --- & --- & --- & --- & --- \\
+impulso (ruido/rnd20) & Guinada & nativo & 5,957 & 5,859 & $-$2 & 1,573 & 1,541 & $-$2 \\
+impulso (ruido/rnd20) & Guinada & LQG & 5,025 & 4,865 & $-$3 & 1,488 & 1,489 & +0 \\
+impulso (ruido/rnd20) & Guinada & LQG (mesmo ruído) & 5,555 & 5,396 & $-$3 & 1,728 & 1,722 & $-$0 \\
 \bottomrule
 \end{tabular}

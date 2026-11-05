@@ -1,0 +1,89 @@
+Erro lento do AHRS nos voos do binário 4f669ec0c1e9.
+1. Diferença verdade − AHRS (graus), média de 1 s a cada 5 s do tempo do perfil:
+  guinada/torque_impulso × nativo, t = -20 -15 -10 -5 +0 +5 +10 +15 +20 +25 +30 +35 +40 +45 +50 +55
+    guinada: -1.94 -1.71 +0.27 -0.13 -0.47 -0.80 -0.98 -0.97 -0.87 -0.76 -0.62 -0.52 -0.49 -0.43 -0.42 -0.04
+    rolagem: -0.088 -0.163 -0.145 -0.176 -0.163 -0.118 -0.099 -0.091 -0.087 -0.085 -0.084 -0.084 -0.083 -0.083 -0.082 -0.077
+  guinada/torque_impulso × cc_lqg, t = -20 -15 -10 -5 +0 +5 +10 +15 +20 +25 +30 +35 +40 +45 +50 +55
+    guinada: -1.94 -1.72 +0.28 -0.12 -0.46 -0.79 -0.94 -0.95 -0.89 -0.80 -0.68 -0.62 -0.52 -0.51 -0.45 -0.05
+    rolagem: -0.082 -0.160 -0.147 -0.178 -0.166 -0.120 -0.103 -0.093 -0.089 -0.087 -0.084 -0.086 -0.083 -0.086 -0.079 -0.079
+  rolagem/torque_impulso × nativo, t = -20 -15 -10 -5 +0 +5 +10 +15 +20 +25 +30 +35 +40 +45 +50 +55
+    guinada: -1.91 -1.71 +0.27 -0.13 -0.48 -0.80 -0.95 -0.94 -0.88 -0.78 -0.65 -0.58 -0.52 -0.50 -0.44 -0.05
+    rolagem: -0.084 -0.160 -0.143 -0.174 -0.162 -0.117 -0.099 -0.091 -0.086 -0.084 -0.084 -0.080 -0.081 -0.084 -0.080 -0.078
+  guinada/torque_degrau × nativo, t = -20 -15 -10 -5 +0 +5 +10 +15 +20 +25 +30 +35 +40 +45 +50 +55
+    guinada: -1.91 -1.71 +0.28 -0.13 -0.47 -0.80 -1.11 -1.39 -1.46 -1.32 -1.08 -0.83 -0.61 -0.44 -0.32 -0.23
+    rolagem: -0.084 -0.160 -0.143 -0.174 -0.162 -0.117 -0.101 -0.091 -0.086 -0.083 -0.082 -0.081 -0.082 -0.082 -0.081 -0.081
+  ruido/rnd20/torque_impulso × nativo, t = -20 -15 -10 -5 +0 +5 +10 +15 +20 +25 +30 +35 +40 +45 +50 +55
+    guinada: -1.91 -1.71 +0.45 -0.04 -0.56 -1.17 -1.30 -1.68 -1.88 -2.61 -2.23 -1.85 -1.24 -1.50 -1.24 -0.26
+    rolagem: -0.084 -0.160 -0.061 +0.001 -0.160 -0.093 -0.134 -0.139 -0.213 -0.212 -0.126 -0.298 -0.170 -0.007 -0.082 -0.115
+2. Métricas da perturbação: AHRS | verdade das tabelas (desvio constante) | verdade sem a parte lenta, 0,05 Hz | 0,1 Hz
+  guinada/torque_degrau × nativo (yaw):
+    pico        2.558 | 2.518 | 2.577 | 2.571
+    EQM         0.847 | 0.754 | 0.846 | 0.848
+    recuperação 22.153 | 10.230 | 22.338 | 22.098
+    faixa calma 0.029 | 0.365 | 0.057 | 0.038
+  guinada/torque_degrau × cc_lqi (yaw):
+    pico        1.872 | 1.832 | 1.851 | 1.878
+    EQM         0.214 | 0.337 | 0.211 | 0.215
+    recuperação 1.140 | 0.865 | 1.100 | 1.135
+    faixa calma 0.007 | 0.373 | 0.044 | 0.019
+  guinada/torque_degrau × cc_lqg (yaw):
+    pico        1.860 | 1.823 | 1.835 | 1.864
+    EQM         0.179 | 0.315 | 0.175 | 0.179
+    recuperação 0.748 | 0.560 | 0.720 | 0.745
+    faixa calma 0.043 | 0.405 | 0.037 | 0.041
+  guinada/torque_degrau × cc_lqg_mesmo_ruido (yaw):
+    pico        2.354 | 2.315 | 2.336 | 2.361
+    EQM         0.250 | 0.364 | 0.247 | 0.250
+    recuperação 0.990 | 0.800 | 0.963 | 0.985
+    faixa calma 0.041 | 0.385 | 0.024 | 0.041
+  guinada/torque_impulso × nativo (yaw):
+    pico        6.004 | 5.968 | 5.967 | 5.999
+    EQM         1.585 | 1.588 | 1.577 | 1.585
+    recuperação 0.575 | 0.595 | 0.588 | 0.573
+    faixa calma 0.029 | 0.373 | 0.076 | 0.031
+  guinada/torque_impulso × cc_lqg_mesmo_ruido (yaw):
+    pico        5.593 | 5.556 | 5.537 | 5.576
+    EQM         1.738 | 1.747 | 1.737 | 1.737
+    recuperação 1.428 | 1.468 | 1.450 | 1.428
+    faixa calma 0.038 | 0.405 | 0.033 | 0.035
+  rolagem/torque_degrau × nativo (roll):
+    pico        0.600 | 0.598 | 0.601 | 0.596
+    EQM         0.070 | 0.076 | 0.071 | 0.070
+    recuperação 2.188 | 2.400 | 2.210 | 2.190
+    faixa calma 0.017 | 0.055 | 0.011 | 0.015
+  rolagem/torque_degrau × cc_lqg_mesmo_ruido (roll):
+    pico        0.558 | 0.557 | 0.560 | 0.555
+    EQM         0.032 | 0.043 | 0.032 | 0.032
+    recuperação 0.200 | 0.203 | 0.203 | 0.200
+    faixa calma 0.017 | 0.042 | 0.023 | 0.018
+  rolagem/torque_impulso × nativo (roll):
+    pico        0.788 | 0.784 | 0.787 | 0.782
+    EQM         0.080 | 0.078 | 0.079 | 0.079
+    recuperação 0.133 | 0.130 | 0.128 | 0.133
+    faixa calma 0.021 | 0.048 | 0.012 | 0.019
+  rolagem/torque_impulso × cc_lqg_mesmo_ruido (roll):
+    pico        0.718 | 0.714 | 0.718 | 0.713
+    EQM         0.082 | 0.082 | 0.082 | 0.082
+    recuperação 0.263 | 0.260 | 0.258 | 0.263
+    faixa calma 0.016 | 0.036 | 0.023 | 0.019
+  ruido/rnd20/torque_impulso × nativo (roll):
+    pico        0.807 | 0.706 | 0.704 | 0.711
+    EQM         0.082 | 0.115 | 0.109 | 0.096
+    recuperação 0.143 | 0.033 | 0.035 | 0.125
+    faixa calma 0.040 | 0.268 | 0.242 | 0.188
+  ruido/rnd20/torque_impulso × cc_lqg_mesmo_ruido (roll):
+    pico        0.734 | 0.714 | 0.619 | 0.639
+    EQM         0.086 | 0.108 | 0.107 | 0.100
+    recuperação 0.295 | 0.030 | 0.205 | 0.248
+    faixa calma 0.041 | 0.395 | 0.251 | 0.196
+  ruido/rnd20/torque_impulso × nativo (yaw):
+    pico        6.029 | 5.941 | 5.809 | 5.932
+    EQM         1.599 | 1.575 | 1.533 | 1.564
+    recuperação 0.585 | 0.300 | 0.688 | 0.658
+    faixa calma 0.128 | 1.046 | 0.302 | 0.174
+  ruido/rnd20/torque_impulso × cc_lqg_mesmo_ruido (yaw):
+    pico        5.537 | 5.339 | 5.095 | 5.236
+    EQM         1.701 | 1.654 | 1.638 | 1.643
+    recuperação 1.383 | 1.093 | 1.368 | 1.360
+    faixa calma 0.169 | 1.319 | 0.581 | 0.341
+Sem ruído, pico e EQM sem a parte lenta contra o AHRS: diferença máxima 2.0 %.

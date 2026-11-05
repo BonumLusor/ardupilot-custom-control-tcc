@@ -228,9 +228,9 @@ desse compromisso uma restrição do projeto: um controlador proposto só é
 comparado ao nativo se não passar aos motores mais ruído do giroscópio do
 que ele (Seção~\ref{sec:projeto-lqg}). Com essa regra, parte da vantagem que
 um projeto de banda maior mostraria se revela efeito do ruído, e não da
-estrutura do controlador. Além disso, o desempenho é medido na atitude
-verdadeira do simulador, e não só na estimada pelo AHRS, porque o LQG age
-sobre o caminho de medida.
+estrutura do controlador. Além disso, como o LQG age sobre o caminho de medida, o
+desempenho é conferido também na atitude verdadeira do simulador, e não só
+na estimada pelo AHRS (Apêndice~\ref{ap:bases}).
 
 \section{Delimitação do escopo}
 \label{sec:delimitacao}

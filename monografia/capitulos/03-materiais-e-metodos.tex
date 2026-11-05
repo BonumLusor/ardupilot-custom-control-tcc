@@ -250,8 +250,9 @@ dentro do milissegundo: o impulso mudava 4\,\% de um voo para outro. O
 \textit{patch} do firmware passa a contagem a microssegundos, com meio passo
 de folga, e o pulso dura sempre o mesmo número de passos: 24 em
 \SI{20}{\milli\second} e 360 em \SI{0.3}{\second}. Nos voos do lote, o
-impulso aplicado, reconstruído da atitude verdadeira, ficou a
-\pendente{x\,\%} do pedido. O início do pulso ainda depende do instante em
+impulso aplicado, reconstruído da atitude verdadeira com o modelo, ficou a
+menos de 2\,\% do pedido em 31 voos, com média de $-0{,}3$\,\% a
+$+0{,}1$\,\% por eixo. O início do pulso ainda depende do instante em
 que o \textit{script} roda, mas um deslocamento no tempo não muda a resposta.
 
 O perfil de perturbação é disparado no início da janela de ensaio, e não no
@@ -619,28 +620,45 @@ mesmo laço pela mensagem \codigo{CCTQ} (Seção~\ref{sec:implementacao}). A
 convenção do quatérnio foi conferida contra a atitude que o próprio
 simulador grava a \SI{10}{\hertz} (mensagem \codigo{SIM}): nos mesmos
 instantes, as duas diferem em até \ang{0.01}, a resolução do \codigo{SIM}.
-As bases diferem por um viés quase constante e pela dinâmica do estimador.
-O viés vem do rumo, porque o alvo de guinada é travado no rumo do AHRS, que
-difere do verdadeiro, e, em rolagem e arfagem, é da ordem de \ang{0.1}. Na
-base verdadeira, a atitude medida é a da \codigo{CCTQ} menos o viés médio
-entre as bases no meio segundo antes da perturbação (sem perturbação, no
-pairado antes do perfil). Assim, o erro parte do mesmo nível nas duas bases,
-e só a dinâmica difere. O trecho é curto de propósito: com ruído de
-giroscópio, a diferença entre as bases vaga devagar, e o viés médio de um
-trecho longo deixaria, no instante da perturbação, um resto somado ao pico. As tabelas dos Capítulos~\ref{cap:modelagem}
-a~\ref{cap:resultados} usam a base verdadeira, uma base por tabela, e o
-Apêndice~\ref{ap:bases} compara as duas. A diferença importa sobretudo para
-o LQG, que age sobre o próprio caminho de medida: avaliado na atitude que ele
-mesmo estima, mistura estimação com controle.
+O alvo de guinada é travado no rumo do AHRS, que difere do verdadeiro, e,
+em rolagem e arfagem, as bases diferem em décimos de grau. Por isso, na base
+verdadeira, a atitude medida é a da \codigo{CCTQ} menos o viés médio entre as
+bases no meio segundo antes da perturbação (sem perturbação, no pairado
+antes do perfil). Assim, o erro parte do mesmo nível nas duas bases.
+
+Depois desse instante, as bases se separam de dois modos. O primeiro é o erro
+lento do AHRS: o rumo estimado se afasta do verdadeiro em até cerca de
+\ang{1} ao longo de dezenas de segundos, e a rolagem, em cerca de
+\ang{0.1}, da mesma forma com qualquer controlador. Nenhum controlador vê
+esse erro, mas ele entra na base verdadeira e domina a recuperação e o erro
+eficaz das janelas longas em guinada. Sem ruído de giroscópio, tirada a parte
+da diferença abaixo de \SI{0.05}{\hertz}, as duas bases concordam a menos de
+2\,\% no pico e no erro eficaz. O segundo modo é o ruído: com ruído de
+giroscópio, o ângulo do AHRS integra o ruído sem filtro, e o pico verdadeiro
+fica de 6\,\% a 7\,\% abaixo do medido, com todos os controladores. As
+tabelas dos Capítulos~\ref{cap:modelagem} a~\ref{cap:resultados} usam,
+portanto, a base do AHRS, a que os controladores regulam, uma base por
+tabela. O Apêndice~\ref{ap:bases} mostra a verdadeira nos mesmos voos. Ela
+foi medida por causa do LQG, que modela o caminho de medida e poderia
+parecer pior no AHRS por não anular um erro que atribui ao estimador. Os
+voos mostram que isso não acontece. A ordem entre os controladores só muda
+de uma base para a outra entre os quase empatados (até 4\,\% de
+diferença), nos voos únicos com ruído de giroscópio e, nas manobras
+grandes, entre os propostos, cujos erros de rastreamento, todos abaixo de
+\ang{1}, diferem menos que o erro do AHRS nessas manobras. Nenhuma
+conclusão do Capítulo~\ref{cap:resultados} depende dessas trocas, e o
+impulso com ruído, que compara o nativo e os LQG, voa cinco vezes: com a
+média, a ordem é a mesma nas duas bases.
 
 Os ensaios sem semente e sem ruído de giroscópio só não são determinísticos
 porque o \textit{script}, os comandos de voo e a física não andam
 sincronizados (Seção~\ref{sec:automacao}). Em três voos repetidos do impulso
-e do degrau de rolagem, o pico e o erro eficaz variaram até
-\pendente{L4: \% no nativo} no nativo e até \pendente{L4: \% no LQG} no LQG,
-na atitude verdadeira. Por isso, esses ensaios voam uma vez, exceto o
-impulso e o degrau de rolagem e de arfagem do nativo e dos dois LQG, que voam
-três vezes e entram nas tabelas pela média. O torque estocástico voa com
+e do degrau de rolagem e de arfagem, o pico e o erro eficaz variaram até
+1,5\,\% no nativo e até 2,7\,\% nos dois LQG. Uma
+variação desse tamanho não muda as diferenças de mais de 10\,\% entre
+controladores, e esses ensaios voam uma vez. As exceções são o impulso e o
+degrau de rolagem e de arfagem do nativo e dos dois LQG, em que as
+diferenças são menores: voam três vezes e entram nas tabelas pela média. O torque estocástico voa com
 cinco sementes, as mesmas para todos os controladores. A diferença ao nativo
 é a média das diferenças semente a semente, com intervalo de confiança de
 95\,\% pareado ($t$ de Student, quatro graus de liberdade). O impulso com

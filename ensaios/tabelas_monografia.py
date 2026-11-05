@@ -2,15 +2,18 @@
 """Gera as tabelas de resultados da monografia a partir das pastas de voo.
 
 Entram so os voos do binario do SITL congelado (versao.json; por padrao, o binario
-compilado agora), na base de atitude pedida: a verdadeira do SITL
-(metricas_verdade.json, de analise/verdade.py) ou a do AHRS (metricas.json). Uma
-base por tabela, nunca as duas misturadas. Quando um par cenario x controlador tem
+compilado agora), na base de atitude pedida: a do AHRS (metricas.json, o padrao)
+ou a verdadeira do SITL (metricas_verdade.json, de analise/verdade.py). Uma base por
+tabela, nunca as duas misturadas; a apendice_bases (Apendice D) poe as duas lado a
+lado. As tabelas ficam no AHRS porque a verdadeira carrega o erro lento do AHRS
+(o rumo se afasta ate ~1 grau em dezenas de segundos), que nenhum controlador ve
+(P3 revisto em 5/11; monografia/verificacao/scripts/deriva_ahrs.py). Quando um par cenario x controlador tem
 mais de um voo (repeticoes ou sementes), a celula e a media, e a nota da tabela diz
 quais. Cada tabela sai no formato da monografia (booktabs, virgula decimal), so com
 o tabular: legenda, rotulo e fonte ficam no capitulo.
 
-    ./tabelas_monografia.py                       # base verdadeira, binario atual
-    ./tabelas_monografia.py --atitude ahrs --destino /tmp/tabelas_ahrs
+    ./tabelas_monografia.py                       # base do AHRS, binario atual
+    ./tabelas_monografia.py --atitude verdadeira --destino /tmp/tabelas_verdade
 """
 
 from __future__ import annotations
@@ -76,7 +79,7 @@ def _achatar(m, prefixo=""):
     return plano
 
 
-def ler_voos(binario, atitude="verdadeira"):
+def ler_voos(binario, atitude="ahrs"):
     """{(cenario, controlador): [linha, ...]}: todos os voos do binario, na base pedida.
 
     Cada linha e o metricas*.json achatado, com ``ensaio`` (o carimbo) e ``semente``.
@@ -247,7 +250,8 @@ def _rotulo_cenario(cen):
 
 def nota_voos(dados, atitude):
     """A nota que toda tabela leva: a base de atitude e quantos voos ha em cada celula."""
-    base = "Atitude verdadeira do SITL" if atitude == "verdadeira" else "Atitude estimada pelo AHRS"
+    base = {"verdadeira": "Atitude verdadeira do SITL", "ahrs": "Atitude estimada pelo AHRS",
+            "ambas": "Os mesmos voos nas duas bases"}[atitude]
     if not dados.repetidos:
         return f"{base}; um voo por célula."
     nomes = dict(CONTROLADORES + NUCLEO + (("nativo_guinada", NOME_NATIVO_GUINADA),))
@@ -264,10 +268,9 @@ def nota_voos(dados, atitude):
 
 
 # Pulso de guinada normalizado pelo impulso registrado (metricas.py, chave
-# desvio_max_norm_deg): o laco do injetor a ~44 Hz faz o impulso aplicado variar
-# de -6 % a +8 % entre voos, e em guinada o pico vem depois do fim do pulso e
-# acompanha o impulso. Em rolagem e arfagem o pico vem durante o pulso e nao
-# depende da duracao: la fica o desvio medido.
+# desvio_max_norm_deg), so nos voos antigos, de pulso temporizado pelo script (~44 Hz,
+# impulso de -6 % a +8 % entre voos). Os voos do lote usam o pulso de duracao exata
+# (WND_MODE 512), sem normalizacao nem marca.
 NOTA_NORM = (r"$^\dagger$ Pulso de guinada: desvio máximo normalizado ao impulso nominal "
              r"do cenário, $\delta_{\max}\,I_{\mathrm{nom}}/I_{\mathrm{reg}}$.")
 
@@ -303,7 +306,7 @@ def tabela_degrau(dados):
 
 def tabela_torque(dados):
     linhas = []
-    for ensaio, rotulo in (("torque_pulso", "pulso"), ("torque_degrau", "degrau")):
+    for ensaio, rotulo in (("torque_pulso", "degrau curto"), ("torque_degrau", "degrau")):
         for grupo, eixo in GRUPO_EIXO.items():
             for slug, nome in controladores(eixo):
                 r = dados.get((f"{grupo}/{ensaio}", slug))
@@ -324,7 +327,7 @@ def tabela_torque(dados):
 def tabela_simultaneo(dados):
     """Pulso e degrau nos tres eixos, ao lado do mesmo eixo no ensaio isolado."""
     linhas = []
-    for ensaio, rotulo in (("torque_pulso", "pulso"), ("torque_degrau", "degrau")):
+    for ensaio, rotulo in (("torque_pulso", "degrau curto"), ("torque_degrau", "degrau")):
         for grupo, eixo in GRUPO_EIXO.items():
             so = dados.get((f"{grupo}/{ensaio}", "nativo"))
             tres = dados.get((f"rolagem_arfagem_guinada/{ensaio}", "nativo"))
@@ -367,7 +370,7 @@ def tabela_ruido(dados):
     o ruido do giroscopio aos motores.
     """
     linhas = []
-    for ensaio, rotulo in (("torque_pulso", "pulso"), ("torque_degrau", "degrau")):
+    for ensaio, rotulo in (("torque_pulso", "degrau curto"), ("torque_degrau", "degrau")):
         for eixo in ("roll", "pitch", "yaw"):
             for slug, nome in controladores(eixo):
                 if slug == "cc_pid":
@@ -431,7 +434,7 @@ def tabela_equivalencia(dados):
     linhas = []
     trio = (("nativo", "nativo (AutoTune)"), ("nativo_lqi", "nativo (ganhos do LQI)"),
             ("cc_lqi", "LQI"))
-    for ensaio, rotulo in (("torque_pulso", "pulso"), ("torque_degrau", "degrau")):
+    for ensaio, rotulo in (("torque_pulso", "degrau curto"), ("torque_degrau", "degrau")):
         for grupo, eixo in (("rolagem", "roll"), ("arfagem", "pitch")):
             for slug, nome in trio:
                 r = dados.get((f"{grupo}/{ensaio}", slug))
@@ -520,7 +523,7 @@ def tabela_niveis_ruido(dados, eixo):
                           f"{rec} & {num(est, d + 'rmse_deg', 3)} \\\\")
         linhas.append(r"\addlinespace")
     linhas.pop()
-    cab = (r" & & Ruído & Pulso & \multicolumn{2}{c}{Degrau} & Estocástico \\" "\n"
+    cab = (r" & & Ruído & Degrau curto & \multicolumn{2}{c}{Degrau} & Estocástico \\" "\n"
            r"\cmidrule(lr){5-6}" "\n"
            r"\codigo{SIM\_GYR\_RND} & Controlador & $u_\mathrm{rms}$ calmo & desvio (\si{\degree}) & "
            r"desvio (\si{\degree}) & recup. (\si{\second}) & RMSE (\si{\degree}) \\")
@@ -552,8 +555,8 @@ def tabela_erro_modelo(dados):
     linhas.pop()
     cab = (r" & & \multicolumn{3}{c}{Rolagem} & \multicolumn{3}{c}{Guinada} \\" "\n"
            r"\cmidrule(lr){3-5}\cmidrule(lr){6-8}" "\n"
-           r"Veículo & Controlador & pulso (\si{\degree}) & degrau (\si{\degree}) & recup. (\si{\second}) & "
-           r"pulso (\si{\degree}) & degrau (\si{\degree}) & recup. (\si{\second}) \\")
+           r"Veículo & Controlador & degrau curto (\si{\degree}) & degrau (\si{\degree}) & recup. (\si{\second}) & "
+           r"degrau curto (\si{\degree}) & degrau (\si{\degree}) & recup. (\si{\second}) \\")
     return tabular("llrrrrrr", linhas, cab, nota=NOTA_NORM)
 
 
@@ -602,7 +605,7 @@ def tabela_grande(dados):
 def tabela_saturacao(dados):
     """Guinada alem da autoridade do mixer: windup depois do pulso e degrau perto do limite."""
     linhas = []
-    for ensaio, rot in (("torque_pulso", "pulso 12 rad/s² × 0,5 s"),
+    for ensaio, rot in (("torque_pulso", "degrau curto 12 rad/s² × 0,5 s"),
                         ("torque_degrau", "degrau 6 rad/s²")):
         for slug, nome in NUCLEO:
             r = dados.get((f"saturacao/guinada/{ensaio}", slug))
@@ -646,8 +649,8 @@ def tabela_filtro(dados):
     linhas.pop()
     cab = (r" & & \multicolumn{3}{c}{Filtro de 20 Hz} & \multicolumn{3}{c}{Filtro de 10 Hz} \\" "\n"
            r"\cmidrule(lr){3-5}\cmidrule(lr){6-8}" "\n"
-           r"Eixo & Controlador & pulso (\si{\degree}) & degrau (\si{\degree}) & rastreio (\si{\degree}) & "
-           r"pulso (\si{\degree}) & degrau (\si{\degree}) & rastreio (\si{\degree}) \\")
+           r"Eixo & Controlador & degrau curto (\si{\degree}) & degrau (\si{\degree}) & rastreio (\si{\degree}) & "
+           r"degrau curto (\si{\degree}) & degrau (\si{\degree}) & rastreio (\si{\degree}) \\")
     return tabular("llrrrrrr", linhas, cab, nota=NOTA_NORM)
 
 
@@ -859,8 +862,9 @@ TABELAS = (("resultados_degrau", tabela_degrau), ("resultados_torque", tabela_to
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--atitude", choices=("verdadeira", "ahrs"), default="verdadeira",
-                    help="base de atitude das metricas (padrao: verdadeira, P3c da revisao)")
+    ap.add_argument("--atitude", choices=("verdadeira", "ahrs"), default="ahrs",
+                    help="base de atitude das metricas (padrao: ahrs; a verdadeira vai para o "
+                         "Apendice D, apendice_bases.tex)")
     ap.add_argument("--binario", help="hash do binario do SITL (padrao: o de lotes/binario_lote.sha256)")
     ap.add_argument("--destino", type=Path, default=DESTINO)
     args = ap.parse_args()
@@ -871,19 +875,21 @@ def main():
           f"(base {args.atitude})")
     args.destino.mkdir(parents=True, exist_ok=True)
 
-    def gravar(nome, saida, dados):
+    def gravar(nome, saida, dados, atitude=args.atitude):
         tabela, extra = saida if isinstance(saida, tuple) else (saida, "")
         (args.destino / f"{nome}.tex").write_text(tabela, encoding="utf-8")
-        nota = nota_voos(dados, args.atitude) + (f" {extra}" if extra else "")
+        nota = nota_voos(dados, atitude) + (f" {extra}" if extra else "")
         (args.destino / f"{nome}_nota.tex").write_text(CABECALHO + nota + "\n", encoding="utf-8")
         print(args.destino / f"{nome}.tex")
 
     for nome, fn in TABELAS + (("resultados_comutacao", lambda d: tabela_comutacao(d, args.atitude)),):
         dados = Dados(voos)
         gravar(nome, fn(dados), dados)
-    if args.atitude == "verdadeira":
-        dados = Dados(voos)
-        gravar("apendice_bases", tabela_bases(dados, Dados(ler_voos(binario, "ahrs"))), dados)
+    # Apendice D: as duas bases nos mesmos voos (revisao de 3/11, 2.2; P3 revisto em 5/11)
+    outra = "ahrs" if args.atitude == "verdadeira" else "verdadeira"
+    dados, dados_outra = Dados(voos), Dados(ler_voos(binario, outra))
+    dv, da = (dados, dados_outra) if args.atitude == "verdadeira" else (dados_outra, dados)
+    gravar("apendice_bases", tabela_bases(dv, da), dados, atitude="ambas")
 
 
 if __name__ == "__main__":

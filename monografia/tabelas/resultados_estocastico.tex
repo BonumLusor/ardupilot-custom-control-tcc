@@ -3,23 +3,24 @@
 \toprule
 Eixo & Controlador & RMSE (\si{\degree}) & $\Delta$ nativo (\%) & Desvio máx. (\si{\degree}) & $u_{\max}$ \\
 \midrule
-Rolagem & nativo & 0,511 & +0 & 1,81 & 0,092 \\
-Rolagem & LQI & 0,601 & +18 & 1,86 & 0,094 \\
-Rolagem & LQR+ESO & 0,611 & +20 & 1,89 & 0,092 \\
-Rolagem & LQG & 0,486 & $-$5 & 1,60 & 0,095 \\
-Rolagem & LQG (mesmo ruído) & 0,483 & $-$5 & 1,60 & 0,088 \\
+Rolagem & nativo & 0,520 & --- & 1,77 & 0,090 \\
+Rolagem & LQI & 0,611 & 18 $\pm$ 3 & 2,10 & 0,092 \\
+Rolagem & LQR+ESO & 0,628 & 21 $\pm$ 3 & 2,17 & 0,094 \\
+Rolagem & LQG & 0,578 & 11 $\pm$ 4 & 2,02 & 0,091 \\
+Rolagem & LQG (mesmo ruído) & 0,500 & $-$4 $\pm$ 3 & 1,74 & 0,094 \\
 \addlinespace
-Arfagem & nativo & 0,551 & +0 & 2,62 & 0,102 \\
-Arfagem & LQI & 0,657 & +19 & 2,76 & 0,097 \\
-Arfagem & LQR+ESO & 0,676 & +23 & 3,20 & 0,110 \\
-Arfagem & LQG & 0,525 & $-$5 & 2,27 & 0,113 \\
-Arfagem & LQG (mesmo ruído) & 0,549 & $-$0 & 2,24 & 0,103 \\
+Arfagem & nativo & 0,544 & --- & 2,10 & 0,097 \\
+Arfagem & LQI & 0,655 & 20 $\pm$ 1 & 2,37 & 0,095 \\
+Arfagem & LQR+ESO & 0,668 & 23 $\pm$ 1 & 2,46 & 0,100 \\
+Arfagem & LQG & 0,618 & 14 $\pm$ 2 & 2,30 & 0,098 \\
+Arfagem & LQG (mesmo ruído) & 0,511 & $-$6 $\pm$ 2 & 1,90 & 0,101 \\
 \addlinespace
-Guinada & nativo & 1,576 & +0 & 5,04 & 0,203 \\
-Guinada & LQI & 1,222 & $-$22 & 3,46 & 0,183 \\
-Guinada & LQR+ESO & 1,234 & $-$22 & 3,58 & 0,193 \\
-Guinada & LQI (mesmo ruído) & 2,931 & +86 & 8,13 & 0,108 \\
-Guinada & LQG & 1,528 & $-$3 & 4,66 & 0,224 \\
-Guinada & LQG (mesmo ruído) & 1,250 & $-$21 & 4,10 & 0,242 \\
+Guinada & nativo & 1,560 & --- & 5,24 & 0,203 \\
+Guinada & LQI & 1,313 & $-$16 $\pm$ 6 & 4,16 & 0,188 \\
+Guinada & LQR+ESO & 1,311 & $-$16 $\pm$ 5 & 4,07 & 0,190 \\
+Guinada & LQI (mesmo ruído) & 3,155 & 102 $\pm$ 15 & 10,32 & 0,126 \\
+Guinada & LQG & 1,448 & $-$7 $\pm$ 3 & 4,80 & 0,216 \\
+Guinada & LQG (mesmo ruído) & 1,698 & 9 $\pm$ 6 & 5,42 & 0,200 \\
+Guinada & nativo (guinada ressintonizada) & 1,701 & 9 $\pm$ 5 & 5,41 & 0,201 \\
 \bottomrule
 \end{tabular}

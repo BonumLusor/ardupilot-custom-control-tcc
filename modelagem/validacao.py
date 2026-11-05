@@ -991,16 +991,21 @@ def main():
     ap.add_argument("--tabela", type=Path, help="arquivo .tex da tabela de validacao")
     ap.add_argument("--ruido", action="store_true",
                     help="so a conferencia do caminho do ruido (giroscopio e angulo do AHRS) "
-                         "nos voos de ruido/torque_pulso")
+                         "nos voos de ruido/rnd20/torque_pulso")
     args = ap.parse_args()
     ATITUDE["base"] = args.atitude
 
     if args.ruido:
         for slug in ("nativo", "cc_lqi", "cc_eso"):
-            base = RESULTADOS / "ruido" / "torque_pulso" / slug
+            # degrau curto de rolagem com SIM_GYRn_RND = 20 (o ruido/torque_pulso antigo,
+            # agora em ruido/rnd20/); com --binario, o primeiro voo desse binario
+            base = RESULTADOS / "ruido" / "rnd20" / "torque_pulso" / slug
             voos = sorted(v for v in base.glob("*") if (v / "metricas.json").exists()
                           and not v.name.endswith("_falhou")
                           and (not args.desde or v.name >= args.desde)) if base.exists() else []
+            if args.binario:
+                voos = [v for v in voos if (v / "versao.json").exists() and json.loads(
+                    (v / "versao.json").read_text(encoding="utf-8")).get("binario_sha256") == args.binario][:1]
             if not voos:
                 continue
             r = conferir_ruido(voos[-1])

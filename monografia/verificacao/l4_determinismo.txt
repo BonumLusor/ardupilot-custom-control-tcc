@@ -1,35 +1,74 @@
-L4: voos repetidos de rolagem, por binário do SITL. Verdade = CCTQ menos a média do trecho calmo; EQM verdadeiro de t0 a t0 + 3 s; AHRS = metricas.json.
+L4: voos repetidos (3 ou mais do mesmo par), por binário do SITL. Verdade = metricas_verdade.json (analise.verdade, a base das tabelas); AHRS = metricas.json. Amplitude = (máx - mín) / média.
 binário c289ac6da233
-    2026-11-05_090122: verdade pico 0.7906 EQM 0.0914 (calmo dp 0.0020); AHRS pico 0.7835 EQM 0.0795; impulso entregue 0.6967 rad/s = 23.9 passos
-    2026-11-05_090200: verdade pico 0.8013 EQM 0.0923 (calmo dp 0.0017); AHRS pico 0.7958 EQM 0.0804; impulso entregue 0.6974 rad/s = 23.9 passos
-    2026-11-05_090238: verdade pico 0.7674 EQM 0.0885 (calmo dp 0.0033); AHRS pico 0.7630 EQM 0.0772; impulso entregue 0.6710 rad/s = 23.0 passos
-  torque_impulso nativo: amplitude verdade pico 4.31 % EQM 4.17 %; AHRS pico 4.20 % EQM 4.08 %
-    2026-11-05_090315: verdade pico 0.7100 EQM 0.0993 (calmo dp 0.0036); AHRS pico 0.7213 EQM 0.0866; impulso entregue 0.7023 rad/s = 24.1 passos
-    2026-11-05_090354: verdade pico 0.7071 EQM 0.0983 (calmo dp 0.0023); AHRS pico 0.7028 EQM 0.0845; impulso entregue 0.6967 rad/s = 23.9 passos
-    2026-11-05_090433: verdade pico 0.6734 EQM 0.0945 (calmo dp 0.0053); AHRS pico 0.6808 EQM 0.0820; impulso entregue 0.6683 rad/s = 22.9 passos
-  torque_impulso cc_lqg: amplitude verdade pico 5.24 % EQM 4.95 %; AHRS pico 5.77 % EQM 5.41 %
-    2026-11-05_020752: verdade pico 0.6063 EQM 0.2436 (calmo dp 0.0026); AHRS pico 0.5991 EQM 0.0697
-    2026-11-05_020836: verdade pico 0.6049 EQM 0.2430 (calmo dp 0.0012); AHRS pico 0.5991 EQM 0.0698
-    2026-11-05_020917: verdade pico 0.6052 EQM 0.2446 (calmo dp 0.0015); AHRS pico 0.5980 EQM 0.0699
-  torque_degrau nativo: amplitude verdade pico 0.22 % EQM 0.67 %; AHRS pico 0.18 % EQM 0.22 %
-    2026-11-05_021000: verdade pico 0.5949 EQM 0.1285 (calmo dp 0.0008); AHRS pico 0.5985 EQM 0.0388
-    2026-11-05_021043: verdade pico 0.5968 EQM 0.1299 (calmo dp 0.0016); AHRS pico 0.5925 EQM 0.0385
-    2026-11-05_021127: verdade pico 0.5859 EQM 0.1258 (calmo dp 0.0040); AHRS pico 0.5942 EQM 0.0386
-  torque_degrau cc_lqg: amplitude verdade pico 1.84 % EQM 3.22 %; AHRS pico 1.00 % EQM 0.68 %
-binário 4f669ec0c1e9
-    2026-11-05_092158: verdade pico 0.7941 EQM 0.0916 (calmo dp 0.0020); AHRS pico 0.7879 EQM 0.0797; impulso entregue 0.6933 rad/s = 23.8 passos
-    2026-11-05_092236: verdade pico 0.7969 EQM 0.0919 (calmo dp 0.0016); AHRS pico 0.7910 EQM 0.0800; impulso entregue 0.6911 rad/s = 23.7 passos
-    2026-11-05_092315: verdade pico 0.7946 EQM 0.0919 (calmo dp 0.0029); AHRS pico 0.7887 EQM 0.0800; impulso entregue 0.6986 rad/s = 24.0 passos
-  torque_impulso nativo: amplitude verdade pico 0.34 % EQM 0.37 %; AHRS pico 0.39 % EQM 0.47 %
-    2026-11-05_092353: verdade pico 0.7248 EQM 0.0998 (calmo dp 0.0008); AHRS pico 0.7237 EQM 0.0863; impulso entregue 0.6991 rad/s = 24.0 passos
-    2026-11-05_092431: verdade pico 0.7276 EQM 0.1018 (calmo dp 0.0024); AHRS pico 0.7337 EQM 0.0886; impulso entregue 0.7002 rad/s = 24.0 passos
-    2026-11-05_092510: verdade pico 0.7338 EQM 0.1015 (calmo dp 0.0075); AHRS pico 0.7368 EQM 0.0882; impulso entregue 0.7014 rad/s = 24.0 passos
-  torque_impulso cc_lqg: amplitude verdade pico 1.24 % EQM 1.95 %; AHRS pico 1.79 % EQM 2.67 %
-    2026-11-05_091742: verdade pico 0.6069 EQM 0.2449 (calmo dp 0.0012); AHRS pico 0.5997 EQM 0.0699
-    2026-11-05_091825: verdade pico 0.6052 EQM 0.2445 (calmo dp 0.0017); AHRS pico 0.5982 EQM 0.0699
-    2026-11-05_091908: verdade pico 0.6076 EQM 0.2460 (calmo dp 0.0022); AHRS pico 0.5989 EQM 0.0699
-  torque_degrau nativo: amplitude verdade pico 0.40 % EQM 0.63 %; AHRS pico 0.26 % EQM 0.08 %
-    2026-11-05_091949: verdade pico 0.5924 EQM 0.1276 (calmo dp 0.0037); AHRS pico 0.5961 EQM 0.0385
-    2026-11-05_092032: verdade pico 0.6037 EQM 0.1321 (calmo dp 0.0024); AHRS pico 0.5975 EQM 0.0389
-    2026-11-05_092116: verdade pico 0.5983 EQM 0.1305 (calmo dp 0.0006); AHRS pico 0.5964 EQM 0.0387
-  torque_degrau cc_lqg: amplitude verdade pico 1.89 % EQM 3.45 %; AHRS pico 0.22 % EQM 0.96 %
+    2026-11-05_090122: verdade pico 0.7906 EQM 0.0914 (verdade local); AHRS pico 0.7835 EQM 0.0795; impulso entregue 0.6967 rad/s (-0.5 %, 23.9 passos)
+    2026-11-05_090200: verdade pico 0.8013 EQM 0.0923 (verdade local); AHRS pico 0.7958 EQM 0.0804; impulso entregue 0.6974 rad/s (-0.4 %, 23.9 passos)
+    2026-11-05_090238: verdade pico 0.7674 EQM 0.0885 (verdade local); AHRS pico 0.7630 EQM 0.0772; impulso entregue 0.6710 rad/s (-4.1 %, 23.0 passos)
+  rolagem/torque_impulso nativo (3 voos): amplitude verdade pico 4.31 % EQM 4.17 %; AHRS pico 4.20 % EQM 4.08 %
+    2026-11-05_090315: verdade pico 0.7100 EQM 0.0993 (verdade local); AHRS pico 0.7213 EQM 0.0866; impulso entregue 0.7023 rad/s (+0.3 %, 24.1 passos)
+    2026-11-05_090354: verdade pico 0.7071 EQM 0.0983 (verdade local); AHRS pico 0.7028 EQM 0.0845; impulso entregue 0.6967 rad/s (-0.5 %, 23.9 passos)
+    2026-11-05_090433: verdade pico 0.6734 EQM 0.0945 (verdade local); AHRS pico 0.6808 EQM 0.0820; impulso entregue 0.6683 rad/s (-4.5 %, 22.9 passos)
+  rolagem/torque_impulso cc_lqg (3 voos): amplitude verdade pico 5.24 % EQM 4.95 %; AHRS pico 5.77 % EQM 5.41 %
+    2026-11-05_020752: verdade pico 0.6063 EQM 0.2436 (verdade local); AHRS pico 0.5991 EQM 0.0697
+    2026-11-05_020836: verdade pico 0.6049 EQM 0.2430 (verdade local); AHRS pico 0.5991 EQM 0.0698
+    2026-11-05_020917: verdade pico 0.6052 EQM 0.2446 (verdade local); AHRS pico 0.5980 EQM 0.0699
+  rolagem/torque_degrau nativo (3 voos): amplitude verdade pico 0.22 % EQM 0.67 %; AHRS pico 0.18 % EQM 0.22 %
+    2026-11-05_021000: verdade pico 0.5949 EQM 0.1285 (verdade local); AHRS pico 0.5985 EQM 0.0388
+    2026-11-05_021043: verdade pico 0.5968 EQM 0.1299 (verdade local); AHRS pico 0.5925 EQM 0.0385
+    2026-11-05_021127: verdade pico 0.5859 EQM 0.1258 (verdade local); AHRS pico 0.5942 EQM 0.0386
+  rolagem/torque_degrau cc_lqg (3 voos): amplitude verdade pico 1.84 % EQM 3.22 %; AHRS pico 1.00 % EQM 0.68 %
+  maior amplitude (pico ou EQM) por controlador: nativo verdade 4.31 % / AHRS 4.20 %; cc_lqg verdade 5.24 % / AHRS 5.77 %
+binário 4f669ec0c1e9 (o do lote)
+    2026-11-05_092158: verdade pico 0.7838 EQM 0.0785; AHRS pico 0.7879 EQM 0.0797; impulso entregue 0.6933 rad/s (-1.0 %, 23.8 passos)
+    2026-11-05_092236: verdade pico 0.7879 EQM 0.0789; AHRS pico 0.7910 EQM 0.0800; impulso entregue 0.6911 rad/s (-1.3 %, 23.7 passos)
+    2026-11-05_092315: verdade pico 0.7847 EQM 0.0790; AHRS pico 0.7887 EQM 0.0800; impulso entregue 0.6986 rad/s (-0.2 %, 24.0 passos)
+  rolagem/torque_impulso nativo (3 voos): amplitude verdade pico 0.52 % EQM 0.64 %; AHRS pico 0.39 % EQM 0.47 %
+    2026-11-05_092353: verdade pico 0.7206 EQM 0.0864; AHRS pico 0.7237 EQM 0.0863; impulso entregue 0.6991 rad/s (-0.1 %, 24.0 passos)
+    2026-11-05_092431: verdade pico 0.7311 EQM 0.0886; AHRS pico 0.7337 EQM 0.0886; impulso entregue 0.7002 rad/s (+0.0 %, 24.0 passos)
+    2026-11-05_092510: verdade pico 0.7330 EQM 0.0880; AHRS pico 0.7368 EQM 0.0882; impulso entregue 0.7014 rad/s (+0.2 %, 24.0 passos)
+  rolagem/torque_impulso cc_lqg (3 voos): amplitude verdade pico 1.70 % EQM 2.48 %; AHRS pico 1.79 % EQM 2.67 %
+    2026-11-05_124914: verdade pico 0.7143 EQM 0.0821; AHRS pico 0.7175 EQM 0.0822; impulso entregue 0.6960 rad/s (-0.6 %, 23.9 passos)
+    2026-11-05_173021: verdade pico 0.7235 EQM 0.0835; AHRS pico 0.7285 EQM 0.0831; impulso entregue 0.7002 rad/s (+0.0 %, 24.0 passos)
+    2026-11-05_173101: verdade pico 0.7305 EQM 0.0843; AHRS pico 0.7339 EQM 0.0841; impulso entregue 0.6990 rad/s (-0.1 %, 24.0 passos)
+  rolagem/torque_impulso cc_lqg_mesmo_ruido (3 voos): amplitude verdade pico 2.24 % EQM 2.65 %; AHRS pico 2.26 % EQM 2.22 %
+    2026-11-05_091742: verdade pico 0.5981 EQM 0.0760; AHRS pico 0.5997 EQM 0.0699
+    2026-11-05_091825: verdade pico 0.5970 EQM 0.0759; AHRS pico 0.5982 EQM 0.0699
+    2026-11-05_091908: verdade pico 0.5981 EQM 0.0763; AHRS pico 0.5989 EQM 0.0699
+  rolagem/torque_degrau nativo (3 voos): amplitude verdade pico 0.18 % EQM 0.44 %; AHRS pico 0.26 % EQM 0.08 %
+    2026-11-05_091949: verdade pico 0.5947 EQM 0.0467; AHRS pico 0.5961 EQM 0.0385
+    2026-11-05_092032: verdade pico 0.5967 EQM 0.0473; AHRS pico 0.5975 EQM 0.0389
+    2026-11-05_092116: verdade pico 0.5955 EQM 0.0470; AHRS pico 0.5964 EQM 0.0387
+  rolagem/torque_degrau cc_lqg (3 voos): amplitude verdade pico 0.34 % EQM 1.25 %; AHRS pico 0.22 % EQM 0.96 %
+    2026-11-05_132256: verdade pico 0.5567 EQM 0.0425; AHRS pico 0.5578 EQM 0.0322
+    2026-11-05_172852: verdade pico 0.5480 EQM 0.0428; AHRS pico 0.5490 EQM 0.0320
+    2026-11-05_172937: verdade pico 0.5530 EQM 0.0430; AHRS pico 0.5541 EQM 0.0324
+  rolagem/torque_degrau cc_lqg_mesmo_ruido (3 voos): amplitude verdade pico 1.57 % EQM 1.21 %; AHRS pico 1.60 % EQM 1.38 %
+    2026-11-05_124951: verdade pico 0.7919 EQM 0.0803; AHRS pico 0.7953 EQM 0.0814; impulso entregue 0.6982 rad/s (-0.3 %, 23.9 passos)
+    2026-11-05_173601: verdade pico 0.7903 EQM 0.0801; AHRS pico 0.7943 EQM 0.0812; impulso entregue 0.6965 rad/s (-0.5 %, 23.9 passos)
+    2026-11-05_173641: verdade pico 0.8023 EQM 0.0811; AHRS pico 0.8064 EQM 0.0822; impulso entregue 0.6994 rad/s (-0.1 %, 24.0 passos)
+  arfagem/torque_impulso nativo (3 voos): amplitude verdade pico 1.51 % EQM 1.32 %; AHRS pico 1.51 % EQM 1.31 %
+    2026-11-05_125147: verdade pico 0.7215 EQM 0.0882; AHRS pico 0.7248 EQM 0.0882; impulso entregue 0.6990 rad/s (-0.1 %, 24.0 passos)
+    2026-11-05_173720: verdade pico 0.7298 EQM 0.0889; AHRS pico 0.7330 EQM 0.0890; impulso entregue 0.7017 rad/s (+0.2 %, 24.1 passos)
+    2026-11-05_173800: verdade pico 0.7229 EQM 0.0875; AHRS pico 0.7267 EQM 0.0878; impulso entregue 0.6937 rad/s (-0.9 %, 23.8 passos)
+  arfagem/torque_impulso cc_lqg (3 voos): amplitude verdade pico 1.14 % EQM 1.57 %; AHRS pico 1.12 % EQM 1.34 %
+    2026-11-05_125225: verdade pico 0.7258 EQM 0.0840; AHRS pico 0.7290 EQM 0.0836; impulso entregue 0.6937 rad/s (-0.9 %, 23.8 passos)
+    2026-11-05_173840: verdade pico 0.7224 EQM 0.0832; AHRS pico 0.7263 EQM 0.0832; impulso entregue 0.7012 rad/s (+0.2 %, 24.0 passos)
+    2026-11-05_173920: verdade pico 0.7123 EQM 0.0821; AHRS pico 0.7167 EQM 0.0818; impulso entregue 0.6935 rad/s (-0.9 %, 23.8 passos)
+  arfagem/torque_impulso cc_lqg_mesmo_ruido (3 voos): amplitude verdade pico 1.87 % EQM 2.25 %; AHRS pico 1.70 % EQM 2.14 %
+    2026-11-05_134823: verdade pico 0.6136 EQM 0.0790; AHRS pico 0.6149 EQM 0.0729
+    2026-11-05_173140: verdade pico 0.6186 EQM 0.0784; AHRS pico 0.6205 EQM 0.0727
+    2026-11-05_173223: verdade pico 0.6143 EQM 0.0788; AHRS pico 0.6156 EQM 0.0728
+  arfagem/torque_degrau nativo (3 voos): amplitude verdade pico 0.81 % EQM 0.76 %; AHRS pico 0.90 % EQM 0.28 %
+    2026-11-05_135359: verdade pico 0.6283 EQM 0.0509; AHRS pico 0.6298 EQM 0.0419
+    2026-11-05_173306: verdade pico 0.6248 EQM 0.0503; AHRS pico 0.6260 EQM 0.0415
+    2026-11-05_173350: verdade pico 0.6231 EQM 0.0518; AHRS pico 0.6246 EQM 0.0415
+  arfagem/torque_degrau cc_lqg (3 voos): amplitude verdade pico 0.83 % EQM 2.89 %; AHRS pico 0.84 % EQM 0.91 %
+    2026-11-05_135442: verdade pico 0.5523 EQM 0.0433; AHRS pico 0.5533 EQM 0.0320
+    2026-11-05_173434: verdade pico 0.5454 EQM 0.0431; AHRS pico 0.5465 EQM 0.0320
+    2026-11-05_173517: verdade pico 0.5438 EQM 0.0426; AHRS pico 0.5450 EQM 0.0316
+  arfagem/torque_degrau cc_lqg_mesmo_ruido (3 voos): amplitude verdade pico 1.57 % EQM 1.45 %; AHRS pico 1.52 % EQM 1.27 %
+  maior amplitude (pico ou EQM) por controlador: nativo verdade 1.51 % / AHRS 1.51 %; cc_lqg verdade 2.89 % / AHRS 2.67 %; cc_lqg_mesmo_ruido verdade 2.65 % / AHRS 2.26 %
+impulso entregue, voos de impulso sem ruído do binário 4f669ec0c1e9 (reconstrução com o modelo):
+  rolagem: 13 voos, desvio do pedido médio +0.03 %, de -1.28 a +1.91 %
+  arfagem: 11 voos, desvio do pedido médio -0.34 %, de -0.93 a +0.35 %
+  guinada: 7 voos, desvio do pedido médio +0.10 %, de -0.05 a +0.39 %
+  todos: 31 voos, |desvio| máximo 1.91 %

@@ -2,9 +2,10 @@
 """Gera as figuras comparativas do Capitulo 6 a partir dos ensaios no SITL.
 
 Como o tabelas_monografia.py, usa so os voos do binario congelado do SITL, na base
-de atitude pedida (a verdadeira, por padrao: o serie_verdade.csv por cima do
-series.csv). Cada curva e o primeiro voo do par (semente 1, repeticao 1); a
-Figura 26 (comparacao_ruido) e a media dos voos e sai nas duas bases. As curvas
+de atitude pedida (a do AHRS, por padrao; com --atitude verdadeira, o
+serie_verdade.csv por cima do series.csv). Cada curva e o primeiro voo do par
+(semente 1, repeticao 1); a figura do ruido (comparacao_ruido) e a media dos voos e
+sai tambem na outra base (comparacao_ruido_verdadeira.pdf, para o Apendice D). As curvas
 do modelo, onde aparecem, vem do modelagem/projeto.py.
 
     comparacao_torque.pdf   erro de atitude no degrau curto e no degrau de torque
@@ -15,8 +16,8 @@ do modelo, onde aparecem, vem do modelagem/projeto.py.
     comparacao_ruido.pdf    esforco e erro eficazes com ruido de giroscopio
     comparacao_ff.pdf       erro de rastreamento: {PID, LQI} x {sem, com} alimentacao direta
 
-    ./figuras_monografia.py                      # base verdadeira, binario atual
-    ./figuras_monografia.py --atitude ahrs --destino /tmp/figuras_ahrs
+    ./figuras_monografia.py                      # base do AHRS, binario atual
+    ./figuras_monografia.py --atitude verdadeira --destino /tmp/figuras_verdade
 """
 
 from __future__ import annotations
@@ -68,7 +69,7 @@ COL_U = {"roll": "u_roll", "pitch": "u_pitch", "yaw": "u_yaw"}
 # Os voos e a base de atitude das figuras (main): so os do binario congelado do SITL;
 # na base verdadeira, as colunas de atitude e de erro vem do serie_verdade.csv
 # (analise/verdade.py), por cima do series.csv.
-BASE = {"binario": None, "atitude": "verdadeira"}
+BASE = {"binario": None, "atitude": "ahrs"}
 
 
 def voos_do_par(cenario, slug):
@@ -349,7 +350,7 @@ def fig_eso(desde, destino):
                 label="Injetada $d$")
         ax.plot(t, col[f"d_hat_{eixo}"], color=COR["cc_eso"], label="Estimada $\\hat d$")
         ax.set_xlim(*xlim)
-        tipo = "pulso" if "pulso" in ensaio else "degrau"
+        tipo = "degrau curto" if "pulso" in ensaio else "degrau"
         ax.set_title(f"{NOMES[eixo].capitalize()}, {tipo} (SITL)", loc="left")
         ax.set_xlabel("Tempo desde o início do torque (s)")
         _eixo_limpo(ax)
@@ -459,11 +460,11 @@ def fig_fronteira_sitl(desde, destino):
 
     Cada controlador e uma curva: um ponto por nivel de SIM_GYRn_RND (0, 10, 20, 40,
     80), com o ruido no esforco medido antes do pulso e o desvio no ensaio que
-    define a metrica primaria do eixo (pulso em rolagem, degrau em guinada).
+    define a metrica primaria do eixo (degrau curto em rolagem, degrau em guinada).
     """
     import matplotlib.ticker as tk
     plt = _estilo()
-    casos = (("roll", "torque_pulso", "Rolagem: desvio no pulso de torque"),
+    casos = (("roll", "torque_pulso", "Rolagem: desvio no degrau curto de torque"),
              ("yaw", "torque_degrau", "Guinada: desvio no degrau de torque"))
     fig, eixos = plt.subplots(1, 2, figsize=(6.3, 3.0))
     algum = False
@@ -545,8 +546,8 @@ def main():
     warnings.filterwarnings("ignore")
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--atitude", choices=("verdadeira", "ahrs"), default="verdadeira",
-                    help="base de atitude (padrao: verdadeira, P3c da revisao)")
+    ap.add_argument("--atitude", choices=("verdadeira", "ahrs"), default="ahrs",
+                    help="base de atitude (padrao: ahrs; a Figura do ruido sai tambem na outra base)")
     ap.add_argument("--binario", help="hash do binario do SITL (padrao: o de lotes/binario_lote.sha256)")
     ap.add_argument("--destino", type=Path, default=DESTINO)
     args = ap.parse_args()
@@ -554,12 +555,14 @@ def main():
     import tabelas_monografia
     BASE["binario"] = args.binario or tabelas_monografia.binario_atual()
     BASE["atitude"] = args.atitude
-    if args.atitude == "verdadeira":
-        # a Figura 26 sai tambem no AHRS: a diferenca entre as bases e resultado (rev. 2.2)
-        BASE["atitude"] = "ahrs"
-        d = fig_ruido(None, args.destino / "comparacao_ruido_ahrs.pdf")
-        print(f"{'figura: ' + str(d) if d else 'sem ensaios para comparacao_ruido_ahrs.pdf'}")
-        BASE["atitude"] = "verdadeira"
+    # a figura do ruido sai tambem na outra base: a diferenca entre as bases e resultado
+    # (rev. 2.2; Apendice D)
+    outra = "ahrs" if args.atitude == "verdadeira" else "verdadeira"
+    BASE["atitude"] = outra
+    nome = f"comparacao_ruido_{outra}.pdf"
+    d = fig_ruido(None, args.destino / nome)
+    print(f"{'figura: ' + str(d) if d else 'sem ensaios para ' + nome}")
+    BASE["atitude"] = args.atitude
     for nome, fn in (("comparacao_torque.pdf", fig_torque), ("comparacao_degrau.pdf", fig_degrau),
                      ("comparacao_frf.pdf", fig_frf), ("eso_dhat_sitl.pdf", fig_eso),
                      ("comparacao_impulso.pdf", fig_impulso),

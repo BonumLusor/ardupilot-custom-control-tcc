@@ -130,7 +130,7 @@ source ~/venv-ardupilot/bin/activate
 ensaios/run_ensaio.py --cenario rolagem/torque_impulso --controlador cc_lqg
 # o lote da monografia (~560 voos, ~8 h; retomavel: rodar de novo pula o que ja voou)
 ensaios/lotes/lote_revisao.sh --l4-inerente
-# metricas na atitude verdadeira, tabelas e figuras (so os voos do binario do lote)
+# metricas na atitude verdadeira (Apendice D), tabelas e figuras (base do AHRS; so os voos do binario do lote)
 cd ensaios
 python -m analise.verdade resultados --binario $(cat lotes/binario_lote.sha256)
 ./tabelas_monografia.py

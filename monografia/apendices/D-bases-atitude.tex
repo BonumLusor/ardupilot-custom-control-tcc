@@ -1,22 +1,60 @@
 % ---------------------------------------------------------------------
 %  APÊNDICE D — ATITUDE VERDADEIRA E ATITUDE DO AHRS
-%  Revisão de 3/11, item 2.2 (P3c): as tabelas usam a atitude verdadeira;
-%  aqui, as duas bases nos mesmos voos. Tabela gerada por
-%  ensaios/tabelas_monografia.py (apendice_bases.tex).
+%  Revisão de 3/11, item 2.2. P3 revisto em 5/11: as tabelas usam a atitude
+%  do AHRS; aqui, a verdadeira nos mesmos voos. Tabela gerada por
+%  ensaios/tabelas_monografia.py (apendice_bases.tex), figura por
+%  ensaios/figuras_monografia.py (comparacao_ruido_verdadeira.pdf); o erro
+%  lento do AHRS, em monografia/verificacao/deriva_ahrs.txt.
 % ---------------------------------------------------------------------
 \chapter{Atitude verdadeira e atitude do AHRS}
 \label{ap:bases}
 
-As tabelas de resultados medem a atitude verdadeira do modelo físico do SITL
-(mensagem \codigo{CCTQ}), menos o viés médio entre as bases no meio segundo
-antes da perturbação (Seção~\ref{sec:metricas}). A Tabela~\ref{tab:bases} mostra, nos mesmos
-voos, o desvio máximo e o erro eficaz nas duas bases, para o nativo e os dois
-LQG nos ensaios em que a diferença mais pesa: o impulso, o degrau e o torque
-estocástico, sem ruído e com o ruído de giroscópio de
+As tabelas de resultados medem a atitude estimada pelo AHRS, a que os
+controladores regulam (Seção~\ref{sec:metricas}). Este apêndice mostra, nos
+mesmos voos, a atitude verdadeira do modelo físico do SITL (mensagem
+\codigo{CCTQ}), menos o viés médio entre as bases no meio segundo antes da
+perturbação. A Tabela~\ref{tab:bases} compara o desvio máximo e o erro
+eficaz nas duas bases, para o nativo e os dois LQG, no impulso, no degrau e
+no torque estocástico, sem ruído e com o ruído de giroscópio de
 \codigo{SIM\_GYR*\_RND} = 20.
 
-\pendente{Fase 6: comentar a tabela com os voos do lote (onde as bases
-divergem, e se a ordem entre os controladores muda).}
+Sem ruído de giroscópio, o desvio máximo é o mesmo nas duas bases, a menos
+de 3\,\%: o pico vem nos primeiros décimos de segundo depois do torque,
+quando as bases ainda não se separaram. Depois, elas se separam devagar,
+pelo erro lento do AHRS. No pairado, o rumo do AHRS se afasta do verdadeiro
+a cerca de \SI{0.06}{\degree\per\second}, até cerca de \ang{1} ao longo de
+dezenas de segundos, e a rolagem, até cerca de \ang{0.1}. O padrão se
+repete, quase igual, nos voos de todos os controladores: é um erro do
+estimador do firmware, e não da lei de controle. O controlador anula o erro
+da atitude que mede, e a atitude verdadeira guarda o erro do AHRS. Por
+isso, nas janelas longas, o erro eficaz verdadeiro fica maior que o do AHRS,
+e mais nos controladores de erro eficaz pequeno: no degrau sustentado de
+rolagem, +9\,\% no nativo e +21\,\% e +33\,\% nos dois LQG; no de guinada,
+até +76\,\%. Na guinada, esse erro passa de 10\,\% do pico do degrau e
+decide o limiar da recuperação, que deixa de comparar controladores. Tirada
+da diferença entre as bases só a parte abaixo de \SI{0.05}{\hertz}, as duas
+concordam a menos de 2\,\% no pico e no erro eficaz, e a recuperação do
+degrau de guinada do nativo volta a \SI{22.3}{\second}, contra
+\SI{22.2}{\second} no AHRS. Sem ruído, a base verdadeira só acrescenta o erro
+lento do AHRS; por isso as tabelas ficam no AHRS.
+
+Com \codigo{SIM\_GYR*\_RND} = 20, o desvio máximo verdadeiro fica de 6\,\% a
+7\,\% abaixo do medido no AHRS, em rolagem, nos três controladores. O ângulo
+do AHRS integra o ruído do giroscópio sem filtro
+(Seção~\ref{sec:sensores-sitl}), e o pico medido inclui esse ruído. O erro
+eficaz verdadeiro, ao contrário, fica de 22\,\% a 33\,\% acima. O
+controlador mantém o ângulo do AHRS, e a aeronave se move com o erro dele,
+um movimento que o AHRS não mostra. No trecho calmo
+(Figura~\ref{fig:comparacao-ruido-verdadeira}), esse erro domina: o erro
+eficaz verdadeiro é de 0,05 a \ang{0.07} em rolagem e arfagem e de 0,23 a
+\ang{0.29} em guinada, cerca de quatro a oito vezes o do AHRS, com todos os
+controladores. O esforço não depende da base, e o painel dele é o da
+Figura~\ref{fig:comparacao-ruido}.
+
+A ordem entre o nativo e os dois LQG é a mesma nas duas bases, e a
+diferença relativa muda pouco: no impulso com ruído, em cinco voos por
+controlador, o LQG de mesmo ruído fica $-9$\,\% abaixo do nativo no AHRS e
+$-10$\,\% na verdade, em rolagem, e $-7$\,\% e $-8$\,\% em guinada.
 
 \begin{table}[htbp]
 \centering
@@ -29,3 +67,15 @@ verdadeira, nos mesmos voos.}
 \nota{\raggedright $\Delta$: verdade em relação ao AHRS.
 \input{tabelas/apendice_bases_nota}}
 \end{table}
+
+\begin{figure}[htbp]
+\centering
+\caption{Esforço e erro de atitude eficazes no trecho calmo antes do
+impulso, com \codigo{SIM\_GYR\_RND} = 20, na atitude verdadeira.}
+\label{fig:comparacao-ruido-verdadeira}
+\includegraphics[width=\textwidth]{figuras/comparacao_ruido_verdadeira}
+\fonte{Elaborada pelo autor.}
+\nota{\raggedright Média e desvio padrão de cinco voos (um nos controladores
+sem repetição). O esforço é o mesmo da Figura~\ref{fig:comparacao-ruido}.}
+\end{figure}
+

@@ -1,0 +1,26 @@
+% Gerada por ensaios/tabelas_monografia.py — nao editar a mao.
+\begin{tabular}{llrrrr}
+\toprule
+Eixo & Controlador & Desvio máx. (\si{\degree}) & Recuperação (\si{\second}) & RMSE (\si{\degree}) & $u_{\max}$ \\
+\midrule
+Rolagem & nativo & 0,79 & 0,13 & 0,080 & 0,071 \\
+Rolagem & LQI & 0,82 & 0,33 & 0,089 & 0,068 \\
+Rolagem & LQR+ESO & 0,82 & 0,35 & 0,090 & 0,068 \\
+Rolagem & LQG & 0,73 & 0,32 & 0,088 & 0,065 \\
+Rolagem & LQG (mesmo ruído) & 0,73 & 0,26 & 0,083 & 0,065 \\
+\addlinespace
+Arfagem & nativo & 0,80 & 0,14 & 0,082 & 0,070 \\
+Arfagem & LQI & 0,85 & 0,36 & 0,091 & 0,068 \\
+Arfagem & LQR+ESO & 0,83 & 0,39 & 0,092 & 0,067 \\
+Arfagem & LQG & 0,73 & 0,33 & 0,088 & 0,064 \\
+Arfagem & LQG (mesmo ruído) & 0,72 & 0,26 & 0,083 & 0,063 \\
+\addlinespace
+Guinada & nativo & 6,00 & 0,58 & 1,585 & 0,273 \\
+Guinada & LQI & 4,19 & 1,66 & 1,332 & 0,350 \\
+Guinada & LQR+ESO & 4,33 & 1,52 & 1,332 & 0,306 \\
+Guinada & LQI (mesmo ruído) & 7,28 & 3,24 & 3,142 & 0,150 \\
+Guinada & LQG & 5,06 & 1,14 & 1,504 & 0,307 \\
+Guinada & LQG (mesmo ruído) & 5,59 & 1,43 & 1,738 & 0,264 \\
+Guinada & nativo (guinada ressintonizada) & 5,82 & 1,72 & 1,744 & 0,264 \\
+\bottomrule
+\end{tabular}

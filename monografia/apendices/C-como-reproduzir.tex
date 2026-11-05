@@ -77,13 +77,14 @@ ensaios/lotes/lote_revisao.sh --l4-inerente
 cd ensaios
 python -m analise.verdade resultados --binario $(cat lotes/binario_lote.sha256)
 ./tabelas_monografia.py
-./tabelas_monografia.py --atitude ahrs --destino /tmp/tabelas_ahrs
+./tabelas_monografia.py --atitude verdadeira --destino /tmp/tabelas_verdade
 ./figuras_monografia.py
 \end{lstlisting}
 
 As tabelas e figuras usam só os voos do binário do lote. A base de atitude
-padrão é a verdadeira, e cada tabela grava, ao lado, a nota com a base e o
-número de voos de cada célula.
+padrão é a do AHRS (Seção~\ref{sec:metricas}); a tabela e a figura do
+Apêndice~\ref{ap:bases} saem também, com a atitude verdadeira. Cada tabela
+grava, ao lado, a nota com a base e o número de voos de cada célula.
 
 \section{Modelo, projeto e confronto com o SITL}
 

@@ -3,17 +3,16 @@
 \toprule
  & & \multicolumn{3}{c}{Filtro de 20 Hz} & \multicolumn{3}{c}{Filtro de 10 Hz} \\
 \cmidrule(lr){3-5}\cmidrule(lr){6-8}
-Eixo & Controlador & pulso (\si{\degree}) & degrau (\si{\degree}) & rastreio (\si{\degree}) & pulso (\si{\degree}) & degrau (\si{\degree}) & rastreio (\si{\degree}) \\
+Eixo & Controlador & degrau curto (\si{\degree}) & degrau (\si{\degree}) & rastreio (\si{\degree}) & degrau curto (\si{\degree}) & degrau (\si{\degree}) & rastreio (\si{\degree}) \\
 \midrule
-Rolagem & nativo & 0,90 & 0,60 & 3,25 & 2,13 & 1,42 & 3,23 \\
-Rolagem & LQI & 0,98 & 0,65 & 0,59 & 2,72 & 1,80 & 0,48 \\
-Rolagem & LQR+ESO & 0,99 & 0,66 & 0,65 & 2,90 & 1,95 & 0,57 \\
-Rolagem & LQG & 0,79 & 0,54 & 0,58 & 1,93 & 1,28 & 0,39 \\
+Rolagem & nativo & 0,89 & 0,60 & 3,26 & 2,13 & 1,41 & 3,23 \\
+Rolagem & LQI & 0,98 & 0,65 & 0,61 & 2,72 & 1,80 & 0,49 \\
+Rolagem & LQR+ESO & 0,99 & 0,66 & 0,65 & 2,90 & 1,95 & 0,61 \\
+Rolagem & LQG & 0,83 & 0,55 & 0,48 & 1,72 & 1,15 & 0,34 \\
 \addlinespace
-Guinada & nativo & 5,55$^\dagger$ & 2,56 & 7,88 & 6,19$^\dagger$ & 3,00 & 8,80 \\
-Guinada & LQI & 3,96$^\dagger$ & 1,87 & 0,09 & 6,89$^\dagger$ & 4,73 & 0,10 \\
-Guinada & LQR+ESO & 3,97$^\dagger$ & 1,77 & 0,24 & 5,72$^\dagger$ & 3,21 & 0,54 \\
-Guinada & LQG & 4,66$^\dagger$ & 1,90 & 0,09 & 5,02$^\dagger$ & 2,16 & 0,11 \\
+Guinada & nativo & 5,69 & 2,56 & 7,84 & 6,31 & 3,00 & 8,79 \\
+Guinada & LQI & 4,02 & 1,87 & 0,11 & 6,76 & 4,74 & 0,11 \\
+Guinada & LQR+ESO & 4,08 & 1,78 & 0,23 & 5,84 & 3,22 & 0,56 \\
+Guinada & LQG & 5,30 & 2,35 & 0,13 & 5,54 & 2,63 & 0,09 \\
 \bottomrule
-\multicolumn{8}{l}{\footnotesize $^\dagger$ Pulso de guinada: desvio máximo normalizado ao impulso nominal do cenário, $\delta_{\max}\,I_{\mathrm{nom}}/I_{\mathrm{reg}}$.} \\
 \end{tabular}
