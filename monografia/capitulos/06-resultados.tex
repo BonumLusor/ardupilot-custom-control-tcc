@@ -1,38 +1,35 @@
 % ======================================================================
 %  CAPÍTULO 6 — RESULTADOS E DISCUSSÃO
 %
-%  Lotes de 27, 29 e 31/10/2026 (análise com ANG a 400 Hz, reanalisados em
-%  1º e 2/11). As tabelas saem de ensaios/tabelas_monografia.py --desde
-%  2026-10-27 (voo mais recente de cada par); os números do texto, das
-%  mesmas pastas de resultado e de monografia/verificacao/.
+%  Lote da revisão de 3/11, voado em 5/11/2026 com o firmware congelado
+%  (binário 4f669ec0, ensaios/lotes/binario_lote.sha256). As tabelas saem
+%  de ensaios/tabelas_monografia.py (base do AHRS; média dos voos repetidos);
+%  os números do texto, das mesmas pastas e de monografia/verificacao/.
 % ======================================================================
 \chapter{Resultados e discussão}
 \label{cap:resultados}
 
 Este capítulo apresenta os resultados dos ensaios descritos no
-Capítulo~\ref{cap:metodos}: os 49 cenários e as 14 configurações de
-controlador da Seção~\ref{sec:controladores}, em 398 pares cenário ×
-controlador, voados em 27, 29 e 31/10/2026; vale, para cada par, o voo mais
-recente. As Seções~\ref{sec:res-integracao} a~\ref{sec:res-vento} discutem o
-PID nativo, com os ganhos da Tabela~\ref{tab:ganhos}, e o \textit{backend} de
-exemplo, com os mesmos ganhos, e têm duas funções: verificar que o caminho de
+Capítulo~\ref{cap:metodos}: os 55 cenários e as 17 configurações de
+controlador da Seção~\ref{sec:controladores}, em 450 pares cenário ×
+controlador e 558 voos, todos com o mesmo binário do firmware. As
+Seções~\ref{sec:res-integracao} a~\ref{sec:res-vento} discutem o PID nativo,
+com os ganhos da Tabela~\ref{tab:ganhos}, e o \textit{backend} de exemplo,
+com os mesmos ganhos, e têm duas funções: verificar que o caminho de
 integração pelo \codigo{AC\_CustomControl} reproduz o controlador nativo,
 condição para que a comparação com os controladores propostos seja válida, e
 caracterizar o PID nativo como linha de base quantitativa. As tabelas dessas
 seções já trazem as linhas dos controladores propostos, que a
 Seção~\ref{sec:res-proposto} discute.
 
-Cada cenário foi voado ao menos uma vez com cada controlador da sua lista;
-quando houve repetição, vale o voo mais recente. Ensaios repetidos depois dos
-lotes, com os mesmos ganhos, dão a medida da repetibilidade: em dois ensaios
-do LQG repetidos em 1º/11 --- o degrau de torque com o braço encurtado e o
-degrau de torque com \codigo{SIM\_GYR1\_RND} = 20 ---, o desvio máximo e o
-erro quadrático médio se reproduziram a menos de 5\,\%, com desvios de
-\ang{0.433} e \ang{0.413} no primeiro e de \ang{0.522} e \ang{0.525} no
-segundo. Com o ruído de giroscópio mais alto, a variação entre voos idênticos
-cresce, e a Seção~\ref{sec:res-proposto} a quantifica. A única fonte de
-variação entre voos identificada na entrada é a duração efetiva do pulso de
-torque, discutida na Seção~\ref{sec:res-torque}.
+As métricas estão na atitude estimada pelo AHRS, a que os controladores
+regulam; o Apêndice~\ref{ap:bases} mostra a atitude verdadeira nos mesmos
+voos. Sem ruído de giroscópio, um par voado três vezes varia até 1,5\,\% no
+nativo e até 2,7\,\% nos LQG (Seção~\ref{sec:metricas}). Por isso, cada par
+voa uma vez, exceto onde as diferenças são menores: o impulso e o degrau de
+rolagem e de arfagem do nativo e dos dois LQG, com três voos; o torque
+estocástico, com cinco sementes; e o impulso com ruído de giroscópio, com
+cinco voos. A nota de cada tabela diz quantos voos entram em cada célula.
 
 % ----------------------------------------------------------------------
 \section{Verificação do caminho de integração}
@@ -43,14 +40,13 @@ Em todos os ensaios com o \textit{backend} de exemplo, a mensagem
 \SI{0.4}{\second} depois do início do perfil e permaneceu ativo até o fim,
 antes, portanto, de qualquer degrau ou perturbação. Com os mesmos ganhos, os
 dois controladores produzem respostas praticamente iguais à perturbação de
-torque (Tabela~\ref{tab:res-torque}): no degrau sustentado, os desvios
-máximos diferem em no máximo 2\,\% e os erros quadráticos médios coincidem;
-no pulso de rolagem e arfagem, os desvios diferem em 1,5\,\%. O modelo da
-Seção~\ref{sec:validacao-tempo} reproduz cada controlador separadamente, com
-a mesma precisão, a partir do código de cada um.
+torque (Tabela~\ref{tab:res-torque}): os desvios máximos diferem em no
+máximo 1,7\,\%, e os erros quadráticos médios, em no máximo 0,4\,\%. O
+modelo da Seção~\ref{sec:validacao-tempo} reproduz cada controlador
+separadamente, com a mesma precisão, a partir do código de cada um.
 
-Duas diferenças aparecem, e ambas têm explicação. A primeira é o
-sobressinal do degrau de rolagem e arfagem, maior no \textit{backend}
+Uma diferença aparece, e ela tem explicação. É o sobressinal do degrau de
+rolagem e arfagem, maior no \textit{backend}
 (Tabela~\ref{tab:res-degrau}): 27\,\% e 24\,\%, contra 22\,\% e 20\,\% no
 nativo. A causa é estrutural. O controlador de ângulo nativo é o controlador
 de raiz quadrada~\eqref{eq:sqrt-controller}, que, com o ganho de
@@ -59,13 +55,10 @@ erros de até \ang{1.0}; o do \textit{backend} é puramente proporcional. No
 degrau, o erro de ângulo chega a \ang{3.3}, e, nesse erro, o nativo pede uma
 velocidade angular 28\,\% menor que a do proporcional, o que reduz o
 sobressinal. Em guinada, o limite linear é de \ang{10.9}, o erro do degrau
-não passa de \ang{7.9}, e os dois controladores coincidem. A segunda é o
-desvio no pulso de guinada: medido, é 6\,\% menor no \textit{backend}, mas o
-impulso aplicado no voo dele foi 7\,\% menor (Seção~\ref{sec:res-torque}).
-A diferença não vem do controlador: simulados com a mesma entrada, os dois
-dão o mesmo desvio, e, normalizados pelo impulso, os desvios são de
-\ang{5.55} e \ang{5.64} (Tabela~\ref{tab:res-torque}), 1,6\,\% de
-diferença.
+não passa de \ang{7.9}, e os dois controladores coincidem. No degrau curto
+de guinada, em que o pico vem depois do fim do pulso e acompanha o impulso
+aplicado, os dois desviam \ang{5.69} e \ang{5.70}: o pulso de duração exata
+(Seção~\ref{sec:injetor}) aplica o mesmo impulso nos dois voos.
 
 O caminho de integração está, portanto, verificado: um controlador executado
 dentro do \codigo{AC\_CustomControl} enfrenta a mesma planta, a mesma
@@ -89,11 +82,12 @@ fizerem com erros grandes é escolha de projeto
 \resizebox{\textwidth}{!}{\input{tabelas/resultados_degrau}}
 
 \fonte{Elaborada pelo autor.}
+\nota{\raggedright \input{tabelas/resultados_degrau_nota}}
 \end{table}
 
 A Tabela~\ref{tab:res-degrau} reúne as métricas dos degraus. Com o nativo e o
 \textit{backend} de exemplo, em rolagem e
-arfagem, o degrau de \ang{10} sobe em 40 a \SI{48}{\milli\second}, com
+arfagem, o degrau de \ang{10} sobe em 43 a \SI{48}{\milli\second}, com
 sobressinal de 20\,\% a 27\,\% e acomodação em 0,18 a \SI{0.23}{\second}; a
 aeronave chega a ficar \ang{3.3} atrás do alvo modelado. Os ganhos de ângulo
 do AutoTune são altos --- cerca de seis vezes os do arquivo de parâmetros
@@ -101,7 +95,7 @@ padrão --- e o atuador do SITL não tem dinâmica (Seção~\ref{sec:motor-sitl}
 o que permite respostas tão rápidas; numa aeronave real, a dinâmica dos
 motores limitaria essa banda. A arfagem repete a rolagem, como prevê a
 simetria do quadro X. Em guinada, o degrau de \ang{30} sobe em
-\SI{0.46}{\second}, com 11\,\% de sobressinal e acomodação em
+\SI{0.47}{\second}, com 11\,\% de sobressinal e acomodação em
 \SI{1.5}{\second}, e o erro de rastreamento chega a \ang{8}: o alvo é
 modelado com a aceleração máxima de \SI{115}{\degree\per\second\squared}, e
 a eficácia de controle em guinada é 30 vezes menor que em rolagem.
@@ -118,29 +112,30 @@ comparados pelo erro de rastreamento em relação à referência modelada.
 
 \begin{table}[htbp]
 \centering
-\caption{Rejeição de torque: pulso de \SI{15}{\radian\per\second\squared}
-(rolagem e arfagem) e \SI{3}{\radian\per\second\squared} (guinada) por
-\SI{0.3}{\second}, e degrau de 10 e \SI{1}{\radian\per\second\squared}; no
-pulso de guinada, desvio normalizado ao impulso nominal ($\dagger$).}
+\caption{Rejeição de torque: degrau curto de
+\SI{15}{\radian\per\second\squared} (rolagem e arfagem) e
+\SI{3}{\radian\per\second\squared} (guinada) por \SI{0.3}{\second}, e degrau
+de 10 e \SI{1}{\radian\per\second\squared}.}
 \label{tab:res-torque}
 \small
 \resizebox{\textwidth}{!}{\input{tabelas/resultados_torque}}
 
 \fonte{Elaborada pelo autor.}
+\nota{\raggedright \input{tabelas/resultados_torque_nota}}
 \end{table}
 
 A Tabela~\ref{tab:res-torque} mostra a rejeição de torque. Com o nativo e o
 \textit{backend} de exemplo, em rolagem e
-arfagem, o pulso desvia a atitude em 0,90 a \ang{0.94}, e o erro volta a
-10\,\% do pico em 1,2 a \SI{1.3}{\second}; o degrau sustentado de
-\SI{10}{\radian\per\second\squared} desvia \ang{0.6} e é compensado pelo
-integrador em 2,1 a \SI{2.3}{\second}. O esforço de controle é pequeno: o
-pulso pede cerca de 5\,\% da faixa de esforço normalizado, e o degrau,
-3,4\,\%. Em guinada, o quadro muda. Um torque sustentado dez vezes menor,
+arfagem, o degrau curto desvia a atitude em 0,89 a \ang{0.94}, e o erro volta
+a 10\,\% do pico em 1,15 a \SI{1.20}{\second}; o degrau sustentado de
+\SI{10}{\radian\per\second\squared} desvia 0,60 a \ang{0.62} e é compensado
+pelo integrador em cerca de \SI{2.2}{\second}. O esforço de controle é
+pequeno: o degrau curto pede cerca de 5\,\% da faixa de esforço normalizado,
+e o degrau, 3,4\,\%. Em guinada, o quadro muda. Um torque sustentado dez vezes menor,
 \SI{1}{\radian\per\second\squared}, desvia o rumo em \ang{2.56}, quatro vezes
 mais que o de rolagem, e a recuperação leva \SI{22}{\second}, dez vezes mais.
-No pulso de guinada, a recuperação de \SI{0.35}{\second} é medida até
-10\,\% do pico, mas resta um desvio de cerca de 4\,\% do pico, que o
+No degrau curto de guinada, a recuperação de \SI{0.35}{\second} é medida
+até 10\,\% do pico, mas resta um desvio de cerca de 4\,\% do pico, que o
 integrador lento só elimina em dezenas de segundos. A Seção~\ref{sec:validacao-tempo} mostrou que essa recuperação é governada
 pelo polo em $-k_I/k_P$, imposto pela razão $k_I = k_P/10$ que o AutoTune
 adota em guinada, e não pela planta. É nesse eixo, com a menor eficácia de
@@ -148,24 +143,16 @@ controle e a ação integral mais lenta, que a rejeição de perturbação do PI
 nativo é mais fraca com a sintonia do AutoTune. A
 Seção~\ref{sec:res-proposto-torque} mostra que qualquer controlador com ação
 integral mais forte, com ou sem estimação explícita da perturbação --- o LQI
-também resolve ---, recupera em 1 a \SI{2}{\second}.
+e o próprio PID com outra sintonia também resolvem ---, recupera em 0,7 a
+\SI{2.3}{\second}.
 
-O pulso de torque exige uma ressalva. O laço do injetor roda a cerca de
-\SI{44}{\hertz}, e não aos \SI{50}{\hertz} pedidos, e a duração efetiva do
-pulso nominal de \SI{0.3}{\second} variou de 300 a \SI{338}{\milli\second}
-nos voos de 27/10 do nativo e do \textit{backend} de exemplo (de 300 a
-\SI{344}{\milli\second} em todos os voos válidos), e o impulso aplicado, em
-até 10\,\% entre dois voos. Em rolagem e
-arfagem, a malha fechada é rápida o bastante para que o pico do desvio ocorra
-durante o próprio pulso, e ele depende pouco da duração: dois voos com
-impulsos 7\,\% diferentes desviaram 0,90 e \ang{0.91}. Em guinada, a resposta
-é lenta, e o desvio acompanha o impulso. Por isso, nas tabelas deste
-capítulo, o desvio do pulso de guinada é normalizado ao impulso nominal do
-cenário, $\delta_{\max}\,I_{\mathrm{nom}}/I_{\mathrm{reg}}$ (marca
-$\dagger$); em rolagem e arfagem, em que o pico precede o fim do pulso, vale o
-desvio medido. A alternativa seria o injetor temporizar o pulso pelo próprio
-simulador, que é capaz de aplicar o torque por uma duração exata
-(\codigo{SIM\_TWIST\_TIME}).
+O degrau curto e o impulso são temporizados pelo próprio simulador
+(Seção~\ref{sec:injetor}): duram sempre o mesmo número de passos da física,
+e o impulso aplicado fica a menos de 2\,\% do pedido. Isso importa sobretudo
+em guinada, em que a resposta é lenta, o pico vem depois do fim do pulso e
+o desvio acompanha o impulso. Em rolagem e arfagem, a malha fechada é rápida
+o bastante para que o pico do degrau curto ocorra durante o próprio pulso.
+Com a duração exata, as tabelas trazem o desvio medido em todos os eixos.
 
 \begin{table}[htbp]
 \centering
@@ -176,6 +163,7 @@ ensaio simultâneo dos três eixos.}
 \input{tabelas/resultados_simultaneo}
 
 \fonte{Elaborada pelo autor.}
+\nota{\raggedright \input{tabelas/resultados_simultaneo_nota}}
 \end{table}
 
 Os ensaios simultâneos nos três eixos (Tabela~\ref{tab:res-simultaneo})
@@ -187,7 +175,7 @@ altas. Com rolagem,
 arfagem e guinada perturbadas ao mesmo tempo, e com os motores M3 e M4
 trabalhando o dobro do que trabalham num ensaio de um eixo, cada eixo desvia
 o mesmo que no ensaio isolado, com diferença de no máximo 1,1\,\%, e
-recupera com diferença de no máximo 6\,\%. É o que prevê a matriz de entrada
+recupera com diferença de no máximo 5\,\%. É o que prevê a matriz de entrada
 diagonal da Seção~\ref{sec:modelo-linear}, e justifica projetar o
 controlador eixo a eixo.
 
@@ -207,23 +195,23 @@ torque.}
 \nota{\raggedright Ganho em \si{\degree} por
 \si{\radian\per\second\squared}; queda de \SI{3}{\decibel} em relação ao
 ganho máximo, acima da frequência do máximo; coerência mediana na faixa da
-varredura.}
+varredura. \input{tabelas/resultados_frequencia_nota}}
 \end{table}
 
 As varreduras (Tabela~\ref{tab:res-frequencia}) estimam a resposta do ângulo
 ao torque de perturbação, $P\,S$, a sensibilidade à perturbação na entrada da
 planta (Seção~\ref{sec:bode}), e mostram em que frequências a malha fechada é
 mais sensível a ela. Com o nativo e o \textit{backend} de exemplo, em rolagem
-e arfagem, o ganho é máximo em \SI{3.6}{\hertz}, com 0,061 a
+e arfagem, o ganho é máximo em \SI{3.6}{\hertz}, com 0,063 a
 \SI{0.065}{\degree} por \si{\radian\per\second\squared}, e cai
-\SI{3}{\decibel} entre 6,4 e \SI{7.6}{\hertz}; abaixo do máximo, o integrador
+\SI{3}{\decibel} entre 6,8 e \SI{7.2}{\hertz}; abaixo do máximo, o integrador
 atenua a perturbação lenta, e acima dele, a própria inércia da
 aeronave~\cite[seção~11.3]{astrom2008}. Em guinada, o ganho é máximo na menor
 frequência da varredura, \SI{0.2}{\hertz}, com \SI{2.56}{\degree} por
 \si{\radian\per\second\squared} --- quarenta vezes o máximo de rolagem ---, e
 cai \SI{3}{\decibel} em \SI{1.2}{\hertz}. A guinada é sensível justamente às
 perturbações lentas, que o integrador fraco demora a compensar, coerente com
-o degrau sustentado. A coerência mediana é de 0,97 ou mais em todas as
+o degrau sustentado. A coerência mediana é de 0,98 ou mais em todas as
 varreduras, e o modelo linear reproduz essas respostas
 (Seção~\ref{sec:validacao-frequencia}).
 
@@ -235,12 +223,12 @@ O ensaio de rajada confirma, com medida, a divisão de trabalho entre as duas
 famílias de perturbação (Seção~\ref{sec:injetor}). Sob uma rajada lateral de
 \SI{10}{\metre\per\second}, a aeronave, com a atitude comandada e sem
 controle de posição, chegou a \SI{4.2}{\metre\per\second} e derivou
-\SI{18.6}{\metre}, mas o erro de rolagem não passou de \ang{0.017}, contra
-\ang{0.013} a \ang{0.015} no trecho calmo antes da rajada, e o de arfagem
-ficou em \ang{0.015}. O pulso de torque de rolagem desvia a atitude 50 vezes
-mais. A guinada é a única exceção visível: o erro de rumo passou de
-\ang{0.03} para \ang{0.30} durante a rajada, ainda vinte vezes menos que no
-pulso de torque de guinada. O nativo e o \textit{backend} de exemplo dão os
+\SI{18.6}{\metre}, mas o erro de rolagem não passou de 0,015 a \ang{0.018},
+contra \ang{0.013} a \ang{0.014} no trecho calmo antes da rajada, e o de
+arfagem ficou em \ang{0.015}. O degrau curto de torque de rolagem desvia a
+atitude 60 vezes mais. A guinada é a única exceção visível: o erro de rumo
+passou de \ang{0.03} para \ang{0.30} durante a rajada, ainda vinte vezes
+menos que no degrau curto de torque de guinada. O nativo e o \textit{backend} de exemplo dão os
 mesmos números. No modelo de multirrotor do SITL, o vento é, assim,
 sobretudo uma perturbação de posição: o arrasto de corpo age no centro de
 massa, e o arrasto de momento nos rotores só produz momento na medida em que
@@ -283,10 +271,10 @@ com o nativo e os controladores propostos.}
 No degrau de atitude (Tabela~\ref{tab:res-degrau} e
 Figura~\ref{fig:comparacao-degrau}), os controladores propostos seguem o alvo
 modelado muito mais de perto. Em rolagem e arfagem, o sobressinal cai de
-20\,\% a 27\,\% para 3,3\,\% a 6,2\,\%, e o erro de rastreamento máximo, de
-cerca de \ang{3.2} para \ang{0.50} a \ang{0.65}, com o mesmo tempo de subida.
+20\,\% a 27\,\% para 1,3\,\% a 6,2\,\%, e o erro de rastreamento máximo, de
+cerca de \ang{3.3} para \ang{0.42} a \ang{0.65}, com o mesmo tempo de subida.
 Em guinada, o sobressinal cai de 11\,\% para no máximo 0,3\,\%, e o erro
-máximo, de \ang{7.88} para \ang{0.09} a \ang{0.24}; a subida fica um pouco
+máximo, de \ang{7.84} para \ang{0.10} a \ang{0.23}; a subida fica um pouco
 mais lenta, 0,56 a \SI{0.57}{\second} contra \SI{0.47}{\second}.
 
 \begin{table}[htbp]
@@ -299,17 +287,17 @@ direta separadas.}
 
 \fonte{Elaborada pelo autor.}
 \nota{\raggedright PID: \textit{backend} de exemplo (\codigo{cc\_pid} e
-\codigo{cc\_pid\_ff}); LQI sem alimentação direta: \codigo{cc\_lqi\_sem\_ff}.}
+\codigo{cc\_pid\_ff}); LQI sem alimentação direta: \codigo{cc\_lqi\_sem\_ff}. \input{tabelas/resultados_alimentacao_direta_nota}}
 \end{table}
 
 A vantagem vem da alimentação direta, e não da realimentação. A
 Tabela~\ref{tab:res-ff} separa as duas na comparação dois a dois da
 Seção~\ref{sec:controladores}: com a mesma alimentação direta do LQI, o PID
-do \textit{backend} de exemplo cai de 27,1\,\% para 5,2\,\% de sobressinal em
-rolagem e de \ang{3.31} para \ang{0.78} de erro máximo, perto dos 5,6\,\% e
-\ang{0.59} do LQI; sem ela, o LQI fica com 18,9\,\% e \ang{2.58}, perto do
+do \textit{backend} de exemplo cai de 27,0\,\% para 4,3\,\% de sobressinal em
+rolagem e de \ang{3.31} para \ang{0.67} de erro máximo, perto dos 5,8\,\% e
+\ang{0.61} do LQI; sem ela, o LQI fica com 18,2\,\% e \ang{2.44}, perto do
 nativo. Em guinada, o PID com alimentação direta chega a 0,0\,\% e
-\ang{0.24}. A alimentação direta pela inversão do modelo~\eqref{eq:ff-modelo}
+\ang{0.25}. A alimentação direta pela inversão do modelo~\eqref{eq:ff-modelo}
 é, portanto, a parte do projeto que melhora o rastreamento, e ela serviria
 igualmente ao PID (Figura~\ref{fig:comparacao-ff}).
 
@@ -327,8 +315,8 @@ realimentação, e o traço, a alimentação direta.}
 
 \begin{figure}[htbp]
 \centering
-\caption{Erro de atitude no pulso e no degrau de torque, em rolagem e em
-guinada, no SITL, com o nativo e os controladores propostos.}
+\caption{Erro de atitude no degrau curto e no degrau de torque, em rolagem e
+em guinada, no SITL, com o nativo e os controladores propostos.}
 \label{fig:comparacao-torque}
 \includegraphics[width=\textwidth]{figuras/comparacao_torque}
 \fonte{Elaborada pelo autor.}
@@ -336,17 +324,19 @@ guinada, no SITL, com o nativo e os controladores propostos.}
 
 Em rolagem e arfagem (Tabela~\ref{tab:res-torque} e
 Figura~\ref{fig:comparacao-torque}), o LQI e o LQR com ESO não superam o
-nativo no pico: no pulso de rolagem, desviam \ang{0.98} e \ang{0.99}, contra
-\ang{0.90}, e no degrau sustentado, \ang{0.65} e \ang{0.66}, contra
-\ang{0.60}. Recuperam, porém, muito mais depressa: \SI{0.44}{\second} e
-\SI{0.41}{\second} no degrau sustentado, contra \SI{2.25}{\second}. A
-Tabela~\ref{tab:res-equivalencia} mostra por quê: o nativo voado com os
-ganhos que reproduzem o LQI dá os mesmos números do LQI --- \ang{0.99}
-contra \ang{0.98} no pulso e \ang{0.66} contra \ang{0.65} no degrau ---,
-porque, nesses eixos, o LQI é a cascata P e PI com outros ganhos
-(Seção~\ref{sec:projeto-lqi}). A diferença para o nativo é de sintonia, e
-não de estrutura: com a mesma frequência de cruzamento e a mesma margem de
-fase, o LQI troca um pouco de pico por um modo lento seis vezes mais rápido.
+nativo no pico: no degrau curto de rolagem, desviam \ang{0.98} e
+\ang{0.99}, contra \ang{0.89}, e no degrau sustentado, \ang{0.65} e
+\ang{0.66}, contra \ang{0.60}; nos dois eixos, ficam de 8\,\% a 13\,\% acima.
+Recuperam, porém, muito mais depressa: \SI{0.44}{\second} e
+\SI{0.42}{\second} no degrau sustentado de rolagem, contra
+\SI{2.20}{\second}. A Tabela~\ref{tab:res-equivalencia} mostra por quê: o
+nativo voado com os ganhos que reproduzem o LQI dá os mesmos números do LQI
+--- \ang{0.99} contra \ang{0.98} no degrau curto e \ang{0.66} contra
+\ang{0.65} no degrau ---, porque, nesses eixos, o LQI é a cascata P e PI com
+outros ganhos (Seção~\ref{sec:projeto-lqi}). A diferença para o nativo é de
+sintonia, e não de estrutura: com a mesma frequência de cruzamento e a mesma
+margem de fase, o LQI troca um pouco de pico por um modo lento seis vezes
+mais rápido.
 
 \begin{table}[htbp]
 \centering
@@ -357,42 +347,151 @@ com os ganhos que reproduzem o LQI e o LQI.}
 \resizebox{\textwidth}{!}{\input{tabelas/resultados_equivalencia}}
 
 \fonte{Elaborada pelo autor.}
+\nota{\raggedright \input{tabelas/resultados_equivalencia_nota}}
 \end{table}
 
-O LQG é o único que melhora o pico em rolagem e arfagem: no pulso, desvia
-\ang{0.81} e \ang{0.79} (mesmo ruído) em rolagem, 10\,\% e 12\,\% abaixo do
-nativo, e \ang{0.84} e \ang{0.86} em arfagem; no degrau sustentado, de
-\ang{0.51} a \ang{0.57}, 7\,\% a 15\,\% abaixo, com recuperação de 0,17 a
-\SI{0.20}{\second}. O que o distingue dos outros dois é modelar o caminho
-de medida: o filtro de Kalman estima a perturbação a partir do ângulo e do
-giroscópio descontando o filtro e o atraso, que o LQI e o ESO ignoram.
+A ação integral mais forte tem um segundo custo, visível na
+Figura~\ref{fig:comparacao-torque}. Quando o degrau curto acaba, o
+integrador ou a estimativa da perturbação ainda guardam o torque, e o erro
+passa do zero. Em rolagem, todos os propostos devolvem de \ang{0.75} a
+\ang{0.91}, quase o tamanho do primeiro desvio, contra \ang{0.29} do nativo;
+em guinada, de \ang{1.9} a \ang{2.7}, contra \ang{0.52}. É a troca da
+integral de Bode (Seção~\ref{sec:bode}) vista no tempo: atenuar mais a
+perturbação lenta, o que dá a recuperação rápida do degrau sustentado,
+aumenta a resposta à perturbação que muda depressa.
+
+O LQG de mesmo ruído, o do portão (Seção~\ref{sec:projeto-lqg}), é o único
+que reduz o pico do degrau curto e do degrau em rolagem e arfagem: desvia
+\ang{0.83} e \ang{0.82} no degrau curto, 7\,\% e 11\,\% abaixo do nativo, e
+\ang{0.55} no degrau sustentado, 8\,\% e 11\,\% abaixo, com recuperação de
+\SI{0.20}{\second}. O projeto previa $-8{,}4$\,\% no degrau curto de rolagem
+(Tabela~\ref{tab:projeto-portao}). O LQG com a regra de sintonia comum, de
+banda igual à do LQI, fica igual ao nativo no pico desses dois ensaios (de
+$-0{,}4$\,\% a $+2{,}1$\,\%) e recupera do degrau em 0,22 a
+\SI{0.23}{\second}. Nesses ensaios, a vantagem no pico vem do critério do
+portão --- o menor pico com o ruído no esforço do nativo ---, e não só da
+estrutura do LQG.
+
+\begin{table}[htbp]
+\centering
+\caption{Impulso de torque de \SI{20}{\milli\second}:
+\SI{35}{\radian\per\second\squared} em rolagem e arfagem e
+\SI{41.5}{\radian\per\second\squared} em guinada.}
+\label{tab:res-impulso}
+\small
+\input{tabelas/resultados_impulso}
+
+\fonte{Elaborada pelo autor.}
+\nota{\raggedright \input{tabelas/resultados_impulso_nota}}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\caption{Erro de atitude no impulso de torque de \SI{20}{\milli\second}, em
+rolagem e em guinada, no SITL, com o nativo e os controladores propostos.}
+\label{fig:comparacao-impulso}
+\includegraphics[width=\textwidth]{figuras/comparacao_impulso}
+\fonte{Elaborada pelo autor.}
+\end{figure}
+
+O impulso de \SI{20}{\milli\second} (Tabela~\ref{tab:res-impulso} e
+Figura~\ref{fig:comparacao-impulso}) é curto demais para que o integrador ou
+a estimativa da perturbação reajam antes do pico: ele mede como a
+realimentação freia a velocidade angular que o torque deixa. Em rolagem e
+arfagem, os dois LQG desviam de 7\,\% a 9\,\% menos que o nativo ---
+\ang{0.73} e \ang{0.72}, contra \ang{0.79} e \ang{0.80} ---, e o LQI e o
+ESO, de 4\,\% a 6\,\% mais. Aqui o LQG de regra comum também ganha. O pico
+do impulso depende da malha perto do cruzamento, onde os dois LQG têm o
+menor pico de sensibilidade, $|S|$ de 1,5 a 1,6 no modelo, contra 1,8 do
+nativo. O do degrau curto, de \SI{0.3}{\second}, depende também da faixa de
+1 a \SI{3}{\hertz}, em que o $|P\,S|$ do LQG de regra comum fica acima do
+nativo, como o do LQI (Tabela~\ref{tab:res-frequencia}). Depois do pico do
+impulso, os propostos passam do zero de \ang{0.17} a \ang{0.24} e voltam a
+10\,\% do pico em 0,26 a \SI{0.39}{\second}, contra 0,13 e
+\SI{0.14}{\second} do nativo. Em guinada, o LQI e o ESO desviam 30\,\% e 28\,\% menos que o
+nativo; o LQG, 16\,\%; e o LQG de mesmo ruído, 7\,\%.
 
 Em guinada, todos os propostos eliminam a recuperação lenta do nativo: no
-degrau sustentado, recuperam em 1,0 a \SI{1.6}{\second}
-(\SI{2.3}{\second} no LQI de mesmo ruído), contra \SI{22}{\second}. No pico do degrau, o LQI e o ESO desviam \ang{1.87} e
-\ang{1.77} e o LQG de mesmo ruído, \ang{1.90}, contra \ang{2.56} do nativo
-(26\,\% a 31\,\% abaixo); no pulso, normalizado pelo impulso, o LQI e o ESO
-ficam 29\,\% e 28\,\% abaixo do nativo, e o LQG de mesmo ruído, 16\,\%. Mas o
-LQI e o ESO compram essa rejeição com 2,4 e 2,0 vezes o ganho de ruído do
-nativo (Tabela~\ref{tab:projeto-margens}); com o mesmo ganho de ruído do
-nativo, o LQI desvia \ang{6.16} no degrau, mais que o dobro do nativo. O LQG
-de mesmo ruído é o único projetado para melhorar o pico em guinada com o
-ruído no esforço do nativo; medido no SITL, porém, esse ruído ficou acima do
-previsto (adiante). Resta nele uma limitação: depois do degrau de guinada, fica um erro
-de cerca de \ang{0.06} que decai devagar, com constante de tempo de cerca de
-\SI{8}{\second}, provavelmente a troca lenta entre a estimativa da
-perturbação e a do viés do giroscópio; o modelo também tem esse modo.
+degrau sustentado, recuperam em 0,75 a \SI{1.14}{\second}
+(\SI{2.33}{\second} no LQI de mesmo ruído), contra \SI{22.2}{\second}. No
+pico do degrau, o LQI, o ESO e o LQG desviam \ang{1.87}, \ang{1.78} e
+\ang{1.86}, de 27\,\% a 31\,\% abaixo dos \ang{2.56} do nativo; o LQG de
+mesmo ruído, \ang{2.35}, 8\,\% abaixo. Mas o LQI e o ESO compram essa
+rejeição com 2,4 e 2,0 vezes o ganho de ruído do nativo
+(Tabela~\ref{tab:projeto-margens}), e o LQG, com 1,4 vez
+(Seção~\ref{sec:res-ruido}); com o ganho de ruído do nativo, o LQI desvia
+\ang{6.16} no degrau, mais que o dobro do nativo. O LQG de mesmo ruído é o
+único projetado para reduzir o pico em guinada com o ruído no esforço do
+nativo. O projeto previa $-10{,}0$\,\% no degrau, e o SITL dá $-8{,}0$\,\%,
+com o ruído no esforço 1,13 vez o do nativo (Seção~\ref{sec:res-ruido}). Em
+troca, ele recupera do degrau curto em \SI{1.45}{\second}, contra
+\SI{0.35}{\second} do nativo, como o portão já mostrava. Depois do degrau
+de guinada, fica no LQG e no ESO um erro de \ang{0.03} a \ang{0.04} que
+decai em dezenas de segundos, 2\,\% do pico, abaixo do limiar da
+recuperação.
+
+\begin{table}[htbp]
+\centering
+\caption{Linha de base de guinada: o nativo com os ganhos do AutoTune e com
+a guinada ressintonizada pelo melhor PID de ganhos livres do portão.}
+\label{tab:res-nativo-guinada}
+\small
+\input{tabelas/resultados_nativo_guinada}
+
+\fonte{Elaborada pelo autor.}
+\nota{\raggedright \input{tabelas/resultados_nativo_guinada_nota}}
+\end{table}
+
+Parte da vantagem em guinada é só de sintonia. O nativo com a guinada
+ressintonizada pelo melhor PID de ganhos livres do portão
+(Tabela~\ref{tab:res-nativo-guinada}) também elimina a recuperação lenta:
+\SI{1.78}{\second} no degrau sustentado, contra \SI{22.2}{\second}, e de
+1,7 a \SI{3.4}{\second} com erro de modelo, falha de motor e saturação. O
+pico quase não muda (de $-2$\,\% a $-5$\,\%), e o ruído no esforço é o do
+nativo. O preço é o mesmo dos propostos: a recuperação do degrau curto e do
+impulso passa de 0,35 e \SI{0.58}{\second} para cerca de
+\SI{1.8}{\second}; o sobressinal do degrau de atitude sobe de 11\,\% para
+20\,\%; e o erro quadrático médio sob torque estocástico fica
+$9 \pm 5$\,\% acima. Com o mesmo ruído no esforço, portanto, o LQG de mesmo
+ruído reduz o pico em guinada de 7\,\% a 8\,\%, onde o melhor PID reduz de
+3\,\% a 4\,\%, e a recuperação rápida do degrau sustentado não depende da
+estrutura do controlador.
+
+\begin{table}[htbp]
+\centering
+\caption{Ablação do LQG de mesmo ruído, em rolagem: o LQG completo e as
+variantes sem um estado, reprojetadas pela regra do portão.}
+\label{tab:res-ablacao}
+\small
+\input{tabelas/resultados_ablacao}
+
+\fonte{Elaborada pelo autor.}
+\nota{\raggedright \input{tabelas/resultados_ablacao_nota}}
+\end{table}
+
+A ablação (Tabela~\ref{tab:res-ablacao}) confere de onde vem a vantagem do
+LQG de mesmo ruído em rolagem. No modelo, cada variante foi reprojetada pela
+regra do portão sem um dos estados do estimador. Sem o filtro do giroscópio
+ou sem o erro do AHRS, nenhum ponto da varredura cumpre o ruído no esforço
+do nativo; sem o atraso do ângulo ($z$) ou sem o viés do giroscópio
+($b_g$), o pico do degrau curto previsto não muda ($-8{,}5$\,\% e
+$-8{,}4$\,\%, contra $-8{,}4$\,\% do completo). Voadas, as duas variantes
+confirmam: sem $z$, o pico do impulso fica 2\,\% acima do LQG completo e o
+do degrau, 2\,\% abaixo; sem $b_g$, os picos ficam iguais. São diferenças
+dentro da variação entre voos repetidos. A vantagem do LQG vem de modelar o
+filtro do giroscópio e o erro do ângulo do AHRS, que o LQI e o ESO
+ignoram; o atraso de um laço e o viés pesam pouco.
 
 A Figura~\ref{fig:eso-dhat-sitl} mostra, no SITL, a perturbação estimada
 pelo ESO contra a injetada: no degrau de guinada, a estimativa converge para
-o torque aplicado, e, no pulso de rolagem, ela o segue com o atraso da banda
-do observador, o que ajuda a explicar por que o ESO não reduz o pico em
-rolagem.
+o torque aplicado, e, no degrau curto de rolagem, ela o segue com o atraso
+da banda do observador, o que ajuda a explicar por que o ESO não reduz o
+pico em rolagem.
 
 \begin{figure}[htbp]
 \centering
 \caption{Perturbação injetada e estimada pelo observador de estado
-estendido, no SITL, no pulso de rolagem e no degrau de guinada.}
+estendido, no SITL, no degrau curto de rolagem e no degrau de guinada.}
 \label{fig:eso-dhat-sitl}
 \includegraphics[width=\textwidth]{figuras/eso_dhat_sitl}
 \fonte{Elaborada pelo autor.}
@@ -403,18 +502,20 @@ estendido, no SITL, no pulso de rolagem e no degrau de guinada.}
 As varreduras (Tabela~\ref{tab:res-frequencia} e
 Figura~\ref{fig:comparacao-frf}) mostram a mesma troca no domínio da
 frequência. Em rolagem e arfagem, o LQI e o ESO deslocam o máximo de
-$|P\,S|$ de \SI{3.6}{\hertz} para \SI{1.6}{\hertz}, com ganho maior, 0,083 a
-\SI{0.089}{\degree} por \si{\radian\per\second\squared}, contra 0,061 a
+$|P\,S|$ de \SI{3.6}{\hertz} para \SI{1.6}{\hertz}, com ganho maior, 0,084 a
+\SI{0.089}{\degree} por \si{\radian\per\second\squared}, contra 0,063 a
 0,065 do nativo, e queda de \SI{3}{\decibel} mais cedo, entre 4,0 e
-\SI{4.8}{\hertz}. O LQG põe o máximo em \SI{2.8}{\hertz}, com 0,075 a
-0,083, e cai \SI{3}{\decibel} em \SI{5.2}{\hertz}. Atenuar mais em baixa
+\SI{4.8}{\hertz}. O LQG de regra comum põe o máximo em \SI{2.0}{\hertz},
+com 0,087 a 0,091, e o LQG de mesmo ruído, em \SI{2.8}{\hertz}, com 0,077,
+caindo \SI{3}{\decibel} em \SI{5.2}{\hertz}. Atenuar mais em baixa
 frequência --- o que dá a recuperação rápida --- custa um máximo maior perto
-do cruzamento, como a integral de Bode exige (Seção~\ref{sec:bode}): no
-modelo, a integral é nula em todos os controladores, e o LQG tem as maiores
-áreas negativa e positiva de $\ln|S|$ em rolagem e arfagem, 0,052 contra
-0,049 do nativo. Em guinada, os propostos com a banda do nativo levam o
-máximo de \SI{0.2}{\hertz} para 0,4 a \SI{0.6}{\hertz}. A coerência mediana é de 0,97 ou mais em todas
-as varreduras.
+do cruzamento, como a integral de Bode exige (Seção~\ref{sec:bode}). No
+modelo, a integral é nula em todos os controladores, a menos de $10^{-6}$, e
+as áreas negativa e positiva de $\ln|S|$ são iguais: em rolagem, 0,051 no
+LQG de mesmo ruído, a maior, 0,049 no nativo e no LQG de regra comum e 0,046
+a 0,047 no LQI e no ESO. Em guinada, os propostos com a banda do nativo
+levam o máximo de \SI{0.2}{\hertz} para 0,4 a \SI{0.6}{\hertz}. A coerência
+mediana é de 0,98 ou mais em todas as varreduras.
 
 \begin{figure}[htbp]
 \centering
@@ -429,16 +530,23 @@ varreduras de torque no SITL (pontos) e no modelo (linhas).}
 
 Sob torque estocástico (Tabela~\ref{tab:res-estocastico} e
 Figura~\ref{fig:comparacao-estocastico}), a métrica é o erro quadrático
-médio. Ela não coincide com o custo do LQG, que minimiza o valor esperado de
-uma forma quadrática do estado e do esforço, com os pesos de Bryson e uma
-perturbação modelada como passeio aleatório de intensidade $q_d$, o parâmetro
-de sintonia (Seção~\ref{sec:projeto-lqg}); o torque dos ensaios é um
-processo de Ornstein-Uhlenbeck (Seção~\ref{sec:perturbacoes}). Em rolagem e arfagem, o LQG fica até
-5\,\% abaixo do nativo, e o LQI e o ESO, de 18\,\% a 23\,\% acima, coerente
-com o máximo de $|P\,S|$ deslocado para baixas frequências, onde o torque
-estocástico, com tempo de correlação de \SI{0.1}{\second}, tem energia. Em guinada, o LQG de mesmo ruído fica 21\,\% abaixo, e o LQI e o
-ESO, 22\,\% abaixo, com o ganho de ruído maior já citado; o LQI de mesmo
-ruído fica 86\,\% acima.
+médio, com cinco sementes por controlador e a diferença ao nativo semente a
+semente. Ela não coincide com o custo do LQG, que minimiza o valor esperado
+de uma forma quadrática do estado e do esforço, com os pesos de Bryson e uma
+perturbação modelada como passeio aleatório de intensidade $q_d$, o
+parâmetro de sintonia (Seção~\ref{sec:projeto-lqg}); o torque dos ensaios é
+um processo de Ornstein-Uhlenbeck (Seção~\ref{sec:perturbacoes}). Em
+rolagem e arfagem, o LQG de mesmo ruído é o único abaixo do nativo,
+$-4 \pm 3$\,\% e $-6 \pm 2$\,\%. O LQI e o ESO ficam de 18\,\% a 23\,\%
+acima, e o LQG de regra comum, 11\,\% e 14\,\% acima, coerentes com o máximo
+de $|P\,S|$ deslocado para as baixas frequências, onde o torque
+estocástico, com tempo de correlação de \SI{0.1}{\second}, tem energia. Em
+guinada, a ordem se inverte. O LQI e o ESO, com mais banda e mais ruído no
+esforço, ficam 16\,\% abaixo, e o LQG de regra comum, $-7 \pm 3$\,\%. O LQG
+de mesmo ruído fica $9 \pm 6$\,\% acima, como o nativo com a guinada
+ressintonizada, $9 \pm 5$\,\%: com o ruído no esforço do nativo, nenhum dos
+dois supera o AutoTune sob torque estocástico em guinada. O LQI de mesmo
+ruído fica $102 \pm 15$\,\% acima.
 
 \begin{table}[htbp]
 \centering
@@ -448,6 +556,7 @@ ruído fica 86\,\% acima.
 \input{tabelas/resultados_estocastico}
 
 \fonte{Elaborada pelo autor.}
+\nota{\raggedright \input{tabelas/resultados_estocastico_nota}}
 \end{table}
 
 \begin{figure}[htbp]
@@ -464,28 +573,29 @@ relativo ao nativo, por eixo.}
 
 Com \codigo{SIM\_GYR\_RND} = 20, o nível de referência, o ruído quase não
 muda a rejeição (Tabela~\ref{tab:res-ruido}): os desvios mudam no máximo
-5\,\%, e o esforço quadrático, no máximo 20\,\%. As Tabelas~\ref{tab:res-niveis-rolagem} e~\ref{tab:res-niveis-guinada}
+3\,\%, e o esforço quadrático, também no máximo 3\,\%. As
+Tabelas~\ref{tab:res-niveis-rolagem} e~\ref{tab:res-niveis-guinada}
 estendem a comparação aos cinco níveis, com o ruído no esforço medido no
-trecho calmo (Figura~\ref{fig:comparacao-ruido}). Em rolagem, com ruído alto,
-ele é o mesmo em todos os controladores, de 0,0056 a 0,0061 com RND 80. Em
-guinada, ele cresce com a banda: com RND 80, o LQI e o ESO têm 2,4 e 2,0
-vezes o do nativo, como o projeto previa, e o LQI de mesmo ruído, o mesmo.
-O LQG, porém, chega a 5 a 8 vezes o do nativo com RND de 10 a 80, também na
-variante de mesmo ruído, embora o projeto previsse para ela um ganho de ruído
-de 0,98 vez o do nativo (Tabela~\ref{tab:projeto-portao}). A diferença entre
-o ruído previsto e o medido em guinada fica como limitação do LQG a
-investigar.
+trecho calmo (Figura~\ref{fig:comparacao-ruido}). Em rolagem, ele é quase o
+mesmo em todos os controladores, de 0,0053 a 0,0059 com RND 80. Em guinada,
+ele cresce com a banda: com RND 80, o LQI e o ESO têm 2,4 e 2,1 vezes o do
+nativo, como o projeto previa, e o LQI de mesmo ruído, o mesmo. O LQG de
+regra comum tem de 1,4 a 1,5 vez o do nativo, e o de mesmo ruído, de 1,1 a
+1,2 vez, com RND de 20 a 80. O projeto previa para este 0,99 vez
+(Tabela~\ref{tab:projeto-portao}). Os 13\,\% a mais com RND 20 são o que
+resta da diferença entre o ruído previsto e o medido depois do reprojeto do
+estimador, com o terceiro ruído do ângulo (Seção~\ref{sec:projeto-lqg}).
 
 \begin{table}[htbp]
 \centering
 \caption{Rejeição de torque com \codigo{SIM\_GYR\_RND} = 0, praticamente sem
-ruído, e com \codigo{SIM\_GYR\_RND} = 20; no pulso de guinada, desvio normalizado ao
-impulso nominal ($\dagger$).}
+ruído, e com \codigo{SIM\_GYR\_RND} = 20, no ensaio dos três eixos.}
 \label{tab:res-ruido}
 \small
 \resizebox{\textwidth}{!}{\input{tabelas/resultados_ruido}}
 
 \fonte{Elaborada pelo autor.}
+\nota{\raggedright \input{tabelas/resultados_ruido_nota}}
 \end{table}
 
 \begin{table}[htbp]
@@ -496,53 +606,71 @@ impulso nominal ($\dagger$).}
 \resizebox{\textwidth}{!}{\input{tabelas/resultados_niveis_rolagem}}
 
 \fonte{Elaborada pelo autor.}
+\nota{\raggedright \input{tabelas/resultados_niveis_rolagem_nota}}
 \end{table}
 
 \begin{table}[htbp]
 \centering
-\caption{Níveis de ruído de giroscópio, em guinada; no pulso, desvio
-normalizado ao impulso nominal ($\dagger$).}
+\caption{Níveis de ruído de giroscópio, em guinada.}
 \label{tab:res-niveis-guinada}
 \small
 \resizebox{\textwidth}{!}{\input{tabelas/resultados_niveis_guinada}}
 
 \fonte{Elaborada pelo autor.}
+\nota{\raggedright \input{tabelas/resultados_niveis_guinada_nota}}
 \end{table}
 
 Com \codigo{SIM\_GYR\_RND} de 40 e 80, o tempo de recuperação não é citado.
 Nesses níveis, o limiar de recuperação deixa de ser 10\,\% do pico e passa a
 ser a faixa de ruído do trecho calmo de cada controlador --- em guinada, com
-RND 80, \ang{3.7} no LQG e \ang{0.4} no LQI ---, e o tempo deixa de comparar
+RND 80, \ang{2.9} no LQG e \ang{0.6} no LQI ---, e o tempo deixa de comparar
 controladores; o desvio máximo e o erro quadrático médio descrevem esses
-ensaios. Com RND 20, o piso de ruído decide o limiar em 4 de 90 medições,
-todas do LQG no degrau de torque de rolagem e de guinada, com o limiar de
-7\,\% a 40\,\% acima dos 10\,\% do pico.
+ensaios. Com RND 20, a faixa de ruído decide o limiar em 1 de 99 medições,
+a do LQG no degrau de guinada, com o limiar 4\,\% acima dos 10\,\% do pico.
 
-Com o ruído de giroscópio mais alto (\codigo{SIM\_GYR\_RND} = 80), cinco voos
-idênticos diferem em até 23\,\% no desvio máximo (coeficiente de variação de
-4 a 9\,\%), e a normalização pelo impulso não reduz essa dispersão, que vem
-do próprio ruído. Nesses níveis, diferenças entre controladores menores que
-cerca de 10\,\% não são conclusivas com um voo por par; o erro quadrático
-médio é a métrica mais estável (variação de 1 a 9\,\%). Com cinco voos por
-par no pulso com RND 80, o LQG fica 10\,\% abaixo do nativo em rolagem e
-8\,\% em arfagem, com 2,4 e 2,7 erros-padrão, e não difere dele em guinada
-(+1\,\% normalizado, 0,3 erro-padrão); as linhas de RND 80 das tabelas de
-níveis, de um voo só, exageram essas diferenças.
+\begin{table}[htbp]
+\centering
+\caption{Impulso de torque com \codigo{SIM\_GYR\_RND} = 20, em voos
+repetidos.}
+\label{tab:res-ruido-impulso}
+\small
+\resizebox{\textwidth}{!}{\input{tabelas/resultados_ruido_impulso}}
+
+\fonte{Elaborada pelo autor.}
+\nota{\raggedright \input{tabelas/resultados_ruido_impulso_nota}}
+\end{table}
+
+Com ruído, voos idênticos deixam de ser iguais: cinco voos do mesmo par
+variam até 8\,\% no pico do impulso, com coeficiente de variação de 0,3\,\% a
+3,5\,\%. Por isso o impulso com RND 20 voa cinco vezes com o nativo e com os
+LQG (Tabela~\ref{tab:res-ruido-impulso}), e a diferença ao nativo sai com o
+intervalo de confiança de Welch. O LQG de mesmo ruído fica abaixo do nativo
+nos três eixos: $-9 \pm 2$\,\% em rolagem, $-10 \pm 2$\,\% em arfagem e
+$-7 \pm 1$\,\% em guinada, o mesmo que sem ruído. O LQG de regra comum fica
+$-8 \pm 4$\,\% e $-9 \pm 2$\,\% abaixo em rolagem e arfagem e
+$-16 \pm 1$\,\% em guinada, com 1,4 vez o ruído no esforço do nativo; o
+nativo com a guinada ressintonizada, $-1 \pm 1$\,\%. As linhas de um voo só
+das tabelas de níveis, com ruído alto, servem para ver a tendência, e não
+diferenças de poucos por cento.
 
 \begin{figure}[htbp]
 \centering
-\caption{Ruído no esforço e no erro, eficazes, no trecho calmo antes do pulso,
-por controlador, com ruído de giroscópio \codigo{SIM\_GYR\_RND} = 20.}
+\caption{Ruído no esforço e no erro, eficazes, no trecho calmo antes do
+impulso, por controlador, com ruído de giroscópio
+\codigo{SIM\_GYR\_RND} = 20.}
 \label{fig:comparacao-ruido}
 \includegraphics[width=\textwidth]{figuras/comparacao_ruido}
 \fonte{Elaborada pelo autor.}
+\nota{\raggedright Média e desvio padrão de cinco voos (um nos controladores
+sem repetição). Na atitude verdadeira, o erro calmo fica de quatro a oito
+vezes maior, com todos os controladores (Apêndice~\ref{ap:bases}).}
 \end{figure}
 
 A Figura~\ref{fig:comparacao-fronteira} junta as duas coisas na fronteira
 medida entre rejeição e ruído: para cada controlador, um ponto por nível de
-ruído, com o ruído no esforço antes do pulso e o desvio no ensaio da métrica
-primária do eixo --- o pulso em rolagem e o degrau em guinada. É a versão
-medida da Figura~\ref{fig:projeto-fronteira}.
+ruído, com o ruído no esforço no trecho calmo e o desvio no ensaio da
+métrica primária do eixo --- o degrau curto em rolagem e o degrau em
+guinada. É a versão medida da Figura~\ref{fig:projeto-fronteira}.
 
 \begin{figure}[htbp]
 \centering
@@ -558,18 +686,19 @@ giroscópio.}
 
 Com o filtro do giroscópio a \SI{10}{\hertz}, o atraso de fase do filtro
 cresce, e o nativo foi ressintonizado pelo AutoTune nessa condição
-(Tabela~\ref{tab:res-filtro}). O LQG mantém a vantagem no pulso de rolagem,
-\ang{1.93} contra \ang{2.13} do nativo (9\,\% abaixo), e o LQI e o ESO pioram,
-\ang{2.72} e \ang{2.90}. Em guinada, o LQG continua abaixo do nativo no pulso
-e no degrau, e o LQI piora no degrau. A vantagem do LQG não cresce com o
-atraso do filtro, mas se mantém; o rastreamento dos propostos continua muito
-melhor que o do nativo, pela alimentação direta.
+(Tabela~\ref{tab:res-filtro}). A vantagem do LQG cresce com o atraso do
+filtro: no degrau curto de rolagem, ele desvia \ang{1.72}, contra \ang{2.13}
+do nativo (19\,\% abaixo, contra 7\,\% com o filtro de \SI{20}{\hertz}), e
+no degrau, \ang{1.15} contra \ang{1.41}; o LQI e o ESO pioram, \ang{2.72} e
+\ang{2.90}. Em guinada, o LQG fica 12\,\% abaixo do nativo no degrau curto e
+no degrau, o LQI piora no degrau, e o ESO fica 7\,\% acima nele. Com mais
+atraso no caminho de medida, modelá-lo vale mais. O rastreamento dos
+propostos continua muito melhor que o do nativo, pela alimentação direta.
 
 \begin{table}[htbp]
 \centering
 \caption{Filtro do giroscópio de \SI{20}{\hertz} e de \SI{10}{\hertz}, com os
-controladores reprojetados para cada um; no pulso de guinada, desvio
-normalizado ao impulso nominal ($\dagger$).}
+controladores reprojetados para cada um.}
 \label{tab:res-filtro}
 \small
 \resizebox{\textwidth}{!}{\input{tabelas/resultados_filtro}}
@@ -577,7 +706,7 @@ normalizado ao impulso nominal ($\dagger$).}
 \fonte{Elaborada pelo autor.}
 \nota{\raggedright Com \SI{20}{\hertz}, a linha do LQG é a do LQG de mesmo
 ruído; com \SI{10}{\hertz}, a do \codigo{cc\_lqg\_filtro10}, projetado pelo
-mesmo critério do portão.}
+mesmo critério do portão. \input{tabelas/resultados_filtro_nota}}
 \end{table}
 
 \subsection{Erro de modelo e falha de motor}
@@ -585,24 +714,25 @@ mesmo critério do portão.}
 Com a aeronave alterada e os ganhos do nominal
 (Tabela~\ref{tab:res-erro-modelo}), a ordem entre os controladores se
 mantém: com o empuxo de pairado 22\,\% menor, com o braço 20\,\% maior e com
-o braço 17\,\% menor, o LQG continua com o menor pico em rolagem, e os
-propostos continuam a recuperar a guinada em 1 a \SI{2.4}{\second}, contra 21
-a \SI{22}{\second} do nativo. Na falha de motor
+o braço 17\,\% menor, o LQG de mesmo ruído continua com o menor pico em
+rolagem, de 7\,\% a 9\,\% abaixo do nativo no degrau curto, e os propostos
+continuam a recuperar a guinada em 0,7 a \SI{2.4}{\second}, contra 21 a
+\SI{22}{\second} do nativo. Na falha de motor
 (Tabela~\ref{tab:res-falha-motor}), o mesmo quadro aparece com um momento não
-linear: na falha severa, o LQG desvia \ang{1.45} em rolagem, contra
-\ang{1.72} do nativo, e, em guinada, os propostos recuperam em 1,0 a
-\SI{2.2}{\second}, contra 22,7 a \SI{25.1}{\second} do nativo nas duas
-falhas.
+linear: na falha severa, o LQG de mesmo ruído desvia \ang{1.50} em rolagem e
+em arfagem, contra \ang{1.72} e \ang{1.76} do nativo, e, em guinada, os
+propostos recuperam em 0,8 a \SI{2.2}{\second}, contra 22,7 a
+\SI{25.2}{\second} do nativo nas duas falhas.
 
 \begin{table}[htbp]
 \centering
-\caption{Erro de modelo: aeronave alterada, ganhos do nominal; no pulso de
-guinada, desvio normalizado ao impulso nominal ($\dagger$).}
+\caption{Erro de modelo: aeronave alterada, ganhos do nominal.}
 \label{tab:res-erro-modelo}
 \small
 \resizebox{\textwidth}{!}{\input{tabelas/resultados_erro_modelo}}
 
 \fonte{Elaborada pelo autor.}
+\nota{\raggedright \input{tabelas/resultados_erro_modelo_nota}}
 \end{table}
 
 \begin{table}[htbp]
@@ -614,46 +744,50 @@ guinada, desvio normalizado ao impulso nominal ($\dagger$).}
 \resizebox{\textwidth}{!}{\input{tabelas/resultados_falha_motor}}
 
 \fonte{Elaborada pelo autor.}
+\nota{\raggedright \input{tabelas/resultados_falha_motor_nota}}
 \end{table}
 
 \subsection{Saturação e ângulos grandes}
 \label{sec:res-saturacao}
 
-Na saturação em guinada (Tabela~\ref{tab:res-saturacao}), o pulso de
-\SI{12}{\radian\per\second\squared} por \SI{0.5}{\second} leva todos os
+Na saturação em guinada (Tabela~\ref{tab:res-saturacao}), o degrau curto
+de \SI{12}{\radian\per\second\squared} por \SI{0.5}{\second} leva todos os
 controladores além da autoridade da guinada. O LQI e o ESO desviam menos,
-\ang{33.3} e \ang{34.7}, contra \ang{44.9} do nativo, e o LQG recupera mais
-depressa, em \SI{0.61}{\second}, contra \SI{1.05}{\second}. No degrau de
-\SI{6}{\radian\per\second\squared}, perto do limite, o nativo desvia
-\ang{16.1} e leva \SI{22.3}{\second} para recuperar, e o LQI e o ESO,
-\ang{11.6} e \ang{11.1}, em cerca de \SI{1}{\second}. Esses ensaios põem à
-prova o anti-\textit{windup} de cada um: a integração condicional do nativo e
-do LQI e o esforço limitado que o ESO e o LQG levam ao estimador.
+\ang{31.9} e \ang{33.2}, contra \ang{42.6} do nativo; o LQG, \ang{36.9}, e
+recupera em \SI{0.99}{\second}, contra \SI{1.03}{\second} do nativo. No
+degrau de \SI{6}{\radian\per\second\squared}, perto do limite, o nativo
+desvia \ang{16.1} e leva \SI{22.3}{\second} para recuperar; o LQI, o ESO e o
+LQG, de \ang{11.1} a \ang{11.6}, em 0,7 a \SI{1.1}{\second}. Esses ensaios
+põem à prova o anti-\textit{windup} de cada um: a integração condicional do
+nativo e do LQI e, no ESO e no LQG, o esforço limitado que vai ao estimador
+e a estimativa da perturbação congelada enquanto o eixo satura
+(Seção~\ref{sec:implementacao}). Nenhum controlador ficou preso à saturação
+depois do degrau curto.
 
 \begin{table}[htbp]
 \centering
-\caption{Saturação em guinada: pulso além da autoridade e degrau perto dela.}
+\caption{Saturação em guinada: degrau curto além da autoridade e degrau perto dela.}
 \label{tab:res-saturacao}
 \small
 \resizebox{\textwidth}{!}{\input{tabelas/resultados_saturacao}}
 
 \fonte{Elaborada pelo autor.}
 \nota{\raggedright $u_{\max}$ é o esforço pedido à alocação; valores acima
-de 1 excedem a faixa normalizada e são cortados por ela.}
+de 1 excedem a faixa normalizada e são cortados por ela. \input{tabelas/resultados_saturacao_nota}}
 \end{table}
 
 Nos degraus de \ang{30} e \ang{45} (Tabela~\ref{tab:res-grande}), o nativo,
-com o controlador de raiz quadrada e sem a alimentação direta de esforço, tem 15,1\,\% e
-10,9\,\% de sobressinal em rolagem e erro máximo de \ang{5.77} e \ang{6.87};
-os propostos, sem raiz quadrada e com a alimentação direta, ficam em 0 a
-4,1\,\% e \ang{0.68} a \ang{1.41}. Na manobra combinada, o erro máximo de
-rolagem do nativo chega a \ang{8.78} e \ang{15.57}, contra \ang{0.95} a
-\ang{6.23} dos propostos, que voaram esses ensaios sem o limite opcional do
-erro de ângulo. O ensaio
-combinado de \ang{45} opera no limite físico da aeronave: com \ang{45} em
-rolagem e em arfagem, o empuxo vertical cai pela metade, e todos os
-controladores perdem cerca de \SI{10}{\metre} de altura e levam motores ao
-limite em 2,5\,\% a 7\,\% das amostras.
+com o controlador de raiz quadrada e sem a alimentação direta de esforço, tem
+15,4\,\% e 10,9\,\% de sobressinal em rolagem e erro máximo de \ang{5.92} e
+\ang{6.88}; os propostos, sem raiz quadrada e com a alimentação direta,
+ficam em 0 a 2,3\,\% e \ang{0.48} a \ang{0.77}. Na manobra combinada, o erro
+máximo de rolagem do nativo chega a \ang{8.74} e \ang{15.55}, contra
+\ang{0.78} a \ang{6.24} dos propostos, que voaram esses ensaios sem o limite
+opcional do erro de ângulo. O ensaio combinado de \ang{45} opera no limite
+físico da aeronave: com \ang{45} em rolagem e em arfagem, o empuxo vertical
+cai pela metade, e todos os controladores perdem cerca de \SI{10}{\metre} de
+altura e levam algum motor ao máximo em 12\,\% a 14\,\% das amostras do
+perfil.
 
 \begin{table}[htbp]
 \centering
@@ -664,6 +798,33 @@ limite em 2,5\,\% a 7\,\% das amostras.
 \resizebox{\textwidth}{!}{\input{tabelas/resultados_grande}}
 
 \fonte{Elaborada pelo autor.}
+\nota{\raggedright \input{tabelas/resultados_grande_nota}}
+\end{table}
+
+\subsection{Volta ao nativo}
+\label{sec:res-comutacao}
+
+Nos ensaios de comutação (Tabela~\ref{tab:res-comutacao}), o controlador
+proposto voa, um degrau de torque de \SI{10}{\radian\per\second\squared}
+entra em rolagem em $t = \SI{6}{\second}$, e o perfil devolve o controle ao
+nativo em $t = \SI{12}{\second}$, com o torque ainda aplicado. Sem a transferência do integrador
+(Seção~\ref{sec:implementacao}), o PID nativo reassume com o integrador
+zerado, e o torque que o \textit{backend} vinha cancelando passa ao erro: a
+atitude desvia \ang{1.47} a \ang{1.48}, com os três propostos, no segundo
+que o integrador nativo leva para se refazer. Com a transferência, ele
+reassume com o integrador equivalente do \textit{backend}, e o desvio fica
+em \ang{0.02} a \ang{0.04}, a ordem do erro de regime.
+
+\begin{table}[htbp]
+\centering
+\caption{Volta ao nativo sob torque sustentado, sem e com a transferência do
+integrador.}
+\label{tab:res-comutacao}
+\small
+\input{tabelas/resultados_comutacao}
+
+\fonte{Elaborada pelo autor.}
+\nota{\raggedright \input{tabelas/resultados_comutacao_nota}}
 \end{table}
 
 \subsection{Síntese}
@@ -671,12 +832,20 @@ limite em 2,5\,\% a 7\,\% das amostras.
 Os resultados respondem à pergunta de pesquisa em três partes. Em rolagem e
 arfagem, com a mesma banda e o mesmo ruído do nativo, o LQI e o LQR com ESO
 não superam o PID no pico da perturbação: o LQI é a mesma cascata com outra
-sintonia, e o ganho deles está na recuperação mais rápida, não no pico. O
-LQG, que modela o caminho de medida, é o único que reduz o pico no tempo, de 7\,\% a
-15\,\%, e o erro quadrático médio sob torque estocástico, e mantém a vantagem
-com o filtro de \SI{10}{\hertz}, com erro de modelo e com falha de motor. Em
-guinada, todos os propostos eliminam a recuperação lenta que o AutoTune impõe
-ao nativo; o LQI e o ESO o fazem com mais banda e mais ruído no esforço, e o
-LQG de mesmo ruído reduz também o pico, com a ressalva do ruído no esforço
-medido acima do previsto. Por fim, a vantagem no rastreamento do degrau de
-atitude vem da alimentação direta, que serviria igualmente ao PID nativo.
+sintonia, e o ganho deles está na recuperação mais rápida, que custa um
+rebote quando a perturbação acaba. O LQG projetado para o ruído no esforço
+do nativo é o único que reduz o pico no tempo: de 7\,\% a 11\,\% no degrau
+curto e no degrau, de 8\,\% a 9\,\% no impulso, o que cinco voos com ruído
+de giroscópio confirmam, e de 4\,\% a 6\,\% no erro quadrático médio sob
+torque estocástico. A vantagem se mantém com erro de modelo e com falha de
+motor, cresce com o filtro de \SI{10}{\hertz}, e a ablação mostra que vem de
+modelar o filtro do giroscópio e o erro do ângulo do AHRS. Em guinada, todos
+os propostos eliminam a recuperação lenta que o AutoTune impõe ao nativo,
+mas o PID ressintonizado também a elimina: ela é de sintonia. O LQI e o ESO
+reduzem o pico com mais banda e mais ruído no esforço. O LQG de mesmo ruído
+o reduz de 7\,\% a 8\,\% com 1,13 vez o ruído no esforço do nativo, contra
+3\,\% a 4\,\% do melhor PID, mas fica 9\,\% acima sob torque estocástico e
+recupera mais devagar do degrau curto. Por fim, a vantagem no rastreamento
+do degrau de atitude vem da alimentação direta, que serviria igualmente ao
+PID nativo, e a transferência do integrador torna suave a volta ao nativo.
+

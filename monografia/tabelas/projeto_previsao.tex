@@ -3,13 +3,13 @@
 \toprule
 Eixo & Ensaio & Controlador & Desvio máx. (\si{\degree}) & Recuperação (\si{\second}) & RMSE (\si{\degree}) & $u_{\max}$ \\
 \midrule
-Rolagem & pulso & Nativo & 0,87 & 1,19 & 0,216 & 0,050 \\
-Rolagem & pulso & LQI & 0,95 & 0,73 & 0,257 & 0,050 \\
-Rolagem & pulso & LQR+ESO & 0,97 & 0,72 & 0,268 & 0,050 \\
-Guinada & pulso & Nativo & 5,69 & 0,35 & 1,558 & 0,242 \\
-Guinada & pulso & LQI & 3,98 & 1,68 & 1,324 & 0,219 \\
-Guinada & pulso & LQR+ESO & 4,07 & 1,52 & 1,316 & 0,230 \\
-Guinada & pulso & LQI (mesmo ruído) & 7,59 & 3,25 & 3,297 & 0,128 \\
+Rolagem & degrau curto & Nativo & 0,87 & 1,19 & 0,216 & 0,050 \\
+Rolagem & degrau curto & LQI & 0,95 & 0,73 & 0,257 & 0,050 \\
+Rolagem & degrau curto & LQR+ESO & 0,97 & 0,72 & 0,268 & 0,050 \\
+Guinada & degrau curto & Nativo & 5,69 & 0,35 & 1,558 & 0,242 \\
+Guinada & degrau curto & LQI & 3,98 & 1,68 & 1,324 & 0,219 \\
+Guinada & degrau curto & LQR+ESO & 4,07 & 1,52 & 1,316 & 0,230 \\
+Guinada & degrau curto & LQI (mesmo ruído) & 7,59 & 3,25 & 3,297 & 0,128 \\
 \addlinespace
 Rolagem & degrau & Nativo & 0,58 & 2,24 & 0,070 & 0,033 \\
 Rolagem & degrau & LQI & 0,63 & 0,45 & 0,048 & 0,033 \\
@@ -19,12 +19,12 @@ Guinada & degrau & LQI & 1,86 & 1,14 & 0,213 & 0,084 \\
 Guinada & degrau & LQR+ESO & 1,79 & 1,05 & 0,194 & 0,087 \\
 Guinada & degrau & LQI (mesmo ruído) & 6,13 & 2,32 & 0,983 & 0,082 \\
 \addlinespace
-Rolagem & degrau de atitude & Nativo & \multicolumn{2}{r}{sobressinal 19,6\,\%} & \multicolumn{2}{r}{rastreamento 2,80\,\si{\degree}} \\
+Rolagem & degrau de atitude & Nativo & \multicolumn{2}{r}{sobressinal 19,6\,\%} & \multicolumn{2}{r}{rastreamento 2,79\,\si{\degree}} \\
 Rolagem & degrau de atitude & LQI & \multicolumn{2}{r}{sobressinal 1,5\,\%} & \multicolumn{2}{r}{rastreamento 0,25\,\si{\degree}} \\
-Rolagem & degrau de atitude & LQR+ESO & \multicolumn{2}{r}{sobressinal 2,4\,\%} & \multicolumn{2}{r}{rastreamento 0,34\,\si{\degree}} \\
-Guinada & degrau de atitude & Nativo & \multicolumn{2}{r}{sobressinal 10,8\,\%} & \multicolumn{2}{r}{rastreamento 7,70\,\si{\degree}} \\
-Guinada & degrau de atitude & LQI & \multicolumn{2}{r}{sobressinal 0,0\,\%} & \multicolumn{2}{r}{rastreamento 0,06\,\si{\degree}} \\
+Rolagem & degrau de atitude & LQR+ESO & \multicolumn{2}{r}{sobressinal 2,4\,\%} & \multicolumn{2}{r}{rastreamento 0,33\,\si{\degree}} \\
+Guinada & degrau de atitude & Nativo & \multicolumn{2}{r}{sobressinal 11,0\,\%} & \multicolumn{2}{r}{rastreamento 7,70\,\si{\degree}} \\
+Guinada & degrau de atitude & LQI & \multicolumn{2}{r}{sobressinal 0,1\,\%} & \multicolumn{2}{r}{rastreamento 0,06\,\si{\degree}} \\
 Guinada & degrau de atitude & LQR+ESO & \multicolumn{2}{r}{sobressinal 0,0\,\%} & \multicolumn{2}{r}{rastreamento 0,18\,\si{\degree}} \\
-Guinada & degrau de atitude & LQI (mesmo ruído) & \multicolumn{2}{r}{sobressinal 0,0\,\%} & \multicolumn{2}{r}{rastreamento 0,05\,\si{\degree}} \\
+Guinada & degrau de atitude & LQI (mesmo ruído) & \multicolumn{2}{r}{sobressinal 0,2\,\%} & \multicolumn{2}{r}{rastreamento 0,05\,\si{\degree}} \\
 \bottomrule
 \end{tabular}

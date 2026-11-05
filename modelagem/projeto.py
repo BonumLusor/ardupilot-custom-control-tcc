@@ -1927,7 +1927,7 @@ def tabela_margens(mod, proj, rob):
 
 def tabela_previsao(sims):
     linhas = []
-    for ensaio, rot in (("torque_pulso", "pulso"), ("torque_degrau", "degrau")):
+    for ensaio, rot in (("torque_pulso", "degrau curto"), ("torque_degrau", "degrau")):
         for eixo in ("roll", "yaw"):
             for var in VARIANTES + ("lqi_ruido",):
                 s = sims.get((eixo, var))
@@ -1984,7 +1984,7 @@ def tabela_portao(veredito):
         linhas.append("\\addlinespace")
     linhas.pop()
     return (CAB_TEX + "\\begin{tabular}{llrrrrrrrr}\n\\toprule\n"
-            " & & & & \\multicolumn{3}{c}{Pulso de torque} & \\multicolumn{2}{c}{Degrau de torque} & \\\\\n"
+            " & & & & \\multicolumn{3}{c}{Degrau curto de torque} & \\multicolumn{2}{c}{Degrau de torque} & \\\\\n"
             "\\cmidrule(lr){5-7}\\cmidrule(lr){8-9}\n"
             "Eixo & Controlador & Ruído & MF (\\si{\\degree}) & Desvio (\\si{\\degree}) & "
             "RMSE (\\si{\\degree}) & Recup. (\\si{\\second}) & Desvio (\\si{\\degree}) & "
@@ -2131,7 +2131,7 @@ def desenhar_tempo_torque(sims, destino):
         ax.axhline(0, color=E.MUDO, lw=0.8, zorder=0)
         ax.set_xlim(*xlim)
         amp = sims[(eixo, "nativo")][ensaio]["amp"]
-        tipo = "pulso" if "pulso" in ensaio else "degrau"
+        tipo = "degrau curto" if "pulso" in ensaio else "degrau"
         ax.set_title(f"{NOMES[eixo].capitalize()}, {tipo} de "
                      f"{amp:g} rad/s²".replace(".", ","), loc="left")
         ax.set_xlabel("Tempo desde o início do torque (s)")
@@ -2184,7 +2184,7 @@ def desenhar_eso(sims, destino):
         ax.plot(r["t_laco"] - s["t0"], r["d_hat"], color=_cor(E, "eso"),
                 label="Estimada $\\hat d$")
         ax.set_xlim(*xlim)
-        tipo = "pulso" if "pulso" in ensaio else "degrau"
+        tipo = "degrau curto" if "pulso" in ensaio else "degrau"
         ax.set_title(f"{NOMES[eixo].capitalize()}, {tipo}", loc="left")
         ax.set_xlabel("Tempo desde o início do torque (s)")
         for lado in ("top", "right"):
@@ -2257,7 +2257,7 @@ def desenhar_robustez(mod, proj, destino):
             ax.plot(nom["t"], nom["erro"], color=cor, label=ROTULO[var])
         ax.axhline(0, color=E.MUDO, lw=0.8, zorder=0)
         ax.set_xlim(*xlim)
-        tipo = "pulso" if "pulso" in ensaio else "degrau"
+        tipo = "degrau curto" if "pulso" in ensaio else "degrau"
         ax.set_title(f"{NOMES[eixo].capitalize()}, {tipo}", loc="left")
         ax.set_xlabel("Tempo desde o início do torque (s)")
         for lado in ("top", "right"):
@@ -2346,7 +2346,7 @@ def desenhar_fronteira(veredito, destino):
         ax.set_ylim(0.6, 2.0)
         ax.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(
             lambda v, _p: f"{v:g}".replace(".", ",")))
-        ens = "pulso" if CRITERIO[eixo]["primaria"][0] == "torque_pulso" else "degrau"
+        ens = "degrau curto" if CRITERIO[eixo]["primaria"][0] == "torque_pulso" else "degrau"
         ax.set_title(f"{NOMES[eixo].capitalize()}: desvio no {ens} de torque", loc="left")
         ax.set_xlabel("Ganho de ruído (× nativo)")
         for lado in ("top", "right"):

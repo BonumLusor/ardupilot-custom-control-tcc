@@ -4,38 +4,38 @@
 \begin{resumo}[Abstract]
 \begin{otherlanguage*}{english}
 Quadrotors are underactuated, nonlinear, coupled and open-loop unstable
-plants whose in-flight behaviour depends entirely on an attitude control
-loop running in real time. In open-source autopilots this loop is
-traditionally implemented by cascaded proportional-integral-derivative (PID)
-controllers, tuned empirically or automatically rather than from an explicit
-dynamic model of the vehicle. This work designs three model-based attitude
-controllers --- LQI, LQR with an extended state observer and LQG ---,
-implements them inside the ArduPilot firmware through the
-\codigo{AC\_CustomControl} framework and compares them with the native PID
-controller, tuned by AutoTune, in software-in-the-loop (SITL) simulation, in
-which the compiled firmware runs against a flight dynamics model. The vehicle
-model is derived from the Newton-Euler equations, linearised around hover and
-checked against the simulator itself, in the time and frequency domains. The
-control laws are designed as a linear quadratic regulator, with integral
-action (LQI) or with an extended state observer, and as an LQG, with a Kalman
-filter that models the firmware's measurement path. The comparative tests
-comprise reference steps in roll, pitch and yaw, isolated and simultaneous;
-reproducible torque disturbances shaped as pulses, sustained steps,
-frequency sweeps and stochastic processes; and robustness scenarios with
-gyroscope noise, model error, motor failure, saturation and large angles,
-applied under identical conditions to all controllers and evaluated through
-transient performance, tracking error, disturbance rejection and control
-effort metrics. In roll and pitch, with the same bandwidth and noise as the
-native controller, the LQI and the LQR with observer do not outperform it in
-peak disturbance rejection --- the LQI is equivalent to the native cascade
-with different gains ---, and the LQG, which models the gyroscope filter and
-the angle delay, is the only one that reduces the peak, by 7\,\% to 15\,\%.
-In yaw, all proposed controllers remove the native controller's slow
-recovery, from 22~s to 1 to 2.3~s, at the cost of more bandwidth or more
-noise in the control effort. The advantage in attitude step tracking comes
-from feedforward by model inversion, which the PID itself could use. The
-limits found stem from the available information --- the gyroscope filter
-and noise and the low yaw authority --- more than from the control law.
+plants, and their flight depends on an attitude control loop running in real
+time. In open-source autopilots this loop is built from cascaded
+proportional-integral-derivative (PID) controllers, tuned empirically or
+automatically rather than from a model of the vehicle. This work designs
+three model-based attitude controllers --- LQI, LQR with an extended state
+observer and LQG ---, implements them inside the ArduPilot firmware through
+the \codigo{AC\_CustomControl} framework and compares them with the native
+PID controller, tuned by AutoTune. The comparison runs in software-in-the-loop
+(SITL) simulation, in which the compiled firmware flies against a flight
+dynamics model. The vehicle model is derived from the Newton-Euler equations,
+linearised around hover and checked against the simulator, in the time and
+frequency domains. The LQI and the LQR with observer use the native
+bandwidth; the LQG uses a Kalman filter that models the firmware's
+measurement path and is designed to pass no more gyroscope noise to the
+motors than the native controller. The tests apply to all controllers, under
+the same conditions, attitude steps and torque disturbances shaped as
+impulses, short steps, sustained steps, frequency sweeps and stochastic
+processes. There are also scenarios with gyroscope noise, model error, motor
+failure, saturation and large angles, in a batch of 558 flights with frozen
+firmware. In roll and pitch, the LQI and the LQR with observer do not
+outperform the native controller in peak disturbance rejection, and the LQI
+is equivalent to the native cascade with different gains. The LQG is the
+only one that reduces the peak, by 7\,\% to 11\,\%, also with gyroscope noise
+and in repeated flights. An ablation shows that this advantage comes from
+modelling the gyroscope filter and the error of the estimated angle. In yaw,
+all proposed controllers remove the native controller's slow recovery, from
+22~s to 0.7 to 2.3~s, but a retuned PID does so as well; the peak only drops
+with more bandwidth and more noise in the control effort or, with the LQG,
+by 7\,\% to 8\,\%. The advantage in attitude step tracking comes from
+feedforward by model inversion, which the PID itself could use. The limits
+found stem more from the available information --- the gyroscope filter and
+noise and the low yaw authority --- than from the control law.
 
 \vspace{\onelineskip}
 

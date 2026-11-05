@@ -205,7 +205,7 @@ final fica entre 0,997 e 1,001 do torque aplicado.
 \begin{figure}[htbp]
 \centering
 \caption{Perturbação injetada e estimativa do observador de estado estendido,
-simuladas no modelo, no pulso de rolagem e no degrau de guinada.}
+simuladas no modelo, no degrau curto de rolagem e no degrau de guinada.}
 \label{fig:projeto-eso}
 \includegraphics[width=\textwidth]{figuras/projeto_eso}
 \fonte{Elaborada pelo autor, por \codigo{modelagem/projeto.py}.}
@@ -389,10 +389,10 @@ As margens da malha ideal do LQR não sobrevivem ao sensor. A malha ideal do LQR
 com realimentação de todos os estados, sem filtro nem atraso, tem margem de
 fase de 65 a \ang{73} em rolagem e arfagem; com o filtro de \SI{20}{\hertz}
 e o atraso de um laço, a margem prevista cai para 38 a \ang{41}, e a medida
-no SITL, pela varredura de torque, fica em 37 a \ang{40}, com frequência de
-cruzamento de 45 a \SI{48}{\radian\per\second}, contra 46 a 47 previstos. Só
+no SITL, pela varredura de torque, fica em 39 a \ang{42}, com frequência de
+cruzamento de 48 a \SI{51}{\radian\per\second}, contra 46 a 47 previstos. Só
 o filtro custa cerca de \ang{33} de fase no cruzamento da rolagem. No LQG em
-guinada, a queda é maior, de 80--\ang{85} na malha ideal para 41--\ang{44}
+guinada, a queda é maior, de 77--\ang{78} na malha ideal para 42--\ang{45}
 medidos, o efeito do estimador na malha que \citeonline{doyle1978} descreve.
 O ganho do LQI e do ESO em margem de fase em guinada vem, portanto, do
 projeto, e não de uma garantia. As Figuras~\ref{fig:projeto-malha}
@@ -438,7 +438,7 @@ guinada.}
 
 \begin{figure}[htbp]
 \centering
-\caption{Erro de atitude no pulso e no degrau de torque, simulados no modelo,
+\caption{Erro de atitude no degrau curto e no degrau de torque, simulados no modelo,
 em rolagem e em guinada.}
 \label{fig:projeto-tempo-torque}
 \includegraphics[width=\textwidth]{figuras/projeto_tempo_torque}
@@ -447,16 +447,16 @@ em rolagem e em guinada.}
 
 As métricas previstas antes de voar estão na
 Tabela~\ref{tab:projeto-previsao} e ficam perto das medidas no SITL
-(Capítulo~\ref{cap:resultados}): no pulso de rolagem, por exemplo, o
+(Capítulo~\ref{cap:resultados}): no degrau curto de rolagem, por exemplo, o
 modelo previa \ang{0.95} para o LQI e \ang{0.97} para o LQR com ESO. O
 degrau de atitude, simulado com o alvo registrado no voo nominal do nativo
 (Figura~\ref{fig:projeto-degrau}), mostra a outra diferença de projeto: a
 alimentação direta. A Tabela~\ref{tab:projeto-rastreio} separa o seu efeito:
-o PID com a mesma alimentação direta do LQI chega a 4,0\,\% de sobressinal e
-\ang{0.688} de erro máximo em rolagem, contra 4,9\,\% e \ang{0.485} do LQI e
-22,8\,\% e \ang{3.219} do nativo. Em guinada, o LQG com o estimador de
-manobra reduz o erro máximo de \ang{0.355}, com um estimador só, para
-\ang{0.111}.
+o PID com a mesma alimentação direta do LQI chega a 3,9\,\% de sobressinal e
+\ang{0.687} de erro máximo em rolagem, contra 4,9\,\% e \ang{0.485} do LQI e
+22,7\,\% e \ang{3.215} do nativo. Em guinada, o LQG com o estimador de
+manobra reduz o erro máximo de \ang{0.155}, com um estimador só, para
+\ang{0.112}.
 
 \begin{table}[htbp]
 \centering
@@ -631,7 +631,10 @@ $k_i\,x_I$ no LQI e $-\hat d/b$ no ESO e no LQG --- e o \textit{frontend} o
 carrega no integrador do PID de taxa do nativo, limitado ao máximo do
 próprio integrador, nos eixos do \codigo{CC\_AXIS\_MASK}. Os ensaios de
 comutação (Seção~\ref{sec:cenarios}) medem o transitório da volta com e sem
-a transferência.
+a transferência: sob um degrau de torque de
+\SI{10}{\radian\per\second\squared} em rolagem, a volta desvia a atitude em
+cerca de \ang{1.5} sem ela e em \ang{0.02} a \ang{0.04} com ela
+(Seção~\ref{sec:res-comutacao}).
 
 \subsection{LQG a bordo}
 
@@ -702,7 +705,7 @@ Apêndice~\ref{ap:validacao-proposto}.}
 \begin{figure}[htbp]
 \centering
 \caption{Erro de atitude no SITL e no modelo, com o LQI, nos ensaios de
-torque em pulso e em degrau.}
+torque em degrau curto e em degrau.}
 \label{fig:validacao-tempo-lqi}
 \includegraphics[width=\textwidth]{figuras/validacao_tempo_cc_lqi}
 \fonte{Elaborada pelo autor, por \codigo{modelagem/validacao.py}.}
@@ -711,7 +714,7 @@ torque em pulso e em degrau.}
 \begin{figure}[htbp]
 \centering
 \caption{Erro de atitude no SITL e no modelo, com o LQR com observador de
-estado estendido, nos ensaios de torque em pulso e em degrau.}
+estado estendido, nos ensaios de torque em degrau curto e em degrau.}
 \label{fig:validacao-tempo-eso}
 \includegraphics[width=\textwidth]{figuras/validacao_tempo_cc_eso}
 \fonte{Elaborada pelo autor, por \codigo{modelagem/validacao.py}.}
@@ -720,7 +723,7 @@ estado estendido, nos ensaios de torque em pulso e em degrau.}
 \begin{figure}[htbp]
 \centering
 \caption{Erro de atitude no SITL e no modelo, com o LQG de mesmo ruído, nos
-ensaios de torque em pulso e em degrau.}
+ensaios de torque em degrau curto e em degrau.}
 \label{fig:validacao-tempo-lqg}
 \includegraphics[width=\textwidth]{figuras/validacao_tempo_cc_lqg_mesmo_ruido}
 \fonte{Elaborada pelo autor, por \codigo{modelagem/validacao.py}.}

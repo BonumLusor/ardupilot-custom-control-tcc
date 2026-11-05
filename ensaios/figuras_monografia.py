@@ -231,9 +231,11 @@ def _fig_casos_torque(desde, destino, casos, grade, tamanho):
         titulo = f"{NOMES[eixo].capitalize()}, {TIPO_TORQUE[ensaio]}"
         if amp is not None:
             dur = float(cen["vento"].get("WND_TQDUR", 0) or 0)
-            titulo += f" de {amp:g} rad/s²".replace(".", ",")
             if ensaio == "torque_impulso":
-                titulo += f" por {dur * 1e3:g} ms"
+                # o titulo inteiro nao cabe no painel; a legenda da figura diz que e impulso
+                titulo = f"{NOMES[eixo].capitalize()}, {amp:g} rad/s² × {dur * 1e3:g} ms".replace(".", ",")
+            else:
+                titulo += f" de {amp:g} rad/s²".replace(".", ",")
         ax.set_title(titulo, loc="left")
         ax.set_xlabel("Tempo desde o início do torque (s)")
         ax.set_ylabel("Erro de atitude (°)")
@@ -346,7 +348,16 @@ def fig_eso(desde, destino):
         if f"d_hat_{eixo}" not in col:
             continue
         t = col["t"] - t_do_torque(col, cen)
-        ax.plot(t, col[COL_TQ[eixo]], color=E.REFERENCIA, lw=E.LARGURA_REF, ls="--",
+        d = np.asarray(col[COL_TQ[eixo]], dtype=float)
+        if int(cen["vento"].get("WND_MODE", 0)) & 512:
+            # pulso de duracao exata: o SITL aplica o torque por WND_TQDUR; a coluna do
+            # series.csv mostra as escritas do script, que duram uma escrita a mais ou a menos
+            on = np.flatnonzero(np.isfinite(d) & (d != 0))
+            if len(on):
+                t_on = t[on[0]]
+                amp = float(cen["vento"][{"roll": "WND_TQX", "pitch": "WND_TQY", "yaw": "WND_TQZ"}[eixo]])
+                d = np.where((t >= t_on) & (t < t_on + float(cen["vento"]["WND_TQDUR"])), amp, 0.0)
+        ax.plot(t, d, color=E.REFERENCIA, lw=E.LARGURA_REF, ls="--",
                 label="Injetada $d$")
         ax.plot(t, col[f"d_hat_{eixo}"], color=COR["cc_eso"], label="Estimada $\\hat d$")
         ax.set_xlim(*xlim)

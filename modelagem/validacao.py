@@ -606,7 +606,20 @@ def validar(pasta, atraso_lacos=0):
         # malha.simular tinha um laco a mais; nos que so usam o giroscopio, um
         # erro compensava o outro (temporizacao conferida nos logs em 01/11).
         opcoes = {"ruido_angulo": True, "tau_ahrs": TAU_AHRS, "atraso_angulo": 1}
-        ang_sim = simular(t_g, (wnd["t"], wnd[col_tq]), a, b, ctl,
+        escada = (wnd["t"], wnd[col_tq])
+        if modo & 512:
+            # pulso de duracao exata: quem desliga o torque e o SITL (SIM_TWIST_TIME),
+            # e o WND so mostra as escritas do script, a ~44 Hz; a duracao registrada
+            # varia de uma escrita (0,28 a 0,30 s no pulso de 0,3 s; ~22 ms no de 20 ms).
+            # O modelo recebe o pulso aplicado: do primeiro registro com torque,
+            # pela duracao do cenario.
+            v = np.asarray(wnd[col_tq], dtype=float)
+            on = np.flatnonzero(v != 0)
+            if len(on):
+                t_on = float(wnd["t"][on[0]])
+                escada = (np.array([t_on - 10.0, t_on, t_on + float(vento["WND_TQDUR"])]),
+                          np.array([0.0, v[on[0]], 0.0]))
+        ang_sim = simular(t_g, escada, a, b, ctl,
                           fs_fisica=fs_fisica, fs_laco=fs_laco,
                           fc_giro=float(p.get("INS_GYRO_FILTER", 20)),
                           atraso_lacos=atraso_lacos,
@@ -774,7 +787,7 @@ def escrever_tabela(resultados, destino, slugs=SLUGS_CAP4, longa=None):
         s, m = e["metricas"]["sitl"], e["metricas"]["sim"]
         cen = cenario_de(r["pasta"])
         grupo, ensaio = cen.rsplit("/", 1)
-        tipo = {"torque_pulso": "pulso", "torque_degrau": "degrau"}[ensaio]
+        tipo = {"torque_pulso": "degrau curto", "torque_degrau": "degrau"}[ensaio]
         ctl = ROTULOS.get(r["slug"], r["slug"])
         simult = {"rolagem_arfagem_guinada": " (3 eixos)",
                   "ruido": " (3 eixos, ruído)"}.get(grupo, "")
@@ -895,11 +908,11 @@ def desenhar(resultados, destino, slug="nativo"):
         ax.set_axisbelow(True)
         for lado in ("top", "right"):
             ax.spines[lado].set_visible(False)
-        tipo = "pulso" if "pulso" in cen else "degrau"
-        ax.set_title(f"{NOMES[eixo].capitalize()}, torque em {tipo}", color=tinta, fontsize=9)
+        tipo = "degrau curto" if "pulso" in cen else "degrau"
+        ax.set_title(f"{NOMES[eixo].capitalize()}, {tipo} de torque", color=tinta, fontsize=9)
         ax.set_xlabel("Tempo desde o início do torque (s)")
         ax.set_ylabel("Erro de atitude (°)")
-        if tipo == "pulso":
+        if tipo == "degrau curto":
             ax.set_xlim(-0.5, 4.0)
     eixos.flat[0].legend(frameon=False, fontsize=8, labelcolor=tinta)
     fig.tight_layout()

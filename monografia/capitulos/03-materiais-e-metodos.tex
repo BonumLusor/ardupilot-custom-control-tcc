@@ -6,7 +6,7 @@
 %  e o AutoTune (controladores/, autotune.py), os cenários
 %  (cenarios/<grupo>/), as métricas (analise/metricas.py,
 %  analise/frequencia.py) e a automação (run_ensaio.py). Reescrito em
-%  nov. 2026 para o conjunto de 14 controladores e 49 cenários; os números
+%  nov. 2026 para o conjunto de 17 configurações e 55 cenários; os números
 %  vêm do código, dos YAMLs e da verificação (monografia/verificacao/).
 % ======================================================================
 \chapter{Materiais e métodos}
@@ -101,11 +101,12 @@ e reduz a constante de tempo do modelador de referência
 última escolha merece justificativa. O modelador transforma o degrau comandado
 em uma transição suave antes que a realimentação o veja
 (Seção~\ref{sec:ardupilot}), e ele é idêntico para todos os controladores.
-Com a constante padrão, a aeronave segue o alvo modelado com erro de pico de
-\ang{0.52} no degrau nominal de rolagem do nativo, e as métricas do degrau
-passam a caracterizar o modelador; encurtando-a para \SI{0.02}{\second}, o
-erro de pico passa a \ang{3.3}: o comando chega mais perto de um degrau, e a
-malha fechada tem de trabalhar.
+Com a constante padrão, num voo à parte com o mesmo firmware, a aeronave
+segue o alvo modelado com erro de pico de \ang{0.49} no degrau nominal de
+rolagem do nativo, e as métricas do degrau passam a caracterizar o
+modelador; encurtando-a para \SI{0.02}{\second}, o erro de pico passa a
+\ang{3.3}: o comando chega mais perto de um degrau, e a malha fechada tem de
+trabalhar.
 
 O simulador é executado com fator de aceleração 5 em relação ao tempo real.
 Esse fator não interfere nos resultados: o relógio do firmware é o relógio
@@ -226,7 +227,8 @@ filtro do vento do SITL (Apêndice~\ref{ap:vento}), e a varredura de torque
 pode chegar a \SI{10}{\hertz} sem distorção.
 
 O laço do \textit{script} não entrega exatamente os \SI{50}{\hertz} pedidos:
-medido nos voos, ele roda de 43,6 a \SI{44.3}{\hertz}. O perfil não perde
+medido nos voos do lote, ele roda de 44,5 a \SI{46.2}{\hertz}, com
+mediana de \SI{44.5}{\hertz}. O perfil não perde
 amostras por isso --- a cada ciclo, o injetor avança o gerador tantos passos
 quantos forem necessários para alcançar o relógio, salvo se o
 \textit{script} ficar parado mais de \SI{0.5}{\second}, o que não ocorreu nos
@@ -269,13 +271,14 @@ mesmo ponto do ensaio.
 Cada controlador é descrito por um arquivo de configuração que lista os
 parâmetros a aplicar, o que se espera encontrar no registro e,
 opcionalmente, os cenários que ele voa (pasta
-\codigo{ensaios/controladores/}). São catorze configurações, em quatro grupos
-(Tabela~\ref{tab:controladores}): a linha de base (PID nativo), a verificação
-do caminho de integração (PID do \codigo{AC\_CustomControl}, com e sem a
-alimentação direta do LQI), os controladores propostos (LQI, LQR com
-observador de estado estendido e LQG, cada um com variantes de critério de
-projeto) e as provas de equivalência e de filtro (nativo com os ganhos do
-LQI e as variantes com o giroscópio filtrado a \SI{10}{\hertz}).
+\codigo{ensaios/controladores/}). São dezessete configurações, em cinco
+grupos (Tabela~\ref{tab:controladores}): a linha de base (o PID nativo e o
+nativo com a guinada ressintonizada), a verificação do caminho de integração
+(PID do \codigo{AC\_CustomControl}, com e sem a alimentação direta do LQI),
+os controladores propostos (LQI, LQR com observador de estado estendido e
+LQG, cada um com variantes de critério de projeto), as provas de
+equivalência e de filtro (nativo com os ganhos do LQI e as variantes com o
+giroscópio filtrado a \SI{10}{\hertz}) e a ablação do LQG.
 
 \begin{table}[htbp]
 \centering
@@ -288,23 +291,27 @@ LQI e as variantes com o giroscópio filtrado a \SI{10}{\hertz}).
 Configuração & \codigo{CC\_TYPE} & Cenários & Papel \\
 \midrule
 \multicolumn{4}{l}{\textit{Linha de base}} \\
-\codigo{nativo}             & 0 & 49 & cascata nativa com os ganhos do AutoTune (Tabela~\ref{tab:ganhos}) \\
+\codigo{nativo}             & 0 & 53 & cascata nativa com os ganhos do AutoTune (Tabela~\ref{tab:ganhos}) \\
+\codigo{nativo\_guinada}    & 0 & 20 & o mesmo, com a guinada do melhor PID de ganhos livres do portão (nativo, guinada ressintonizada) \\
 \multicolumn{4}{l}{\textit{Verificação do caminho de integração}} \\
 \codigo{cc\_pid}            & 2 & 18 & \textit{backend} PID de exemplo com os mesmos ganhos do nativo \\
 \codigo{cc\_pid\_ff}        & 2 & 18 & o mesmo, com a alimentação direta do LQI (\codigo{CC2\_FF}) \\
 \multicolumn{4}{l}{\textit{Controladores propostos}} \\
-\codigo{cc\_lqi}            & 3 & 49 & LQI com alimentação direta (LQI) \\
+\codigo{cc\_lqi}            & 3 & 55 & LQI com alimentação direta (LQI) \\
 \codigo{cc\_lqi\_sem\_ff}   & 3 & 18 & LQI sem alimentação direta \\
-\codigo{cc\_lqi\_mesmo\_ruido} & 3 & 49 & LQI com a guinada projetada para o ruído no esforço do nativo (LQI, mesmo ruído) \\
-\codigo{cc\_eso}            & 3 & 49 & LQR com observador de estado estendido (LQR+ESO) \\
-\codigo{cc\_lqg}            & 4 & 49 & LQG com a mesma regra de banda do LQI (LQG) \\
-\codigo{cc\_lqg\_mesmo\_ruido} & 4 & 49 & LQG com ruído no esforço não maior que o do nativo (LQG, mesmo ruído) \\
+\codigo{cc\_lqi\_mesmo\_ruido} & 3 & 51 & LQI com a guinada projetada para o ruído no esforço do nativo (LQI, mesmo ruído) \\
+\codigo{cc\_eso}            & 3 & 55 & LQR com observador de estado estendido (LQR+ESO) \\
+\codigo{cc\_lqg}            & 4 & 55 & LQG com a mesma regra de banda do LQI (LQG) \\
+\codigo{cc\_lqg\_mesmo\_ruido} & 4 & 53 & LQG com ruído no esforço não maior que o do nativo (LQG, mesmo ruído) \\
 \multicolumn{4}{l}{\textit{Provas de equivalência e de filtro}} \\
 \codigo{nativo\_lqi}        & 0 & 18 & cascata nativa com os ganhos que reproduzem o LQI \\
 \codigo{nativo\_filtro10}   & 0 & 8  & nativo com o giroscópio a \SI{10}{\hertz} e o segundo AutoTune \\
 \codigo{cc\_lqi\_filtro10}  & 3 & 8  & LQI reprojetado para o filtro de \SI{10}{\hertz} \\
 \codigo{cc\_eso\_filtro10}  & 3 & 8  & LQR+ESO reprojetado para o filtro de \SI{10}{\hertz} \\
 \codigo{cc\_lqg\_filtro10}  & 4 & 8  & LQG reprojetado para o filtro de \SI{10}{\hertz} \\
+\multicolumn{4}{l}{\textit{Ablação do LQG}} \\
+\codigo{cc\_lqg\_sem\_z}    & 4 & 2  & LQG de mesmo ruído sem o estado do atraso do ângulo, reprojetado \\
+\codigo{cc\_lqg\_sem\_bg}   & 4 & 2  & LQG de mesmo ruído sem o estado do viés do giroscópio, reprojetado \\
 \bottomrule
 \end{tabular}
 
@@ -316,7 +323,13 @@ torque; nos três eixos, o nominal, o degrau curto e o degrau; o degrau curto
 e o degrau com
 \codigo{SIM\_GYR*\_RND} = 20; e a rajada. A de 8 reúne, em rolagem e
 guinada, o nominal, o degrau curto e o degrau; o torque estocástico nos três
-eixos; e o degrau curto com \codigo{SIM\_GYR*\_RND} = 20.}
+eixos; e o degrau curto com \codigo{SIM\_GYR*\_RND} = 20. A de 20 reúne
+os cenários de guinada (nominal, degrau curto, degrau, impulso, varredura e
+estocástico), o impulso com \codigo{SIM\_GYR*\_RND} = 20, a saturação, o erro
+de modelo e a falha de motor. A ablação voa o impulso e o degrau de rolagem.
+Os dois cenários de comutação voam só com o LQI, o LQR+ESO e o LQG; o LQI de
+mesmo ruído, igual ao LQI em rolagem e arfagem, não voa o impulso desses
+eixos.}
 \end{table}
 
 O \emph{PID nativo} é a cascata padrão do ArduPilot
@@ -422,8 +435,8 @@ $t = \SI{6}{\second}$ (\SI{4}{\second} na varredura). A separação não é
 detalhe: sobre uma aeronave inclinada e acelerando lateralmente, a
 perturbação incidiria num ponto de operação diferente do equilíbrio em torno
 do qual os controladores são projetados. Nos ensaios das pastas de eixo, a
-perturbação encontra a aeronave entre \ang{-0.02} e \ang{0.07} de rolagem
-(mediana de \ang{-0.005}).
+perturbação encontra a aeronave entre \ang{-0.02} e \ang{0.02} de rolagem
+(mediana de \ang{-0.004}).
 
 \subsection{Conjunto de cenários}
 \label{sec:conjunto-cenarios}
@@ -527,7 +540,7 @@ Grupo & Ensaios & O que muda \\
     também o impulso
   & \codigo{SIM\_GYR*\_RND} = 10, 20, 40 e 80 \\
 \codigo{erro\_modelo/}\allowbreak\codigo{empuxo\_fraco}
-  & nominal, pulso e degrau, nos três eixos
+  & nominal, degrau curto e degrau, nos três eixos
   & \codigo{SIM\_FRM\_HOVR\_THR} de 0,39 para 0,50: $b$ cai 22\,\% em rolagem e
     arfagem e 9\,\% em guinada \\
 \codigo{erro\_modelo/}\allowbreak\codigo{braco\_longo}
@@ -543,7 +556,7 @@ Grupo & Ensaios & O que muda \\
   & degrau de \ang{45} em rolagem; combinado de \ang{45}, \ang{45} e \ang{90}
   & \codigo{ATC\_ANGLE\_MAX} = \ang{50} \\
 \codigo{saturacao/}\allowbreak\codigo{guinada}
-  & pulso de \SI{12}{\radian\per\second\squared} por \SI{0.5}{\second}; degrau de
+  & degrau curto de \SI{12}{\radian\per\second\squared} por \SI{0.5}{\second}; degrau de
     \SI{6}{\radian\per\second\squared}
   & --- \\
 \codigo{falha\_motor/}\allowbreak\codigo{leve} e \codigo{severa}
@@ -603,9 +616,11 @@ tradicional de atitude, \codigo{ATT}, é gravada sempre a \SI{10}{\hertz}; a
 atitude na taxa do laço vai em \codigo{ANG}, com os mesmos
 campos~\cite{ardupilot2026}. Como um degrau de rolagem sobe em cerca de
 \SI{50}{\milli\second}, a \SI{10}{\hertz} o transitório inteiro cabe em uma
-ou duas amostras: refeita com \codigo{ATT}, a análise dos voos de 27/10 dá
-sobressinal entre 4\,\% e 24\,\% para o mesmo degrau, conforme a posição das
-amostras, e desvio máximo no pulso de torque até 13\,\% menor. O erro de
+ou duas amostras. Refeita com \codigo{ATT}, a análise dos voos do lote dá,
+para os PID que têm de 20\,\% a 27\,\% de sobressinal, entre 2\,\% e 23\,\%,
+conforme a posição das amostras; o desvio máximo do degrau curto sai até
+10\,\% menor, e o do impulso, até 94\,\% menor, porque o pico, que dura
+centésimos de segundo, cai entre duas amostras. O erro de
 atitude de cada eixo é $e = \theta^* - \theta$, a diferença entre o alvo e a
 medida; em guinada, o rumo é tomado em relação ao rumo inicial e desdobrado
 antes da interpolação, para que um degrau que cruze o norte não apareça como
@@ -688,8 +703,8 @@ controladores~\cite{astrom2008}.
 \subsection{Rejeição de perturbação}
 
 A janela começa no início da
-perturbação e termina \SI{4}{\second} depois do início no pulso (ou oito
-vezes a sua duração, se maior), no fim do ensaio no degrau sustentado, no fim
+perturbação e termina \SI{4}{\second} depois do início no degrau curto e no
+impulso (ou oito vezes a duração, se maior), no fim do ensaio no degrau sustentado, no fim
 da perturbação no torque estocástico e na falha de motor e quatro durações
 depois do início na rajada; é a mesma para todos os eixos,
 para que a rolagem de um ensaio simultâneo seja comparável à do ensaio de
@@ -769,9 +784,11 @@ consolidada recebe uma linha por ensaio, com as métricas, os ganhos que
 voaram em cada eixo e a massa e as inércias da aeronave. Um voo que falha é
 repetido, e a pasta do voo malsucedido é marcada com o motivo da falha.
 
-O lote completo, com os 49 cenários e os 14 controladores (cada controlador
-voa os cenários da sua lista), tem 398 voos e leva cerca de seis horas, a
-cerca de um minuto por voo. O código, os cenários e as configurações são
+O lote completo, com os 55 cenários e as 17 configurações (cada uma voa os
+cenários da sua lista), tem 450 pares cenário × controlador e, com as
+repetições e as sementes da Seção~\ref{sec:metricas}, 558 voos. Ele leva
+cerca de oito horas, a cerca de um minuto por voo, e voa com o firmware
+congelado (Seção~\ref{sec:ambiente}). O código, os cenários e as configurações são
 versionados; os resultados ficam fora do controle de versão, mas cada pasta
 de resultado guarda o necessário para reanalisar o ensaio e, com a versão do
 código, refazê-lo: o registro traz o próprio \textit{script} do injetor e a
@@ -798,8 +815,8 @@ protege de uma carga maior. Com a fila esvaziada, o atraso fica em cerca de
 imposto pela taxa de comando de \SI{10}{\hertz}. A perturbação, temporizada
 pelo relógio do injetor, que roda dentro do firmware, não depende do
 computador: ela começa no primeiro ciclo do \textit{script} depois do instante
-programado, e, com ciclos de cerca de \SI{23}{\milli\second} (43,6 a
-\SI{44.3}{\hertz}), o atraso medido ficou abaixo de \SI{30}{\milli\second}. Os intervalos
+programado, e, com ciclos de cerca de \SI{22}{\milli\second}, o atraso
+medido ficou abaixo de \SI{30}{\milli\second}. Os intervalos
 de tempo do lado do computador usam um relógio monotônico: o relógio de
 parede do sistema chegou a voltar no tempo durante uma corrida, ao se
 ressincronizar.

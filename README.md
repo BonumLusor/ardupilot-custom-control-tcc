@@ -735,7 +735,7 @@ atrasado custa só 7°). O ganho de Kalman sai da Riccati dual, com o ruído do 
 (LTR) na entrada da planta.
 
 ```bash
-python modelagem/projeto.py --portao --cache ensaios/resultados/projeto_portao_cache.pkl \
+python modelagem/projeto.py --portao --cache ensaios/resultados/verificacao_2026-11-04/projeto_portao_cache_v2.pkl \
     --escrever-yaml --tabelas monografia/tabelas --figuras monografia/figuras   # ~20 min
 ```
 
