@@ -167,19 +167,35 @@ def pastas_de_voo(raizes, binario=None):
             yield pasta
 
 
+def _uma(pasta):
+    try:
+        return pasta, calcular_pasta(pasta) is not None, None
+    except Exception as exc:              # um voo ruim não para a reanálise
+        return pasta, False, str(exc)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("raizes", nargs="+", type=Path)
     ap.add_argument("--binario", help="só os voos deste hash do binário do SITL")
+    ap.add_argument("--processos", type=int, default=1, help="voos analisados em paralelo")
+    ap.add_argument("--pular-feitos", action="store_true",
+                    help="pula os voos que já têm metricas_verdade.json")
     a = ap.parse_args(argv)
+    pastas = [p for p in pastas_de_voo(a.raizes, a.binario)
+              if not (a.pular_feitos and (p / ARQ_METRICAS).exists())]
     n = falhas = 0
-    for pasta in pastas_de_voo(a.raizes, a.binario):
-        try:
-            if calcular_pasta(pasta) is not None:
-                n += 1
-        except Exception as exc:          # um voo ruim não para a reanálise
+    if a.processos > 1:
+        from multiprocessing import Pool
+        with Pool(a.processos) as pool:
+            res = list(pool.imap_unordered(_uma, pastas))
+    else:
+        res = map(_uma, pastas)
+    for pasta, ok, erro in res:
+        n += ok
+        if erro:
             falhas += 1
-            print(f"FALHOU {pasta}: {exc}", file=sys.stderr)
+            print(f"FALHOU {pasta}: {erro}", file=sys.stderr)
     print(f"{n} voo(s) na base verdadeira; {falhas} falha(s)")
 
 
