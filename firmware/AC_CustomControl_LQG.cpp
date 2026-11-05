@@ -4,6 +4,7 @@
 
 #include "AC_CustomControl_LQG.h"
 
+#include <AP_InertialSensor/AP_InertialSensor.h>
 #include <AP_Logger/AP_Logger.h>
 #include <AP_Math/AP_Math.h>
 
@@ -256,6 +257,13 @@ const AP_Param::GroupInfo AC_CustomControl_LQG::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("LR8W", 43, AC_CustomControl_LQG, _lrw[7], 0),
 
+    // @Param: DBGANG
+    // @DisplayName: Depuracao: fonte do angulo medido
+    // @Description: 0 usa o angulo do AHRS. 1 usa a integral dos incrementos de angulo nao filtrados do INS, sem as correcoes do EKF, um laco atrasada como o AHRS que o backend le. So para a ablacao do diagnostico do ruido (revisao de 3/11)
+    // @Values: 0:AHRS,1:Integral do INS
+    // @User: Advanced
+    AP_GROUPINFO("DBGANG", 44, AC_CustomControl_LQG, _dbgang, 0),
+
     AP_GROUPEND
 };
 
@@ -406,6 +414,24 @@ Vector3f AC_CustomControl_LQG::update()
     // erro de atitude e alvo de velocidade angular, como no AC_CustomControl_PID
     Quaternion attitude_body, attitude_target;
     _ahrs->get_quat_body_to_ned(attitude_body);
+    if (_dbgang > 0) {
+        // ablacao (revisao de 3/11, Fase 3c): o angulo medido sai da integral dos
+        // incrementos de angulo nao filtrados do INS, sem as correcoes do EKF. A
+        // integral parte do AHRS e e lida ANTES de somar o incremento deste laco,
+        // e fica um laco atrasada, como o AHRS que o backend le
+        if (!_q_int_ok) {
+            _q_int = attitude_body;
+            _q_int_ok = true;
+        }
+        const Quaternion q_lida = _q_int;
+        Vector3f dang;
+        float dang_dt;
+        if (AP::ins().get_delta_angle(dang, dang_dt)) {
+            _q_int.rotate(dang);
+            _q_int.normalize();
+        }
+        attitude_body = q_lida;
+    }
     attitude_target = _att_control->get_attitude_target_quat();
     Vector3f attitude_error;
     float thrust_angle_rad, thrust_error_angle_rad;
@@ -553,6 +579,7 @@ void AC_CustomControl_LQG::reset(void)
         _inov[i][0] = _inov[i][1] = 0.0f;
     }
     _primeiro = true;
+    _q_int_ok = false;
 }
 
 #endif  // AP_COPTER_CUSTOMCONTROL_LQG_ENABLED

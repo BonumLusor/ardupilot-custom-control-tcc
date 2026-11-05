@@ -56,6 +56,9 @@ RESULTADOS = RAIZ / "resultados"
 # --fila-antiga volta a ler a mensagem mais antiga da fila no laco do perfil (o
 # comportamento de antes da correcao) e --destino tira os voos da arvore das tabelas.
 PARAMS_EXTRA = {}
+# --ganho: como --param, mas aplicado DEPOIS dos ganhos do controlador, quando os
+# parametros do backend (CC2_*, CC3_*, CC4_*) ja existem
+GANHOS_EXTRA = {}
 FILA_FRESCA = True
 
 # Os cenarios ficam em uma pasta por eixo exercitado, e os ensaios de cada pasta
@@ -1139,6 +1142,8 @@ def voar(cen, ctl, pasta, speedup, instancia):
         ganhos = ctl.get("ganhos") or {}
         if ganhos:
             aplicar_params(m, ganhos, "de ganhos do controlador")
+        if GANHOS_EXTRA:
+            aplicar_params(m, GANHOS_EXTRA, "do backend, da linha de comando")
 
         # Os WND_* so existem DEPOIS do reboot, e so quando o vento.lua ja rodou e
         # registrou a tabela dinamica — o que leva alguns segundos.
@@ -1370,6 +1375,9 @@ def main():
     ap.add_argument("--param", action="append", default=[], metavar="NOME=VALOR",
                     help="parametro do veiculo aplicado por ultimo, acima do cenario e do "
                          "controlador (repete). So para voos de medicao: use com --destino")
+    ap.add_argument("--ganho", action="append", default=[], metavar="NOME=VALOR",
+                    help="parametro do backend (CC2_*, CC3_*, CC4_*) aplicado depois dos ganhos "
+                         "do controlador (repete). So para voos de medicao: use com --destino")
     ap.add_argument("--fila-antiga", action="store_true",
                     help="le a mensagem mais antiga da fila no laco do perfil, como antes "
                          "da correcao da temporizacao (Cap. 3). So para medir o atraso")
@@ -1384,15 +1392,22 @@ def main():
         if not sep:
             raise SystemExit(f"--param espera NOME=VALOR, veio {item!r}")
         PARAMS_EXTRA[nome.strip()] = float(valor)
+    for item in args.ganho:
+        nome, sep, valor = item.partition("=")
+        if not sep:
+            raise SystemExit(f"--ganho espera NOME=VALOR, veio {item!r}")
+        GANHOS_EXTRA[nome.strip()] = float(valor)
     FILA_FRESCA = not args.fila_antiga
     if args.destino:
         RESULTADOS = Path(args.destino).resolve()
         RESULTADOS.mkdir(parents=True, exist_ok=True)
-    if (PARAMS_EXTRA or args.fila_antiga) and not args.destino and not args.analisar:
-        raise SystemExit("--param e --fila-antiga sao para voos de medicao: "
+    if (PARAMS_EXTRA or GANHOS_EXTRA or args.fila_antiga) and not args.destino and not args.analisar:
+        raise SystemExit("--param, --ganho e --fila-antiga sao para voos de medicao: "
                          "use --destino para nao misturar com os ensaios das tabelas")
     if PARAMS_EXTRA:
         log(f"parametros da linha de comando: {PARAMS_EXTRA}")
+    if GANHOS_EXTRA:
+        log(f"parametros do backend da linha de comando: {GANHOS_EXTRA}")
     if args.fila_antiga:
         log("leitura ANTIGA da fila no laco do perfil (medicao do atraso)")
 

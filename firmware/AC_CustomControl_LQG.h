@@ -64,6 +64,7 @@ protected:
     AP_Vector3f _taur;      // erro do angulo do AHRS no estimador rapido, s
     AP_Vector3f _wman;      // velocidade alvo a partir da qual o rapido assume, graus/s (0 desliga)
     AP_Float    _tman;      // constante de tempo da volta ao lento, s
+    AP_Int8     _dbgang;    // depuracao: 0 angulo do AHRS, 1 integral dos incrementos do INS
     AP_Vector3f _lrt[CC_LQG_N];
     AP_Vector3f _lrw[CC_LQG_N];
 
@@ -78,6 +79,8 @@ protected:
     float _u_fb_ant[3];         // realimentacao aplicada no laco anterior
     float _inov[3][2];          // inovacoes do ultimo passo (log)
     float _w_t_ant[3];          // alvo de taxa do laco anterior (aceleracao alvo)
+    Quaternion _q_int;          // _dbgang = 1: atitude integrada dos incrementos de angulo
+    bool _q_int_ok = false;
     bool _primeiro;             // primeiro passo depois de um reset
     LowPassFilter2pFloat _filtro_alvo[3];
 };
