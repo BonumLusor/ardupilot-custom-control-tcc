@@ -160,7 +160,7 @@ uma plataforma experimental construída para esse fim.
 graus de liberdade e projetou controladores por realimentação de estados e
 por técnicas não lineares, avaliando-os exclusivamente em simulação numérica.
 
-Este trabalho situa-se na lacuna entre essas duas abordagens. Em vez de
+Este trabalho fica entre essas duas abordagens. Em vez de
 construir uma aeronave própria, o que desloca o esforço para a montagem
 mecânica e eletrônica, ou de encerrar a avaliação no ambiente de projeto, o
 que deixa em aberto a questão da implementação, a proposta consiste em
@@ -175,6 +175,62 @@ Um resultado adicional esperado é de natureza metodológica: um roteiro
 reprodutível, em português, que vai da equação de Newton-Euler até o código
 embarcado e até a bateria de ensaios automatizada, construído exclusivamente
 com software livre e passível de continuidade por outros alunos.
+
+\section{Trabalhos relacionados}
+\label{sec:relacionados}
+
+Três grupos de trabalhos cercam este. O primeiro compara o PID com o controle
+ótimo no próprio quadrirrotor. \citeonline{bouabdallah2004} aplicaram ao OS4
+um PID, projetado sobre uma dinâmica simplificada, e um LQ, projetado sobre um
+modelo mais completo. Em voo, o PID estabilizou a atitude sob perturbações
+pequenas, e o LQ teve resultado apenas mediano, que os autores atribuíram às
+imperfeições do modelo. A vantagem de um projeto baseado em modelo depende,
+portanto, de o modelo representar o que o controlador de fato enfrenta. É por
+isso que este trabalho identifica o modelo no próprio SITL
+(Capítulo~\ref{cap:modelagem}).
+
+O segundo grupo embarca controladores em pilotos automáticos de código aberto.
+O controlador de ângulo do PX4 implementa a lei em quatérnios de
+\citeonline{brescianini2013}, segundo a documentação do próprio PX4
+\cite{px4controladores}. \citeonline{smeur2016} levaram ao voo de
+microveículos a inversão dinâmica incremental adaptativa. Três trabalhos
+comparam o controlador proposto com o de produção dentro do mesmo
+\textit{firmware}:
+\begin{itemize}
+\item \citeonline{nguyen2015} compararam, no ArduPilot, o PID original, um
+PID novo e um \textit{backstepping} integral;
+\item \citeonline{bressan2020} trocaram o controlador de taxa do PX4 por um
+controlador adaptativo com observador, que pode ser ligado e desligado em
+voo. Eles o compararam com a cascata original sob um torque de perturbação no
+pairado, medindo o tempo até a atitude nivelar, o pico do desvio e o esforço
+de controle, as mesmas famílias de métrica usadas aqui;
+\item \citeonline{saldiran2024} implementaram a inversão dinâmica incremental
+como biblioteca à parte no ArduPilot, com chaveamento para o controlador
+original. Eles a verificaram no SITL e a compararam em voo com o PID ajustado
+pelo AutoTune, a mesma linha de base deste trabalho.
+\end{itemize}
+
+O terceiro grupo estima a perturbação e a cancela. O observador de estado
+estendido do LQR+ESO vem do controle por rejeição ativa de perturbações de
+\citeonline{han2009}, e \citeonline{chen2016} revisam o controle baseado em
+observador de perturbação. \citeonline{sanz2016} aplicaram à atitude de um
+quadrirrotor um estimador de incerteza e perturbação em que um só parâmetro
+troca rejeição por amplificação do ruído de medida no sinal de controle; no
+voo, escolheram um valor com esforço próximo ao de um PID de dois graus de
+liberdade. \citeonline{lyu2018} projetaram o observador por síntese
+$H_\infty$ e notaram que a banda do controlador de base da aeronave deles
+era limitada pelo ruído e pelos modos flexíveis.
+
+Esses trabalhos medem o ganho na rejeição. O esforço de controle aparece como
+uma métrica a mais \cite{bressan2020}, e o compromisso com o ruído de medida
+aparece como verificação depois do projeto \cite{sanz2016}. Este trabalho faz
+desse compromisso uma restrição do projeto: um controlador proposto só é
+comparado ao nativo se não passar aos motores mais ruído do giroscópio do
+que ele (Seção~\ref{sec:projeto-lqg}). Com essa regra, parte da vantagem que
+um projeto de banda maior mostraria se revela efeito do ruído, e não da
+estrutura do controlador. Além disso, o desempenho é medido na atitude
+verdadeira do simulador, e não só na estimada pelo AHRS, porque o LQG age
+sobre o caminho de medida.
 
 \section{Delimitação do escopo}
 \label{sec:delimitacao}

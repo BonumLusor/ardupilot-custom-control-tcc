@@ -1152,3 +1152,157 @@
   year    = {1986},
   doi     = {10.1109/TAC.1986.1104222}
 }
+
+% ----------------------------------------------------------------------
+%  6. Trabalhos relacionados (revisão de 3/11, item 5.1), conferidos em
+%     5 nov. 2026 no Crossref (api.crossref.org/works/DOI)
+% ----------------------------------------------------------------------
+
+% URI: https://doi.org/10.1109/iros.2004.1389776 (texto indexado); Crossref:
+%      IROS 2004, p. 2451-2456 v. 3. Na conclusão: o LQ "provides average
+%      results, due to the model imperfections"; o PID controla a orientação
+%      "in the presence of minor perturbation".
+% USO: Cap. 1, sec:relacionados. FALTA: nada.
+@inproceedings{bouabdallah2004,
+  author    = {Samir Bouabdallah and Andr{\'e} Noth and Roland Siegwart},
+  title     = {{PID} vs {LQ} control techniques applied to an indoor micro quadrotor},
+  booktitle = {Proceedings of the 2004 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+  publisher = {IEEE},
+  address   = {Sendai},
+  volume    = {3},
+  pages     = {2451--2456},
+  year      = {2004},
+  doi       = {10.1109/IROS.2004.1389776}
+}
+
+% URI: https://doi.org/10.3929/ethz-a-009970340 (relatório técnico, ETH
+%      Zürich, IDSC, 10 out. 2013). A documentação do PX4 (px4controladores)
+%      dá este relatório como a publicação da lei de atitude em quatérnios
+%      do mc_att_control.
+% USO: Cap. 1, sec:relacionados. FALTA: nada.
+@techreport{brescianini2013,
+  author      = {Dario Brescianini and Markus Hehn and Raffaello D'Andrea},
+  title       = {Nonlinear quadrocopter attitude control},
+  subtitle    = {technical report},
+  institution = {ETH Zürich, Institute for Dynamic Systems and Control},
+  address     = {Zürich},
+  year        = {2013},
+  doi         = {10.3929/ethz-a-009970340}
+}
+
+% URI: https://docs.px4.io/main/en/modules/modules_controller (mc_att_control:
+%      "Publication documenting the implemented Quaternion Attitude Control:
+%      Nonlinear Quadrocopter Attitude Control (2013)").
+% USO: Cap. 1, sec:relacionados. FALTA: nada.
+@misc{px4controladores,
+  author        = {{PX4 DEVELOPMENT TEAM}},
+  title         = {Modules reference: controller},
+  howpublished  = {PX4 Guide (main)},
+  url           = {https://docs.px4.io/main/en/modules/modules_controller},
+  urlaccessdate = {5 nov. 2026},
+  year          = {2026}
+}
+
+% URI: https://doi.org/10.1177/0954410018820193 (texto indexado até a
+%      introdução e a plataforma); Crossref: v. 234, n. 10, p. 1587-1596,
+%      impresso em ago. 2020 (on-line em 27 dez. 2018). PX4 "customized to
+%      allow replacing the baseline attitude controller"; torque de
+%      perturbação no pairado; métricas: tempo até nivelar, pico do desvio e
+%      esforço de controle.
+% USO: Cap. 1, sec:relacionados. FALTA: nada.
+@article{bressan2020,
+  author  = {G. Bressan and A. Russo and D. Invernizzi and M. Giurato and S. Panza and M. Lovera},
+  title   = {Adaptive augmentation of the attitude control system for a multirotor unmanned aerial vehicle},
+  journal = {Proceedings of the Institution of Mechanical Engineers, Part G: Journal of Aerospace Engineering},
+  volume  = {234},
+  number  = {10},
+  pages   = {1587--1596},
+  year    = {2020},
+  doi     = {10.1177/0954410018820193}
+}
+
+% URI: https://doi.org/10.1007/978-3-031-39767-7_8 (texto indexado);
+%      Crossref: p. 195-230, impresso em 2024 (on-line em 21 nov. 2023).
+%      "The INDI controller was implemented into the ArduPilot autopilot as a
+%      separate library [...] A switching mechanism between the legacy and
+%      the proposed controller"; SITL e voo; "For a fair comparison, the
+%      ArduPilot PID controller is tuned using its autotune feature."
+% USO: Cap. 1, sec:relacionados. FALTA: nada.
+@incollection{saldiran2024,
+  author    = {Emre Saldiran and Gokhan Inalhan},
+  title     = {Incremental nonlinear dynamic inversion-based trajectory tracking controller for an agile quadrotor},
+  subtitle  = {design, analysis, and flight tests results},
+  editor    = {Andrea L'Afflitto and Gokhan Inalhan and Hyo-Sang Shin},
+  booktitle = {Control of autonomous aerial vehicles},
+  series    = {Advances in Industrial Control},
+  publisher = {Springer},
+  address   = {Cham},
+  pages     = {195--230},
+  year      = {2024},
+  doi       = {10.1007/978-3-031-39767-7_8}
+}
+
+% URI: https://doi.org/10.32508/stdj.v18i4.1003 (só o resumo indexado);
+%      Crossref: v. 18, n. 4, p. 170-178, 2015. PID original do ArduPilot,
+%      PID novo e backstepping integral no mesmo firmware.
+% USO: Cap. 1, sec:relacionados. FALTA: o texto completo não foi lido.
+@article{nguyen2015,
+  author  = {Quang Anh Nguyen and Emmanuel Grolleau and Hieu Khanh Ngo},
+  title   = {Results and comparision between different control algorithms for a quadrotor using {ArduPilot} framework},
+  journal = {Science and Technology Development Journal},
+  volume  = {18},
+  number  = {4},
+  pages   = {170--178},
+  year    = {2015},
+  doi     = {10.32508/stdj.v18i4.1003}
+}
+
+% URI: https://doi.org/10.1109/tie.2015.2478397 (citado por lyu2018);
+%      Crossref: v. 63, n. 2, p. 1083-1095, fev. 2016.
+% USO: Cap. 1, sec:relacionados. FALTA: o texto não foi lido; citado só
+%      como revisão do controle baseado em observador de perturbação.
+@article{chen2016,
+  author  = {Wen-Hua Chen and Jun Yang and Lei Guo and Shihua Li},
+  title   = {Disturbance-observer-based control and related methods},
+  subtitle = {an overview},
+  journal = {IEEE Transactions on Industrial Electronics},
+  volume  = {63},
+  number  = {2},
+  pages   = {1083--1095},
+  year    = {2016},
+  doi     = {10.1109/TIE.2015.2478397}
+}
+
+% URI: https://doi.org/10.1115/1.4033315 (texto indexado); Crossref: v. 138,
+%      n. 7, artigo 071006, 2016. "the lower the T, the better the
+%      disturbance rejection but the higher the amplification of high
+%      frequencies in the measurement noise"; TV do UDE 72,4 contra 71,2 do
+%      PID; voos reais.
+% USO: Cap. 1, sec:relacionados. FALTA: nada.
+@article{sanz2016,
+  author  = {Ricardo Sanz and Pedro Garcia and Qing-Chang Zhong and Pedro Albertos},
+  title   = {Robust control of quadrotors based on an uncertainty and disturbance estimator},
+  journal = {Journal of Dynamic Systems, Measurement, and Control},
+  volume  = {138},
+  number  = {7},
+  pages   = {071006},
+  year    = {2016},
+  doi     = {10.1115/1.4033315}
+}
+
+% URI: https://doi.org/10.1109/lra.2018.2847405 (texto indexado); Crossref:
+%      v. 3, n. 4, p. 2910-2917, out. 2018. "the bandwidth of our baseline
+%      controller, limited by the noise and flexible modes [...]"; "the
+%      disturbance rejection performance really depends on both the baseline
+%      controller and add-on disturbance observer".
+% USO: Cap. 1, sec:relacionados. FALTA: nada.
+@article{lyu2018,
+  author  = {Ximin Lyu and Jinni Zhou and Haowei Gu and Zexiang Li and Shaojie Shen and Fu Zhang},
+  title   = {Disturbance observer based hovering control of quadrotor tail-sitter {VTOL} {UAVs} using {$H_\infty$} synthesis},
+  journal = {IEEE Robotics and Automation Letters},
+  volume  = {3},
+  number  = {4},
+  pages   = {2910--2917},
+  year    = {2018},
+  doi     = {10.1109/LRA.2018.2847405}
+}
