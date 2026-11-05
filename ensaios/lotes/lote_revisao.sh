@@ -3,6 +3,10 @@
 # Cada voo grava versao.json (hash do binario do SITL); --pular-feitos pula o que ja foi
 # voado com o mesmo binario, entao rodar de novo este script retoma sem repetir voo.
 # Ordem (P2): L4 primeiro (para, se o determinismo falhar), depois o que o resumo usa.
+# Com --l4-inerente (depois de ver que a variacao do L4 nao tem conserto), o lote segue
+# mesmo com o L4 reprovado e voa o bloco condicional do plano no fim.
+INERENTE=0
+[ "$1" = "--l4-inerente" ] && INERENTE=1
 cd /home/gustavo/faculdade/TCC
 source /home/gustavo/venv-ardupilot/bin/activate
 L="ensaios/run_ensaio.py --sem-gif --pular-feitos"
@@ -18,8 +22,11 @@ bloco() {   # bloco <descricao> <argumentos do run_ensaio>: registra a falha e s
 echo "== 1. L4, determinismo ($(date))"
 bloco "L4" --cenario rolagem/torque_impulso rolagem/torque_degrau --controlador nativo cc_lqg --repeticoes 3
 if ! python ensaios/lotes/criterio_l4.py; then
-    echo "== PARADA: o criterio de determinismo do L4 falhou ($(date))"
-    exit 1
+    if [ $INERENTE = 0 ]; then
+        echo "== PARADA: o criterio de determinismo do L4 falhou ($(date))"
+        exit 1
+    fi
+    echo "== L4 reprovado, variacao inerente ao SITL: segue, e o bloco condicional entra no fim"
 fi
 
 echo "== 2. L5, nativo_guinada ($(date))"
@@ -50,5 +57,10 @@ bloco "L7" --controlador cc_lqg_sem_z cc_lqg_sem_bg
 
 echo "== 9. L8, comutacao ($(date))"
 bloco "L8" --cenario comutacao --controlador cc_lqi cc_eso cc_lqg
+
+if [ $INERENTE = 1 ]; then
+    echo "== 10. condicional do L4: impulso e degrau, 3 voos por par ($(date))"
+    bloco "Condicional" --cenario rolagem/torque_impulso rolagem/torque_degrau arfagem/torque_impulso arfagem/torque_degrau --controlador nativo cc_lqg cc_lqg_mesmo_ruido --repeticoes 3
+fi
 
 echo "== fim ($(date))"

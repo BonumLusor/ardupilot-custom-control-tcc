@@ -266,3 +266,52 @@ index a28ebe788e..4f5eed26b9 100644
 +#ifndef AP_COPTER_CUSTOMCONTROL_LQG_ENABLED
 +#define AP_COPTER_CUSTOMCONTROL_LQG_ENABLED AP_COPTER_CUSTOMCONTROL_BACKEND_DEFAULT_ENABLED
 +#endif
+diff --git a/libraries/SITL/SIM_Aircraft.cpp b/libraries/SITL/SIM_Aircraft.cpp
+index 3f8cf3e8b2..8238e18b1f 100644
+--- a/libraries/SITL/SIM_Aircraft.cpp
++++ b/libraries/SITL/SIM_Aircraft.cpp
+@@ -1345,23 +1345,26 @@ void Aircraft::add_twist_forces(Vector3f &rot_accel)
+     if (sitl->gnd_behav != -1) {
+         ground_behavior = (GroundBehaviour)sitl->gnd_behav.get();
+     }
+-    const uint32_t now = AP_HAL::millis();
++    const uint64_t now_us = AP_HAL::micros64();
+     if (sitl == nullptr) {
+         return;
+     }
+     if (sitl->twist.t == 0) {
+         return;
+     }
+-    if (sitl->twist.start_ms == 0) {
+-        sitl->twist.start_ms = now;
++    if (sitl->twist.start_us == 0) {
++        sitl->twist.start_us = now_us;
+     }
+-    if (now - sitl->twist.start_ms < uint32_t(sitl->twist.t)) {
++    // TCC: a duracao conta em microssegundos, com meio passo da fisica de folga, e o
++    // pulso dura sempre round(t / passo) passos. Com millis(), um pulso de 20 ms durava
++    // 23 ou 24 passos de 1200 Hz conforme a fase do inicio dentro do milissegundo.
++    if (now_us - sitl->twist.start_us + frame_time_us / 2 < uint64_t(sitl->twist.t.get()) * 1000ULL) {
+         // FIXME: can we get a vector operation here instead?
+         rot_accel.x += sitl->twist.x;
+         rot_accel.y += sitl->twist.y;
+         rot_accel.z += sitl->twist.z;
+     } else {
+-        sitl->twist.start_ms = 0;
++        sitl->twist.start_us = 0;
+         sitl->twist.t.set(0);
+     }
+ }
+diff --git a/libraries/SITL/SITL.h b/libraries/SITL/SITL.h
+index 9a0511e734..1952f74c22 100644
+--- a/libraries/SITL/SITL.h
++++ b/libraries/SITL/SITL.h
+@@ -500,7 +500,7 @@ public:
+         AP_Float z;
+         AP_Int32 t;
+ 
+-        uint32_t start_ms;
++        uint64_t start_us;  // TCC: em microssegundos (era start_ms); ver Aircraft::add_twist_forces
+     } twist;
+ 
+     AP_Int8 gnd_behav;
