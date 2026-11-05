@@ -1,5 +1,5 @@
 #pragma once
-
+// SPDX-License-Identifier: GPL-3.0-or-later. Copyright (C) 2026 Gustavo Henrique Ferraioli (TCC; ver LICENSE).
 /// @file    AC_CustomControl_LQR.h
 /// @brief   Backend do controlador de atitude proposto no TCC: LQI ou LQR + ESO.
 ///

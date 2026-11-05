@@ -1,5 +1,5 @@
 #pragma once
-
+// SPDX-License-Identifier: GPL-3.0-or-later. Copyright (C) 2026 Gustavo Henrique Ferraioli (TCC; ver LICENSE).
 /// @file    AC_CustomControl_LQG.h
 /// @brief   Backend LQG do TCC: a lei do LQR + ESO sobre os estados de um
 ///          filtro de Kalman em regime.

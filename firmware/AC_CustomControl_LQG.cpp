@@ -1,5 +1,5 @@
 #include "AC_CustomControl_config.h"
-
+// SPDX-License-Identifier: GPL-3.0-or-later. Copyright (C) 2026 Gustavo Henrique Ferraioli (TCC; ver LICENSE).
 #if AP_COPTER_CUSTOMCONTROL_LQG_ENABLED
 
 #include "AC_CustomControl_LQG.h"
