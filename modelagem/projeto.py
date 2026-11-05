@@ -1233,10 +1233,14 @@ def carregar_cenario(cen_id):
 
 
 def forma_torque(t, vento):
-    """forma_torque do vento.lua: pulso (bit 8), meio cosseno (16) e degrau (32)."""
+    """forma_torque do vento.lua: pulso (bit 8), meio cosseno (16), degrau (32) e pulso
+    de duracao exata (512, SIM_TWIST_TIME: o SITL aplica o torque por exatamente WND_TQDUR
+    e os outros bits de torque sao ignorados)."""
     modo = int(vento["WND_MODE"])
     t0 = float(vento["WND_TQT0"])
     dur = max(float(vento.get("WND_TQDUR", 0.4)), 0.01)
+    if modo & 512:
+        return ((t >= t0) & (t < t0 + dur)).astype(float)
     dentro = (t >= t0) & (t <= t0 + dur)
     f = np.zeros_like(t)
     if modo & 8:

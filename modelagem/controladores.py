@@ -67,7 +67,7 @@ class CascataPID:
 
     def __init__(self, g, eixo, dt, raiz=True, ff=None):
         self.pid = PID(g["kp"], g["ki"], g["kd"], g["imax"], g["fltt"], g["flte"],
-                       g["fltd"], dt)
+                       g["fltd"], dt, g.get("kff", 0.0), g.get("kdff", 0.0))
         self.p = g["ang_p"]
         self.raiz = raiz
         self.dt = dt

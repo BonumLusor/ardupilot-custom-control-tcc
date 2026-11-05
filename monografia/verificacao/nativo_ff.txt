@@ -1,0 +1,7 @@
+nativo contra nativo com FF = a/b e D_FF = 1/b, no modelo (planta real)
+rolagem: FF = 0.004623 (faixa (0.0, 0.5)), D_FF = 0.002325 (faixa (0.0, 0.02))
+  nativo           : wc 46.6 rad/s, MF 38.8 graus, ruído 0.0538 (1.00x); pulso 0.867 graus / 1.19 s; impulso 0.796 graus / 0.12 s; degrau 0.578 graus / 2.24 s; degrau de atitude: sobressinal 22.8 %, erro máx. 3.219 graus
+  nativo + FF/D_FF : wc 68.0 rad/s, MF 35.4 graus, ruído 0.0856 (1.59x); pulso 0.723 graus / 1.31 s; impulso 0.622 graus / 0.09 s; degrau 0.482 graus / 2.41 s; degrau de atitude: sobressinal 12.6 %, erro máx. 1.446 graus
+guinada: FF = 0.1384 (faixa (0.0, 0.5)), D_FF = 0.0696 (faixa (0.0, 0.02))  [D_FF fora da faixa documentada]
+  nativo           : wc 6.3 rad/s, MF 37.5 graus, ruído 0.0610 (1.00x); pulso 5.690 graus / 0.35 s; impulso 6.252 graus / 0.56 s; degrau 2.572 graus / 23.72 s; degrau de atitude: sobressinal 11.1 %, erro máx. 7.812 graus
+  nativo + FF/D_FF : wc 7.4 rad/s, MF 46.8 graus, ruído 0.0876 (1.44x); pulso 4.367 graus / 0.40 s; impulso 4.914 graus / 0.37 s; degrau 2.094 graus / 28.43 s; degrau de atitude: sobressinal 0.2 %, erro máx. 0.321 graus

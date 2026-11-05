@@ -52,8 +52,11 @@ class PassaBaixas2p:
 class PID:
     """AC_PID::update_all sem notch, slew nem limite de PD (todos desligados)."""
 
-    def __init__(self, kp, ki, kd, imax, fltt, flte, fltd, dt):
+    def __init__(self, kp, ki, kd, imax, fltt, flte, fltd, dt, kff=0.0, kdff=0.0):
         self.kp, self.ki, self.kd, self.imax = kp, ki, kd, imax
+        # FF e D_FF do AC_PID: multiplicam o alvo filtrado e a sua derivada
+        # (AC_PID::update_all, _pid_info.FF e .DFF); com 0, nada muda
+        self.kff, self.kdff = kff, kdff
         self.at = alfa_passa_baixas(dt, fltt)
         self.ae = alfa_passa_baixas(dt, flte)
         self.ad = alfa_passa_baixas(dt, fltd)
@@ -61,6 +64,7 @@ class PID:
         self.alvo = self.erro = self.deriv = self.integ = 0.0
 
     def atualizar(self, alvo, medida, limite=False):
+        alvo_ant = self.alvo
         self.alvo += self.at * (alvo - self.alvo)
         erro_ant = self.erro
         self.erro += self.ae * ((self.alvo - medida) - self.erro)
@@ -70,7 +74,8 @@ class PID:
         if self.ki and (not limite or self.integ * self.erro < 0):
             self.integ = min(max(self.integ + self.erro * self.ki * self.dt,
                                  -self.imax), self.imax)
-        return self.erro * self.kp + self.integ + self.deriv * self.kd
+        ff = self.alvo * self.kff + (self.alvo - alvo_ant) / self.dt * self.kdff
+        return self.erro * self.kp + self.integ + self.deriv * self.kd + ff
 
 
 def raiz_quadrada(erro, p, lim, dt):

@@ -151,6 +151,7 @@ def ganhos(p, prefixo, eixo):
     return {
         "kp": g("P"), "ki": g("I"), "kd": g("D"), "imax": g("IMAX", 0.5),
         "fltt": g("FLTT"), "flte": g("FLTE"), "fltd": g("FLTD"),
+        "kff": g("FF"), "kdff": g("D_FF"),
         "ang_p": float(p[f"{prefixo}_ANG_{ang}_P"]),
         "acc_max": math.radians(float(p.get(f"ATC_ACC_{acc}_MAX", 0.0))),
     }
