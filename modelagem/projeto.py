@@ -150,14 +150,16 @@ class Planta:
 
 
 def planta_com_filtro(a, b, ts, fc_giro, atraso_lacos=0, ruido_angulo=False, tau_c=None,
-                      atraso_angulo=0):
+                      atraso_angulo=0, angulo_indep=0.0):
     """A Planta de um eixo; o primeiro estado e sempre o angulo verdadeiro.
 
     Com ``ruido_angulo``, um quinto estado eta: o angulo do AHRS integra o mesmo
     ruido n do giroscopio, sem o passa-baixas, e medido = theta + eta, com
     eta' = n - eta/tau_c (malha.py, validacao.conferir_ruido). Com
     ``atraso_angulo``, a medida de angulo chega esse numero de lacos atrasada,
-    como o backend a le (run_custom_controller antes de read_AHRS).
+    como o backend a le (run_custom_controller antes de read_AHRS). Com
+    ``angulo_indep`` (fracao da potencia do ruido do giroscopio), eta integra tambem
+    um ruido independente do giroscopio (ANGULO_INDEP; malha.simular, mesmo nome).
     """
     wc = 2.0 * math.pi * fc_giro
     Ac = np.array([[0.0, 1.0, 0.0, 0.0],
@@ -180,7 +182,10 @@ def planta_com_filtro(a, b, ts, fc_giro, atraso_lacos=0, ruido_angulo=False, tau
     G = Bc[:, [2]]
     M = np.zeros((2 * n0, 2 * n0))
     M[:n0, :n0] = -Ac
-    M[:n0, n0:] = G @ G.T * ts
+    W = G @ G.T
+    if ruido_angulo and angulo_indep > 0:
+        W[4, 4] += angulo_indep
+    M[:n0, n0:] = W * ts
     M[n0:, n0:] = Ac.T
     E = linalg.expm(M * ts)
     Qn = E[n0:, n0:].T @ E[:n0, n0:]
@@ -525,6 +530,20 @@ def sintonizar(mod, eixo, variante, an_nativo, medida="wc", planta=None, relaxar
 # esta, para todos os controladores.
 PLANTA_REAL = {"ruido_angulo": True, "tau_c": V.TAU_AHRS, "atraso_angulo": 1}
 
+# Fracao da potencia do ruido do giroscopio que o angulo medido integra de forma
+# independente dele. No SITL, a derivada do erro do angulo e o erro da taxa tem
+# coerencia de 0,93 a 0,98 de 1 a 10 Hz, e nao 1 (revisao de 3/11, Fase 3d); com o
+# Kalman projetado para medidas perfeitamente consistentes (R_KALMAN quase nulo), o
+# LQG jogava essa inconsistencia em d^, e o seu ruido no esforco saiu 1,4x (rolagem)
+# e 6,4x (guinada) o previsto. Calibrada pelo esforco do cc_lqg medido com RND 20
+# (monografia/verificacao/calibrar_angulo_indep.txt); a arfagem repete a rolagem.
+ANGULO_INDEP = {"roll": 0.1766, "pitch": 0.1766, "yaw": 0.0411}
+
+
+def planta_real(eixo):
+    """A planta do portao (PLANTA_REAL) com o ruido independente do angulo do eixo."""
+    return {**PLANTA_REAL, "angulo_indep": ANGULO_INDEP[eixo]}
+
 # Ruido do giroscopio para o qual o Kalman e projetado: o dos voos de ruido/
 # (SIM_GYRn_RND = 20), com o acelerador medio de 0,605 que o ruido_do_voo le
 # deles (2,47 graus/s a 1 kHz, media de 8 sub-amostras).
@@ -577,7 +596,7 @@ def intensidade_ruido(rnd=RND_PROJETO, acel=ACEL_PAIRADO, sub=8):
     return sigma * sigma * 1e-3
 
 
-def ganhos_kalman(a, b, ts, fc, tau_c, q_n, q_d, r=R_KALMAN, tau_d=None, q_b=Q_VIES):
+def ganhos_kalman(a, b, ts, fc, tau_c, q_n, q_d, r=R_KALMAN, tau_d=None, q_b=Q_VIES, q_a=0.0):
     """Ganho L (8 x 2) do Kalman em regime, na forma corrente, pela Riccati dual.
 
     Q discreta pelo metodo de Van Loan sobre o modelo continuo de
@@ -588,9 +607,14 @@ def ganhos_kalman(a, b, ts, fc, tau_c, q_n, q_d, r=R_KALMAN, tau_d=None, q_b=Q_V
     """
     Ac, _, G = C.matrizes_lqg(a, b, fc, tau_c, tau_d)
     n = C.N_CONT
+    # q_a: ruido independente do giroscopio que o angulo medido integra (em eta),
+    # ANGULO_INDEP x q_n; com 0, as duas medidas sao supostas consistentes
+    g_a = np.zeros((n, 1))
+    g_a[5, 0] = 1.0
+    G = np.hstack([G, g_a])
     M = np.zeros((2 * n, 2 * n))
     M[:n, :n] = -Ac
-    M[:n, n:] = G @ np.diag([q_n, q_d, q_b]) @ G.T
+    M[:n, n:] = G @ np.diag([q_n, q_d, q_b, q_a]) @ G.T
     M[n:, n:] = Ac.T
     E = linalg.expm(M * ts)
     Phi_c = E[n:, n:].T
@@ -607,8 +631,9 @@ def fabrica_lqg(mod, eixo, q_d, q_n=None, tau_d=None):
     """LQG de um eixo: o LQR de [theta, w] do ESO (mesmos PESOS) e o Kalman de q_d."""
     th_m, w_m = PESOS[eixo]
     q = [1.0 / th_m ** 2, 1.0 / w_m ** 2]
+    q_n = q_n or intensidade_ruido()
     L = ganhos_kalman(mod.a, mod.b[eixo], mod.ts, mod.fc_giro, TAU_ESTIMADOR[eixo],
-                      q_n or intensidade_ruido(), q_d, tau_d=tau_d)
+                      q_n, q_d, tau_d=tau_d, q_a=ANGULO_INDEP[eixo] * q_n)
 
     def fazer(r):
         k = ganhos_lqr(mod.a, mod.b[eixo], mod.ts, q, r)
@@ -725,11 +750,12 @@ def _controlador_da_familia(mod, eixo, familia, par):
         g = ganhos_fixa(mod, eixo, "eso", par)
         return C.LQRESO(g["k_th"], g["k_w"], g["l1"], g["l2"], a, b, ts)
     if familia == "lqg":
-        chave = (eixo, par["q_d"])
+        chave = (eixo, par["q_d"], ANGULO_INDEP[eixo])
         cache = _CTX.setdefault("kalman", {})
         if chave not in cache:
+            q_n = intensidade_ruido()
             cache[chave] = ganhos_kalman(a, b, ts, mod.fc_giro, TAU_ESTIMADOR[eixo],
-                                         intensidade_ruido(), par["q_d"])
+                                         q_n, par["q_d"], q_a=ANGULO_INDEP[eixo] * q_n)
         k = ganhos_lqr(a, b, ts, [1.0 / th_m ** 2, 1.0 / w_m ** 2], par["r"])
         return C.LQG(k[0], k[1], cache[chave], a, b, ts, mod.fc_giro, TAU_ESTIMADOR[eixo],
                      fc_alvo=mod.fc_giro)
@@ -746,7 +772,7 @@ def avaliar_ponto(tarefa):
     a, b, ts = mod.a, mod.b[eixo], mod.ts
     w = W_PADRAO(ts, W_BUSCA)
     ctl = _controlador_da_familia(mod, eixo, familia, par)
-    an = analisar(ctl, a, b, ts, mod.fc_giro, w=w, planta=PLANTA_REAL)
+    an = analisar(ctl, a, b, ts, mod.fc_giro, w=w, planta=planta_real(eixo))
     res = {"familia": familia, "eixo": eixo, "par": par, "estavel": an.estavel()}
     if not res["estavel"] or an.margens["mf_graus"] is None:
         res["estavel"] = False
@@ -754,7 +780,7 @@ def avaliar_ponto(tarefa):
     rob = []
     for _nome, fator, atraso in CASOS_ROBUSTEZ:
         r = analisar(ctl, a, b * fator, ts, mod.fc_giro, atraso_lacos=atraso, w=w,
-                     planta=PLANTA_REAL)
+                     planta=planta_real(eixo))
         rob.append(r.margens["mf_graus"] if r.estavel() and r.margens["mf_graus"] else None)
     te = TORQUE_ESTOCASTICO
     rms_th, rms_u = h2_torque(an, te["sigma"][eixo], te["tau"], ts)
@@ -899,7 +925,7 @@ def ruido_no_tempo(mod, eixo, familia, par):
         ctl = _controlador_da_familia(mod, eixo, familia, par)
         r = malha.simular(ctl, mod.a, mod.b[eixo], t, fs_fisica=mod.fs_fisica,
                           fs_laco=mod.fs_laco, fc_giro=mod.fc_giro, ruido_giro=sig, semente=s,
-                          **opcoes_malha(PLANTA_REAL))
+                          **opcoes_malha(planta_real(eixo)))
         us.append(float(np.std(r["u"][::passo][int(5 * mod.fs_laco):])))
     return float(np.mean(us))
 
@@ -926,7 +952,7 @@ def referencias(mod, proj, eixo, nat):
         return nat["primaria"], fator
     g = proj[eixo]["lqi"]["ganhos"]
     ctl = C.LQI(g["k_i"], g["k_th"], g["k_w"], mod.a, mod.b[eixo], mod.ts)
-    an = analisar(ctl, mod.a, mod.b[eixo], mod.ts, mod.fc_giro, planta=PLANTA_REAL)
+    an = analisar(ctl, mod.a, mod.b[eixo], mod.ts, mod.fc_giro, planta=planta_real(eixo))
     met = metricas_lineares(an, eixo, mod.ts)
     return met[cr["primaria"][0]][cr["primaria"][1]], met[ens_rec]["tempo_recuperacao_s"] * fator
 
@@ -982,7 +1008,7 @@ def portao(mod, pontos, proj, eixos=("roll", "yaw")):
             g = ganhos_lqg(mod, eixo, lqg["par"], tau_d=tau, q_d=2.0 * sig * sig / tau)
             ctl = C.LQG(g["k_th"], g["k_w"], g["L"], mod.a, mod.b[eixo], mod.ts, mod.fc_giro,
                         TAU_ESTIMADOR[eixo], fc_alvo=mod.fc_giro, tau_d=tau)
-            an = analisar(ctl, mod.a, mod.b[eixo], mod.ts, mod.fc_giro, planta=PLANTA_REAL)
+            an = analisar(ctl, mod.a, mod.b[eixo], mod.ts, mod.fc_giro, planta=planta_real(eixo))
             if an.estavel():
                 rms_th, rms_u = h2_torque(an, sig, tau, mod.ts)
                 oraculo = {"rms_th": rms_th, "rms_u": rms_u, "ruido": an.ruido_branco,
@@ -1000,14 +1026,16 @@ def ganhos_lqg(mod, eixo, par, tau_d=None, q_d=None):
     w_m *= par.get("pw", 1.0)
     k = ganhos_lqr(mod.a, mod.b[eixo], mod.ts, [1.0 / th_m ** 2, 1.0 / w_m ** 2], par["r"])
     q = q_d if q_d is not None else par["q_d"]
+    q_n = intensidade_ruido()
+    q_a = ANGULO_INDEP[eixo] * q_n
     L = ganhos_kalman(mod.a, mod.b[eixo], mod.ts, mod.fc_giro, TAU_ESTIMADOR[eixo],
-                      intensidade_ruido(), q, tau_d=tau_d)
+                      q_n, q, tau_d=tau_d, q_a=q_a)
     g = {"k_th": float(k[0]), "k_w": float(k[1]), "L": L, "q_d": float(q),
          "r": float(par["r"]), "pw": float(par.get("pw", 1.0)), "tau_c": TAU_ESTIMADOR[eixo],
          "L_r": None, "tau_r": TAU_RAPIDO[eixo], "w_ref": 0.0, "tau_alfa": MANOBRA_TAU}
     if TAU_RAPIDO[eixo] != TAU_ESTIMADOR[eixo]:
         g["L_r"] = ganhos_kalman(mod.a, mod.b[eixo], mod.ts, mod.fc_giro, TAU_RAPIDO[eixo],
-                                 intensidade_ruido(), q, tau_d=tau_d)
+                                 q_n, q, tau_d=tau_d, q_a=q_a)
         g["w_ref"] = MANOBRA_W_REF
     return g
 
@@ -1079,27 +1107,31 @@ def projetar_lqg(mod, proj, pontos, relaxar=False):
     lqg_ruido  o escolhido pelo portao: ruido <= nativo (analise e tempo), MF e
                MF robusta >=, nada pior que o nativo, a melhor metrica primaria
 
-    Com ``relaxar`` (as variantes de veiculo), um eixo em que nenhum ponto cumpre
-    tudo fica com o melhor so com ruido, MF e MF robusta nao piores que as do
-    nativo (o P2 relaxado), em vez de ficar sem LQG.
+    Um eixo em que nenhum ponto cumpre tudo fica com o melhor so com ruido, MF e MF
+    robusta nao piores que as do nativo (o P2 relaxado), em vez de ficar sem LQG,
+    marcado com "relaxado". Antes so as variantes de veiculo (``relaxar``) faziam
+    isso; desde o reprojeto com ANGULO_INDEP (5/11/2026), a guinada de 20 Hz cai
+    nesse caso, e o autor escolheu voar o melhor relaxado.
     """
     res = {}
     for eixo in EIXOS:
         frs = fronteiras(pontos, eixo)
         ref_teto = referencias(mod, proj, eixo, frs["nativo"])
         p = escolher(mod, frs, eixo, "lqg", ref_teto)
-        if p is None and relaxar:
+        relaxado = False
+        if p is None:
             ok = [q for q in frs["lqg"]["viaveis"] if q["ruido"] <= frs["nativo"]["ruido"]]
             p = min(ok, key=lambda q: q["primaria"]) if ok else None
-            if p is not None:
+            relaxado = p is not None
+            if relaxado:
                 print(f"  {NOMES[eixo]}: LQG pelo criterio relaxado (ruido, MF e MF robusta)")
         an_n = analisar(novo_controlador(mod, eixo, "nativo"), mod.a, mod.b[eixo], mod.ts,
-                        mod.fc_giro, planta=PLANTA_REAL)
-        esc, varr = sintonizar(mod, eixo, "lqg", an_n, planta=PLANTA_REAL)
+                        mod.fc_giro, planta=planta_real(eixo))
+        esc, varr = sintonizar(mod, eixo, "lqg", an_n, planta=planta_real(eixo))
         par_b = {"q_d": esc["ganhos"]["q_d"], "r": esc["r"], "pw": 1.0}
         res[eixo] = {"lqg": {**esc, "varredura": varr, "ganhos": ganhos_lqg(mod, eixo, par_b)},
                      "lqg_ruido": None if p is None else
-                     {"ponto": p, "ganhos": ganhos_lqg(mod, eixo, p["par"])}}
+                     {"ponto": p, "ganhos": ganhos_lqg(mod, eixo, p["par"]), "relaxado": relaxado}}
     return res
 
 
@@ -1243,7 +1275,8 @@ def opcoes_malha(planta):
     """As opcoes de malha.simular equivalentes a um dict de planta (PLANTA_REAL)."""
     planta = planta or {}
     return {"ruido_angulo": planta.get("ruido_angulo", False),
-            "tau_ahrs": planta.get("tau_c"), "atraso_angulo": planta.get("atraso_angulo", 0)}
+            "tau_ahrs": planta.get("tau_c"), "atraso_angulo": planta.get("atraso_angulo", 0),
+            "angulo_indep": planta.get("angulo_indep", 0.0)}
 
 
 def simular_torque(mod, eixo, ctl, cen_id, b_planta=None, atraso_lacos=0, ruido_giro=0.0,
@@ -1518,7 +1551,10 @@ TEXTO_YAML = {
             "plano): ruido no esforco nao maior que o do nativo, margem de fase e margem com a "
             "planta alterada nao menores, nada pior que o nativo nas metricas de torque, e a "
             "menor metrica primaria (pico do pulso em rolagem e arfagem, pico do degrau de "
-            "torque em guinada). Difere do cc_lqg nos tres eixos."),
+            "torque em guinada). Difere do cc_lqg nos tres eixos. Em guinada, com o ruido "
+            "independente do angulo do SITL no modelo (ANGULO_INDEP), nenhum ponto cumpre tudo, "
+            "e fica o melhor so com ruido, margem de fase e margem robusta nao piores que as "
+            "do nativo (criterio relaxado, revisao de 3/11)."),
         interesse=["CC4_KTH_Z", "CC4_KW_Z", "CC4_L5T_Z", "CC4_L5W_Z"]),
     "nativo_lqi": dict(
         nome="PID nativo com os ganhos do LQI",
@@ -2135,7 +2171,7 @@ def rastreio(mod, proj, lqg, eixos=("roll", "yaw")):
                  ("LQI", novo_controlador(mod, eixo, "lqi", proj[eixo]["lqi"]["ganhos"])),
                  ("LQG, um estimador", lqg_de_ganhos(mod, eixo, {**g, "L_r": None})),
                  ("LQG, com manobra", lqg_de_ganhos(mod, eixo, g)))
-        res[eixo] = [(nome, simular_degrau(mod, eixo, ctl, alvo, planta=PLANTA_REAL)["metricas"])
+        res[eixo] = [(nome, simular_degrau(mod, eixo, ctl, alvo, planta=planta_real(eixo))["metricas"])
                      for nome, ctl in casos]
     return res
 
