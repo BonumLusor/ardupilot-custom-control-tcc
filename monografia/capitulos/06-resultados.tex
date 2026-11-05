@@ -139,8 +139,10 @@ integrador lento só elimina em dezenas de segundos. A Seção~\ref{sec:validaca
 pelo polo em $-k_I/k_P$, imposto pela razão $k_I = k_P/10$ que o AutoTune
 adota em guinada, e não pela planta. É nesse eixo, com a menor eficácia de
 controle e a ação integral mais lenta, que a rejeição de perturbação do PID
-nativo é mais fraca, e onde um controlador com estimação explícita da
-perturbação tem mais a oferecer.
+nativo é mais fraca com a sintonia do AutoTune. A
+Seção~\ref{sec:res-proposto-torque} mostra que qualquer controlador com ação
+integral mais forte, com ou sem estimação explícita da perturbação --- o LQI
+também resolve ---, recupera em 1 a \SI{2}{\second}.
 
 O pulso de torque exige uma ressalva. O laço do injetor roda a cerca de
 \SI{44}{\hertz}, e não aos \SI{50}{\hertz} pedidos, e a duração efetiva do
@@ -315,6 +317,7 @@ realimentação, e o traço, a alimentação direta.}
 \end{figure}
 
 \subsection{Rejeição de torque}
+\label{sec:res-proposto-torque}
 
 \begin{figure}[htbp]
 \centering
@@ -420,7 +423,11 @@ varreduras de torque no SITL (pontos) e no modelo (linhas).}
 
 Sob torque estocástico (Tabela~\ref{tab:res-estocastico} e
 Figura~\ref{fig:comparacao-estocastico}), a métrica é o erro quadrático
-médio, que é o que o LQG minimiza. Em rolagem e arfagem, o LQG fica até
+médio. Ela não coincide com o custo do LQG, que minimiza o valor esperado de
+uma forma quadrática do estado e do esforço, com os pesos de Bryson e uma
+perturbação modelada como passeio aleatório de intensidade $q_d$, o parâmetro
+de sintonia (Seção~\ref{sec:projeto-lqg}); o torque dos ensaios é um
+processo de Ornstein-Uhlenbeck (Seção~\ref{sec:perturbacoes}). Em rolagem e arfagem, o LQG fica até
 5\,\% abaixo do nativo, e o LQI e o ESO, de 18\,\% a 23\,\% acima, coerente
 com o máximo de $|P\,S|$ deslocado para baixas frequências, onde o torque
 estocástico, com tempo de correlação de \SI{0.1}{\second}, tem energia. Em guinada, o LQG de mesmo ruído fica 21\,\% abaixo, e o LQI e o
@@ -657,7 +664,7 @@ Os resultados respondem à pergunta de pesquisa em três partes. Em rolagem e
 arfagem, com a mesma banda e o mesmo ruído do nativo, o LQI e o LQR com ESO
 não superam o PID no pico da perturbação: o LQI é a mesma cascata com outra
 sintonia, e o ganho deles está na recuperação mais rápida, não no pico. O
-LQG, que modela o caminho de medida, é o único que reduz o pico, de 7\,\% a
+LQG, que modela o caminho de medida, é o único que reduz o pico no tempo, de 7\,\% a
 15\,\%, e o erro quadrático médio sob torque estocástico, e mantém a vantagem
 com o filtro de \SI{10}{\hertz}, com erro de modelo e com falha de motor. Em
 guinada, todos os propostos eliminam a recuperação lenta que o AutoTune impõe
