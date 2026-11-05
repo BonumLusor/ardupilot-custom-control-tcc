@@ -13,7 +13,7 @@ params:
   SIM_FRM_DIAG_SZ: 0.42
 
 vento:
-  WND_MODE: 9
+  WND_MODE: 513  # 1 (vento medio zero) + 512 (pulso de duracao exata, SIM_TWIST_TIME)
   WND_SPD: 0
   WND_DIR: 0
   WND_DIRZ: 0

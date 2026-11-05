@@ -69,6 +69,7 @@ local MODO_TQ_DEG   = 32     -- torque: degrau sustentado
 local MODO_TQ_CHIRP = 64     -- torque: varredura em frequencia
 local MODO_TQ_ESTOC = 128    -- torque: estocastico (Gauss-Markov por eixo)
 local MODO_EVENTO   = 256    -- evento de planta: motor fraco ou perda de empuxo
+local MODO_TQ_EXATO = 512    -- torque: pulso retangular de duracao EXATA (SIM_TWIST_TIME)
 local MODO_TQ_QUALQUER = MODO_TQ_PULSO | MODO_TQ_COS | MODO_TQ_DEG | MODO_TQ_CHIRP
                          | MODO_TQ_ESTOC
 
@@ -97,8 +98,13 @@ assert(param:add_table(PARAM_TABLE_KEY, PARAM_TABLE_PREFIX, 24), 'vento: nao con
                               |  64  torque: varredura em frequencia (chirp)
                               | 128  torque: estocastico (Gauss-Markov)
                               | 256  evento de planta (motor fraco, empuxo)
+                              | 512  torque: pulso de duracao exata
      As formas de torque compartilham amplitude, inicio e duracao; ligar mais
-     de uma ao mesmo tempo as SOMA.                                            --]]
+     de uma ao mesmo tempo as SOMA. O 512 nao soma: o injetor escreve a amplitude
+     e SIM_TWIST_TIME = duracao em ms UMA vez, e o SITL desliga o torque sozinho
+     ao fim dela, com a resolucao do passo da fisica, e nao a do ciclo do script
+     (~23 ms). E o pulso curto (impulso) e o degrau curto dos ensaios desde a
+     revisao de 3/11; com ele, os outros bits de torque sao ignorados.          --]]
 local WND_MODE = bind_add_param('MODE', 1, 0)
 -- vento medio: modulo (m/s) e direcao de ONDE VEM (graus, convencao do SIM_WIND_DIR)
 local WND_SPD  = bind_add_param('SPD', 2, 0)
@@ -257,6 +263,7 @@ local dv_u1, dv_u2, dv_y1, dv_y2 = 0.0, 0.0, 0.0, 0.0   -- Tustin 2a ordem (late
 local passo = 0
 local wn_atual, we_atual = 0.0, 0.0
 local tq_x, tq_y, tq_z = 0.0, 0.0, 0.0
+local exato_disparado = false
 
 -- teto de passos por chamada: se o script travar, o perfil retoma sem tentar
 -- recuperar minutos de turbulencia num unico ciclo
@@ -332,6 +339,17 @@ local function iniciar_perfil(agora_ms)
    wn_atual, we_atual = 0.0, 0.0
    tq_x, tq_y, tq_z = 0.0, 0.0, 0.0
    rng_semear(WND_SEED:get() or 1)
+
+   -- pulso de duracao exata: os outros torques ficam de fora, e o twist so e
+   -- escrito no instante do pulso (forma_torque/passo)
+   exato_disparado = false
+   if (p.modo & MODO_TQ_EXATO) ~= 0 then
+      p.modo = p.modo & ~MODO_TQ_QUALQUER
+      SIM_TWIST_X:set(0)
+      SIM_TWIST_Y:set(0)
+      SIM_TWIST_Z:set(0)
+      SIM_TWIST_TIME:set(0)
+   end
 
    -- arma o injetor de torque; as amplitudes sao moduladas a cada ciclo
    if (p.modo & MODO_TQ_QUALQUER) ~= 0 then
@@ -531,6 +549,28 @@ local function avancar_um_passo()
       tq_x = tq_x + p.tqx * es_x
       tq_y = tq_y + p.tqy * es_y
       tq_z = tq_z + p.tqz * es_z
+   end
+
+   -- pulso de duracao exata: dispara uma vez, no primeiro passo depois de tqt0;
+   -- amplitudes primeiro e SIM_TWIST_TIME por ultimo. O log leva a amplitude
+   -- enquanto o pulso dura no relogio do perfil; o inicio exato e o da fisica.
+   if (p.modo & MODO_TQ_EXATO) ~= 0 then
+      -- em passos inteiros: com floats de 32 bits, t < tqt0 + tqdur cairia de lados
+      -- diferentes aqui e na referencia em Python (dryden_ref) na borda final
+      local k_ini = math.floor(p.tqt0 / DT + 0.5)
+      local k_dur = math.max(math.floor(p.tqdur / DT + 0.5), 1)
+      local dentro = passo >= k_ini and passo < k_ini + k_dur
+      tq_x, tq_y, tq_z = 0.0, 0.0, 0.0
+      if dentro then
+         tq_x, tq_y, tq_z = p.tqx, p.tqy, p.tqz
+      end
+      if dentro and not exato_disparado then
+         SIM_TWIST_X:set(p.tqx)
+         SIM_TWIST_Y:set(p.tqy)
+         SIM_TWIST_Z:set(p.tqz)
+         SIM_TWIST_TIME:set(math.floor(p.tqdur * 1000.0 + 0.5))
+         exato_disparado = true
+      end
    end
 
    return vel_long * cs - vel_lat * sn,

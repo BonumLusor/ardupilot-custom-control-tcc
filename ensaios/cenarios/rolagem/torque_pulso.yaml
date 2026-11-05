@@ -12,7 +12,7 @@ descricao: >
   severidade que a proposta pede.
 
 vento:
-  WND_MODE: 9        # 1 (vento medio, de intensidade zero) + 8 (pulso de torque)
+  WND_MODE: 513        # 1 (vento medio zero) + 512 (pulso de duracao exata, SIM_TWIST_TIME)
   WND_SPD: 0
   WND_DIR: 0
   WND_DIRZ: 0

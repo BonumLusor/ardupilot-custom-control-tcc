@@ -1,0 +1,9 @@
+4b: impulso pedido x entregue (integral da perturbação verdadeira), voos do nativo
+  rolagem/torque_impulso  : pedido 0.700 rad/s, entregue 0.704 rad/s (+0.6 %); conferência do perfil: {'amostras': 2743, 'taxa_efetiva_hz': 43.93211719854394, 'err_max_wn': 0.0, 'err_rms_wn': 0.0, 'err_max_we': 0.0, 'err_rms_we': 0.0, 'err_max_tqx': 0.0, 'err_rms_tqx': 0.0, 'err_max_tqy': 0.0, 'err_rms_tqy': 0.0, 'err_max_tqz': 0.0, 'err_rms_tqz': 0.0, 'ok': True}
+  guinada/torque_impulso  : pedido 0.830 rad/s, entregue 0.829 rad/s (-0.1 %); conferência do perfil: {'amostras': 2723, 'taxa_efetiva_hz': 44.134804188033435, 'err_max_wn': 0.0, 'err_rms_wn': 0.0, 'err_max_we': 0.0, 'err_rms_we': 0.0, 'err_max_tqx': 0.0, 'err_rms_tqx': 0.0, 'err_max_tqy': 0.0, 'err_rms_tqy': 0.0, 'err_max_tqz': 0.0, 'err_rms_tqz': 0.0, 'ok': True}
+  guinada/torque_pulso    : pedido 0.900 rad/s, entregue 0.899 rad/s (-0.1 %); conferência do perfil: {'amostras': 2676, 'taxa_efetiva_hz': 43.41550448629063, 'err_max_wn': 0.0, 'err_rms_wn': 0.0, 'err_max_we': 0.0, 'err_rms_we': 0.0, 'err_max_tqx': 0.0, 'err_rms_tqx': 0.0, 'err_max_tqy': 0.0, 'err_rms_tqy': 0.0, 'err_max_tqz': 3.0, 'err_rms_tqz': 0.05799335047702943, 'ok': False}
+4c: d^ de guinada no pulso de saturação (12 rad/s² por 0,5 s): máximo e maior salto por laço
+  cc_eso  sem congelar : d^ máximo 11.01 rad/s²; maior salto 0.060 rad/s² (saturacao/guinada/torque_pulso/cc_eso/2026-10-31_142858)
+  cc_eso  congelado    : d^ máximo 3.13 rad/s²; maior salto 0.052 rad/s² (verificacao_2026-11-04/medicoes/teste_4b4c/saturacao/guinada/torque_pulso/cc_eso/2026-11-05_012515)
+  cc_lqg  sem congelar : d^ máximo 16.96 rad/s²; maior salto 0.162 rad/s² (saturacao/guinada/torque_pulso/cc_lqg/2026-10-31_143025)
+  cc_lqg  congelado    : d^ máximo 5.74 rad/s²; maior salto 0.094 rad/s² (verificacao_2026-11-04/medicoes/teste_4b4c/saturacao/guinada/torque_pulso/cc_lqg/2026-11-05_012557)

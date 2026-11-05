@@ -1,0 +1,39 @@
+# O rolagem/torque_pulso no eixo de arfagem: perturbacao impulsiva de torque em
+# y, em ar parado e com a aeronave nivelada.
+nome: "Impulso curto de torque em arfagem — 0,70 rad/s (35 rad/s2 por 20 ms)"
+descricao: >
+  Pulso retangular de torque de 20 ms, de duracao exata: o injetor escreve a
+  amplitude e SIM_TWIST_TIME uma vez, e o SITL desliga o torque ao fim dela.
+  Impulso de 0,70 rad/s (35 rad/s2 por 20 ms), escolhido no modelo para o desvio do nativo ficar
+  abaixo de 1 grau em rolagem e arfagem (o limite linear do controlador de
+  raiz quadrada) e o esforco maximo de todos os controladores caber na folga
+  da alocacao em guinada (monografia/verificacao/escolher_impulso.txt;
+  revisao de 3/11, item 2.6). Mede a recuperacao depois de um choque, sem o
+  pico acontecer durante o torque, como no pulso de 0,3 s (o degrau curto).
+
+vento:
+  WND_MODE: 513        # 1 (vento medio zero) + 512 (pulso de duracao exata, SIM_TWIST_TIME)
+  WND_SPD: 0
+  WND_DIR: 0
+  WND_DIRZ: 0
+  WND_GA: 0
+  WND_GT0: 0
+  WND_GDUR: 3
+  WND_TSIG: 0
+  WND_TLU: 200
+  WND_SEED: 1
+  WND_T0: 8
+  WND_TQX: 0
+  WND_TQY: 35.0      # rad/s2 — o botao de severidade deste ensaio
+  WND_TQZ: 0
+  WND_TQT0: 6        # segundos apos o inicio do perfil
+  WND_TQDUR: 0.02
+  WND_TQF0: 0.2      # so usados pelo chirp (bit 64); aqui ficam nos padroes
+  WND_TQF1: 10.0
+
+voo:
+  altitude_m: 15
+  espera_apos_decolagem_s: 6
+  degrau_pitch_deg: 0    # sem degrau: este ensaio mede REJEICAO, nao rastreamento
+  t_degrau_s: 0
+  duracao_s: 25

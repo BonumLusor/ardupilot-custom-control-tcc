@@ -17,6 +17,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+import math
+
 import numpy as np
 
 # bits de WND_MODE
@@ -29,6 +31,7 @@ MODO_TQ_DEG = 32
 MODO_TQ_CHIRP = 64
 MODO_TQ_ESTOC = 128
 MODO_EVENTO = 256
+MODO_TQ_EXATO = 512   # pulso de duracao exata (SIM_TWIST_TIME); ignora os outros torques
 MODO_TQ_QUALQUER = (MODO_TQ_PULSO | MODO_TQ_COS | MODO_TQ_DEG | MODO_TQ_CHIRP
                     | MODO_TQ_ESTOC)
 
@@ -117,6 +120,14 @@ def forma_torque(perfil: Perfil, t):
     tqdur = max(perfil.tqdur, 0.01)
     dentro = (t >= perfil.tqt0) & (t <= perfil.tqt0 + tqdur)
     f = np.zeros_like(np.asarray(t, dtype=float))
+    if perfil.modo & MODO_TQ_EXATO:
+        # o Lua grava a amplitude nos passos k_ini <= k < k_ini + k_dur, contados em
+        # passos inteiros (o pulso de verdade e o do SITL, de duracao exata), e
+        # ignora os demais bits de torque
+        k = np.floor(np.asarray(t, dtype=float) / DT + 0.5)
+        k_ini = math.floor(perfil.tqt0 / DT + 0.5)
+        k_dur = max(math.floor(perfil.tqdur / DT + 0.5), 1)
+        return np.where((k >= k_ini) & (k < k_ini + k_dur), 1.0, 0.0)
     if perfil.modo & MODO_TQ_PULSO:
         f = f + np.where(dentro, 1.0, 0.0)
     if perfil.modo & MODO_TQ_COS:

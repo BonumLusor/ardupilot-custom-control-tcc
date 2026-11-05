@@ -1,0 +1,45 @@
+# Perturbacao impulsiva de torque, em ar parado. E ESTE o ensaio que mede
+# rejeicao da malha de atitude — vento nao serve para isso, porque no modelo do
+# SITL ele entra como forca no centro de massa e nao gera momento.
+nome: "Impulso curto de torque em rolagem — 0,70 rad/s (35 rad/s2 por 20 ms)"
+descricao: >
+  Pulso retangular de torque de 20 ms, de duracao exata: o injetor escreve a
+  amplitude e SIM_TWIST_TIME uma vez, e o SITL desliga o torque ao fim dela.
+  Impulso de 0,70 rad/s (35 rad/s2 por 20 ms), escolhido no modelo para o desvio do nativo ficar
+  abaixo de 1 grau em rolagem e arfagem (o limite linear do controlador de
+  raiz quadrada) e o esforco maximo de todos os controladores caber na folga
+  da alocacao em guinada (monografia/verificacao/escolher_impulso.txt;
+  revisao de 3/11, item 2.6). Mede a recuperacao depois de um choque, sem o
+  pico acontecer durante o torque, como no pulso de 0,3 s (o degrau curto).
+
+vento:
+  WND_MODE: 513        # 1 (vento medio zero) + 512 (pulso de duracao exata, SIM_TWIST_TIME)
+  WND_SPD: 0
+  WND_DIR: 0
+  WND_DIRZ: 0
+  WND_GA: 0
+  WND_GT0: 0
+  WND_GDUR: 3
+  WND_TSIG: 0
+  WND_TLU: 200
+  WND_SEED: 1
+  WND_T0: 8
+  # torque so em rolagem, para casar com o resto dos ensaios
+  WND_TQX: 35.0      # rad/s2 — este e o botao de severidade do ensaio
+  WND_TQY: 0
+  WND_TQZ: 0
+  WND_TQT0: 6       # segundos apos o inicio do perfil; DEPOIS do retorno a 0 graus
+  WND_TQDUR: 0.02
+  WND_TQF0: 0.2      # so usados pelo chirp (bit 64); aqui ficam nos padroes
+  WND_TQF1: 10.0
+
+voo:
+  altitude_m: 15
+  espera_apos_decolagem_s: 6
+  degrau_roll_deg: 0     # sem degrau: este ensaio mede REJEICAO, nao rastreamento.
+                         # A aeronave voa nivelada e parada o tempo todo, e a
+                         # unica coisa que a tira do lugar e o disturbio. O degrau
+                         # vive no cenario rolagem/nominal, que e o ensaio de
+                         # rastreamento (grupo 1 da proposta).
+  t_degrau_s: 0
+  duracao_s: 25

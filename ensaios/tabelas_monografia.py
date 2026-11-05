@@ -86,7 +86,10 @@ def pico_pulso(r, eixo, casas=2):
     if eixo != "yaw":
         return num(r, f"disturbio_{eixo}.desvio_max_deg", casas)
     v = num(r, "disturbio_yaw.desvio_max_norm_deg", casas)
-    return v if v == "---" else v + r"$^\dagger$"
+    if v == "---":
+        # pulso de duracao exata (WND_MODE 512): sem normalizacao, nem marca
+        return num(r, "disturbio_yaw.desvio_max_deg", casas)
+    return v + r"$^\dagger$"
 
 
 def tabela_degrau(dados):

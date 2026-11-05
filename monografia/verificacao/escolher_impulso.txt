@@ -1,0 +1,15 @@
+pulso retangular de 20 ms; desvio máximo (graus) e |u| máximo no modelo
+rolagem: impulso 0.70 rad/s (amplitude 35.0 rad/s² por 20 ms)
+  nativo            : desvio 0.792 graus; |u| máx 0.071
+  LQI               : desvio 0.826 graus; |u| máx 0.069
+  ESO               : desvio 0.827 graus; |u| máx 0.069
+  LQG               : desvio 0.721 graus; |u| máx 0.061
+  LQG (mesmo ruído) : desvio 0.723 graus; |u| máx 0.062
+guinada: impulso 0.83 rad/s (amplitude 41.5 rad/s² por 20 ms)
+  nativo            : desvio 6.014 graus; |u| máx 0.272
+  LQI               : desvio 4.163 graus; |u| máx 0.348
+  ESO               : desvio 4.329 graus; |u| máx 0.304
+  LQG               : desvio 4.992 graus; |u| máx 0.304
+  LQG (mesmo ruído) : desvio 5.536 graus; |u| máx 0.262
+  LQI (mesmo ruído) : desvio 7.266 graus; |u| máx 0.149
+  nativo_guinada    : desvio 5.848 graus; |u| máx 0.264
