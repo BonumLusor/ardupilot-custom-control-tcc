@@ -2,6 +2,8 @@
 %  LISTA DE SÍMBOLOS (na ordem em que aparecem no texto)
 % ---------------------------------------------------------------------
 \begin{simbolos}
+    \item[$\vetor{u} = {[T\ \tau_x\ \tau_y\ \tau_z]}^{\mathsf{T}}$] Entradas do
+        modelo de corpo rígido: empuxo total e torques de controle
     \item[$\{\mathcal{N}\}$, $\{\mathcal{B}\}$] Referencial inercial local (NED)
         e referencial do corpo (FRD)
     \item[$\phi, \theta, \psi$] Ângulos de rolagem, arfagem e guinada
@@ -75,3 +77,15 @@
     \item[$b_g$] Polarização do giroscópio estimada pelo LQG
     \item[$\alpha$] Peso da mistura dos estimadores lento e rápido do LQG
 \end{simbolos}
+
+\vspace{\baselineskip}
+\noindent\textbf{Nota:} vetores e matrizes vêm em negrito. Alguns símbolos de uso consagrado
+se repetem com significados diferentes e são distinguidos pela fonte, pelo
+índice ou pelo contexto: $q$ (velocidade de arfagem) e $\vetor{q}$ (quatérnio),
+além de $q_d$ e $q_n$ (intensidades no filtro de Kalman); $p$ (velocidade de
+rolagem) e $\vetor{p}$ (posição); $\vetor{u}$, que no modelo de corpo rígido
+(Seção~\ref{sec:modelo}) é o vetor $[T\ \tau_x\ \tau_y\ \tau_z]^{\mathsf{T}}$
+e, a partir do Capítulo~\ref{cap:modelagem}, o de esforços normalizados;
+$\matriz{L}$ (ganho de Kalman), $L(z)$ (malha aberta), $L_u, L_v$ (escalas da
+turbulência) e $L_m$ (indutância do motor).
+

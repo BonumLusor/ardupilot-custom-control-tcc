@@ -106,10 +106,8 @@ consequência prática. O firmware modela a referência de atitude como uma
 rotação suave em quatérnio; quando os três eixos são comandados ao mesmo
 tempo, os ângulos de Euler dessa referência deixam de evoluir de forma
 independente, e a referência expressa em rolagem e arfagem pode ultrapassar
-transitoriamente o valor final comandado --- no ensaio com os três eixos,
-com degraus de \ang{10}, \ang{10} e \ang{30}, o alvo de arfagem chega a
-\ang{13.6} antes de assentar em \ang{10} ---, sem que o controlador tenha
-participação nisso. Por esse motivo, nos ensaios com os três eixos
+transitoriamente o valor final comandado (Seção~\ref{sec:res-degrau}), sem
+que o controlador tenha participação nisso. Por esse motivo, nos ensaios com os três eixos
 simultâneos, a comparação entre controladores se faz pelo erro de
 rastreamento em relação à referência efetivamente modelada, e não apenas pelo
 sobressinal em relação ao degrau nominal.
@@ -637,7 +635,7 @@ contínuo tem margens de estabilidade garantidas em cada canal de entrada:
 tolera aumento ilimitado ou redução de até 50\,\% do ganho e tem margem de
 fase de ao menos \ang{60}~\cite{safonov1977}. Em tempo discreto, mesmo com
 realimentação de todos os estados, as margens garantidas são menores e
-dependem de $\matriz{R}$ e de $\matriz{B}_d^{\mathsf{T}}\matriz{P}\matriz{B}_d$~\cite{shaked1986};
+dependem de $\matriz{R}_u$ e de $\matriz{B}_d^{\mathsf{T}}\matriz{P}\matriz{B}_d$~\cite{shaked1986};
 com estimador, deixam de existir~\cite{doyle1978}; e os filtros e atrasos da
 planta real as reduzem ainda mais. Por isso as margens são verificadas em
 cada projeto.
