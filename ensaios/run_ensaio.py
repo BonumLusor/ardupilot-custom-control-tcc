@@ -51,6 +51,12 @@ LOGS_SITL = ARDUPILOT / "ArduCopter" / "logs"
 CENARIOS = RAIZ / "cenarios"
 CONTROLADORES = RAIZ / "controladores"
 RESULTADOS = RAIZ / "resultados"
+# Ajustes de linha de comando para voos de MEDICAO do procedimento (Cap. 3), nao
+# para os ensaios das tabelas: --param soma parametros com a palavra final,
+# --fila-antiga volta a ler a mensagem mais antiga da fila no laco do perfil (o
+# comportamento de antes da correcao) e --destino tira os voos da arvore das tabelas.
+PARAMS_EXTRA = {}
+FILA_FRESCA = True
 
 # Os cenarios ficam em uma pasta por eixo exercitado, e os ensaios de cada pasta
 # tem os mesmos nomes. A ordem aqui e a de execucao e de listagem; pastas e
@@ -863,7 +869,7 @@ def voar_perfil(m, voo, vento, speedup, taxa_hz=10.0, rc_override=None):
         # do que o veiculo os produz, a fila acumula, e o relogio do orquestrador
         # fica para tras. Medido antes da correcao: o degrau atrasava 0,5 s e o
         # retorno, 1,8 s — um erro de TAXA, nao um deslocamento fixo.
-        agora = tempo_sim(m, timeout=2.0, fresco=True)
+        agora = tempo_sim(m, timeout=2.0, fresco=FILA_FRESCA)
         if agora is not None:
             t_sim = agora - t0_sim
 
@@ -1122,8 +1128,8 @@ def voar(cen, ctl, pasta, speedup, instancia):
         # do controlador tem a palavra final
         params_cen = dict(cen.get("params") or {})
         params_ctl = dict(ctl.get("params") or {})
-        aplicar_params(m, {**PARAMS_BASE, **params_cen, **params_ctl},
-                       "de base, do cenario e do controlador")
+        aplicar_params(m, {**PARAMS_BASE, **params_cen, **params_ctl, **PARAMS_EXTRA},
+                       "de base, do cenario, do controlador e da linha de comando")
         m = reiniciar(m, instancia, sitl=sitl)
 
         # Os ganhos vao DEPOIS do reboot: os CC2_* do backend so existem quando
@@ -1360,7 +1366,34 @@ def main():
                          "pastas acima delas (resultados/, resultados/guinada/...)")
     ap.add_argument("--listar", action="store_true",
                     help="lista os cenarios e controladores disponiveis")
+    ap.add_argument("--param", action="append", default=[], metavar="NOME=VALOR",
+                    help="parametro do veiculo aplicado por ultimo, acima do cenario e do "
+                         "controlador (repete). So para voos de medicao: use com --destino")
+    ap.add_argument("--fila-antiga", action="store_true",
+                    help="le a mensagem mais antiga da fila no laco do perfil, como antes "
+                         "da correcao da temporizacao (Cap. 3). So para medir o atraso")
+    ap.add_argument("--destino", metavar="PASTA",
+                    help="raiz dos resultados no lugar de resultados/ (pasta, consolidado.csv "
+                         "e tabela.tex). Para voos que nao devem entrar nas tabelas")
     args = ap.parse_args()
+
+    global RESULTADOS, FILA_FRESCA
+    for item in args.param:
+        nome, sep, valor = item.partition("=")
+        if not sep:
+            raise SystemExit(f"--param espera NOME=VALOR, veio {item!r}")
+        PARAMS_EXTRA[nome.strip()] = float(valor)
+    FILA_FRESCA = not args.fila_antiga
+    if args.destino:
+        RESULTADOS = Path(args.destino).resolve()
+        RESULTADOS.mkdir(parents=True, exist_ok=True)
+    if (PARAMS_EXTRA or args.fila_antiga) and not args.destino and not args.analisar:
+        raise SystemExit("--param e --fila-antiga sao para voos de medicao: "
+                         "use --destino para nao misturar com os ensaios das tabelas")
+    if PARAMS_EXTRA:
+        log(f"parametros da linha de comando: {PARAMS_EXTRA}")
+    if args.fila_antiga:
+        log("leitura ANTIGA da fila no laco do perfil (medicao do atraso)")
 
     if args.listar:
         print("cenarios (pasta/ensaio):")
