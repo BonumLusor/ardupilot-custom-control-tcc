@@ -1,25 +1,27 @@
 #!/usr/bin/env python3
 """Gera as figuras comparativas do Capitulo 6 a partir dos ensaios no SITL.
 
-Como o tabelas_monografia.py, usa o ensaio mais recente de cada cenario x
-controlador (opcionalmente a partir de uma data) e le o series.csv de cada um.
-As curvas do modelo, onde aparecem, vem do modelagem/projeto.py.
+Como o tabelas_monografia.py, usa so os voos do binario congelado do SITL, na base
+de atitude pedida (a verdadeira, por padrao: o serie_verdade.csv por cima do
+series.csv). Cada curva e o primeiro voo do par (semente 1, repeticao 1); a
+Figura 26 (comparacao_ruido) e a media dos voos e sai nas duas bases. As curvas
+do modelo, onde aparecem, vem do modelagem/projeto.py.
 
-    comparacao_torque.pdf   erro de atitude no pulso e no degrau de torque
+    comparacao_torque.pdf   erro de atitude no degrau curto e no degrau de torque
+    comparacao_impulso.pdf  erro de atitude no impulso curto (20 ms)
     comparacao_degrau.pdf   degraus de atitude dos ensaios nominais
     comparacao_frf.pdf      |Theta/D| das varreduras, SITL e modelo
     eso_dhat_sitl.pdf       perturbacao injetada e a estimada pelo ESO no voo
     comparacao_ruido.pdf    esforco e erro eficazes com ruido de giroscopio
     comparacao_ff.pdf       erro de rastreamento: {PID, LQI} x {sem, com} alimentacao direta
 
-    ./figuras_monografia.py --desde 2026-10-29
-    ./figuras_monografia.py --desde 2026-10-29 --destino ../monografia/figuras
+    ./figuras_monografia.py                      # base verdadeira, binario atual
+    ./figuras_monografia.py --atitude ahrs --destino /tmp/figuras_ahrs
 """
 
 from __future__ import annotations
 
 import argparse
-import math
 import sys
 from pathlib import Path
 
@@ -63,19 +65,47 @@ COL_U = {"roll": "u_roll", "pitch": "u_pitch", "yaw": "u_yaw"}
 # leitura
 # --------------------------------------------------------------------------
 
-def ensaio_recente(cenario, slug, desde=None):
-    """A pasta do ensaio mais recente de um cenario x controlador, ou None."""
+# Os voos e a base de atitude das figuras (main): so os do binario congelado do SITL;
+# na base verdadeira, as colunas de atitude e de erro vem do serie_verdade.csv
+# (analise/verdade.py), por cima do series.csv.
+BASE = {"binario": None, "atitude": "verdadeira"}
+
+
+def voos_do_par(cenario, slug):
+    """As pastas de voo do binario de um cenario x controlador, em ordem de semente e de carimbo."""
+    import json
     base = RESULTADOS / cenario / slug
     if not base.exists():
-        return None
-    pastas = [p for p in base.iterdir() if (p / "series.csv").exists()
-              and not p.name.endswith("_falhou") and (not desde or p.name >= desde)]
-    return max(pastas, key=lambda p: p.name) if pastas else None
+        return []
+    pastas = []
+    for p in base.iterdir():
+        v = p / "versao.json"
+        if not (p / "series.csv").exists() or not v.exists():
+            continue
+        if json.loads(v.read_text(encoding="utf-8")).get("binario_sha256") != BASE["binario"]:
+            continue
+        if BASE["atitude"] == "verdadeira" and not (p / "serie_verdade.csv").exists():
+            continue
+        cen = yaml.safe_load((p / "cenario.yaml").read_text(encoding="utf-8")) or {}
+        pastas.append(((cen.get("vento") or {}).get("WND_SEED") or 0, p.name, p))
+    return [p for _, _, p in sorted(pastas)]
+
+
+def ensaio_recente(cenario, slug, desde=None):
+    """O voo que a figura mostra: o primeiro do binario (semente 1, repeticao 1), ou None."""
+    voos = voos_do_par(cenario, slug)
+    return voos[0] if voos else None
 
 
 def ler(pasta):
     import validacao as V
     col = V.ler_series(pasta / "series.csv")
+    if BASE["atitude"] == "verdadeira":
+        verd = V.ler_series(pasta / "serie_verdade.csv")
+        for k, v in verd.items():
+            if k in ("t", "tp"):
+                continue
+            col[k] = v if len(v) == len(col["t"]) else np.interp(col["t"], verd["t"], v)
     cen = yaml.safe_load((pasta / "cenario.yaml").read_text(encoding="utf-8"))
     return col, cen
 
@@ -160,11 +190,24 @@ def _controladores(eixo):
 # figuras
 # --------------------------------------------------------------------------
 
+TIPO_TORQUE = {"torque_pulso": "degrau curto", "torque_degrau": "degrau", "torque_impulso": "impulso"}
+
+
 def fig_torque(desde, destino):
-    plt = _estilo()
-    fig, eixos = plt.subplots(2, 2, figsize=(6.3, 4.6))
     casos = (("torque_pulso", "roll", (-0.3, 3.0)), ("torque_pulso", "yaw", (-0.3, 4.0)),
              ("torque_degrau", "roll", (-0.3, 4.0)), ("torque_degrau", "yaw", (-1.0, 30.0)))
+    return _fig_casos_torque(desde, destino, casos, (2, 2), (6.3, 4.6))
+
+
+def fig_impulso(desde, destino):
+    """Impulso curto (20 ms) em rolagem e em guinada."""
+    casos = (("torque_impulso", "roll", (-0.1, 1.5)), ("torque_impulso", "yaw", (-0.1, 4.0)))
+    return _fig_casos_torque(desde, destino, casos, (1, 2), (6.3, 2.5))
+
+
+def _fig_casos_torque(desde, destino, casos, grade, tamanho):
+    plt = _estilo()
+    fig, eixos = plt.subplots(*grade, figsize=tamanho, squeeze=False)
     algum = False
     for ax, (ensaio, eixo, xlim) in zip(eixos.flat, casos):
         amp = None
@@ -184,10 +227,12 @@ def fig_torque(desde, destino):
             algum = True
         ax.axhline(0, color=E.MUDO, lw=0.8, zorder=0)
         ax.set_xlim(*xlim)
-        tipo = "pulso" if "pulso" in ensaio else "degrau"
-        titulo = f"{NOMES[eixo].capitalize()}, {tipo}"
+        titulo = f"{NOMES[eixo].capitalize()}, {TIPO_TORQUE[ensaio]}"
         if amp is not None:
+            dur = float(cen["vento"].get("WND_TQDUR", 0) or 0)
             titulo += f" de {amp:g} rad/s²".replace(".", ",")
+            if ensaio == "torque_impulso":
+                titulo += f" por {dur * 1e3:g} ms"
         ax.set_title(titulo, loc="left")
         ax.set_xlabel("Tempo desde o início do torque (s)")
         ax.set_ylabel("Erro de atitude (°)")
@@ -314,39 +359,46 @@ def fig_eso(desde, destino):
     return _salvar(fig, destino) if algum else None
 
 
+CEN_RUIDO = "ruido/rnd20/torque_impulso"     # o L2 do lote: 5 voos do nativo e dos LQG
+
+
 def fig_ruido(desde, destino):
-    """Esforco e erro eficazes no trecho calmo do ruido/torque_pulso, por controlador."""
+    """Esforco e erro eficazes no trecho calmo do impulso com RND 20, por controlador.
+
+    Barras: media dos voos do par (5 no nativo e nos LQG, 1 nos demais); traco: o
+    desvio padrao entre eles. Sai na base de atitude do BASE; o main gera as duas.
+    """
     plt = _estilo()
-    ctl = CONTROLADORES + (MESMO_RUIDO,)
-    rms_u = {s: [] for s, _ in ctl}
-    rms_e = {s: [] for s, _ in ctl}
+    ctl = CONTROLADORES + (MESMO_RUIDO, ("cc_lqg", "LQG"))
+    med = {k: {s: [] for s, _ in ctl} for k in ("u", "e")}
+    dp = {k: {s: [] for s, _ in ctl} for k in ("u", "e")}
     algum = False
     for slug, _ in ctl:
-        pasta = (ensaio_recente("ruido/rnd20/torque_pulso", slug, desde)
-                 or ensaio_recente("ruido/torque_pulso", slug, desde))
+        voos = [ler(p) for p in voos_do_par(CEN_RUIDO, slug)]
         for eixo in ("roll", "pitch", "yaw"):
-            if pasta is None or (slug in SO_GUINADA and eixo != "yaw"):
-                rms_u[slug].append(np.nan)
-                rms_e[slug].append(np.nan)
-                continue
-            col, cen = ler(pasta)
-            tp = col["tp"]
-            # do primeiro segundo do perfil ate meio segundo antes do torque
-            calmo = np.isfinite(tp) & (tp >= 1.0) & (tp <= float(cen["vento"]["WND_TQT0"]) - 0.5)
-            u = col[COL_U[eixo]][calmo]
-            e = col[COL_ERRO[eixo]][calmo]
-            rms_u[slug].append(float(np.sqrt(np.nanmean((u - np.nanmean(u)) ** 2))))
-            rms_e[slug].append(float(np.sqrt(np.nanmean((e - np.nanmean(e)) ** 2))))
-            algum = True
+            vals = {"u": [], "e": []}
+            if not (slug in SO_GUINADA and eixo != "yaw"):
+                for col, cen in voos:
+                    tp = col["tp"]
+                    # do primeiro segundo do perfil ate meio segundo antes do torque
+                    calmo = np.isfinite(tp) & (tp >= 1.0) & (tp <= float(cen["vento"]["WND_TQT0"]) - 0.5)
+                    for k, c in (("u", COL_U[eixo]), ("e", COL_ERRO[eixo])):
+                        x = col[c][calmo]
+                        vals[k].append(float(np.sqrt(np.nanmean((x - np.nanmean(x)) ** 2))))
+            for k in ("u", "e"):
+                med[k][slug].append(float(np.mean(vals[k])) if vals[k] else np.nan)
+                dp[k][slug].append(float(np.std(vals[k], ddof=1)) if len(vals[k]) > 1 else np.nan)
+                algum |= bool(vals[k])
     if not algum:
         return None
     fig, eixos = plt.subplots(1, 2, figsize=(6.3, 2.8))
     x = np.arange(3)
     larg = 0.8 / len(ctl)
-    for ax, dados, rot in ((eixos[0], rms_u, "Esforço eficaz $u_{\\mathrm{rms}}$"),
-                           (eixos[1], rms_e, "Erro de atitude eficaz (°)")):
+    for ax, k, rot in ((eixos[0], "u", "Esforço eficaz $u_{\\mathrm{rms}}$"),
+                       (eixos[1], "e", "Erro de atitude eficaz (°)")):
         for j, (slug, rotulo) in enumerate(ctl):
-            ax.bar(x + (j - (len(ctl) - 1) / 2) * larg, dados[slug], larg * 0.92,
+            ax.bar(x + (j - (len(ctl) - 1) / 2) * larg, med[k][slug], larg * 0.92,
+                   yerr=dp[k][slug], error_kw={"elinewidth": 0.6, "capsize": 1.5},
                    color=COR[slug], hatch="//" if slug in TRACO else None,
                    edgecolor="white", label=rotulo)
         ax.set_xticks(x)
@@ -391,10 +443,11 @@ def fig_alimentacao_direta(desde, destino):
 
 def _metricas(cenario, slug, desde):
     pasta = ensaio_recente(cenario, slug, desde)
-    if pasta is None or not (pasta / "metricas.json").exists():
+    arq = "metricas_verdade.json" if BASE["atitude"] == "verdadeira" else "metricas.json"
+    if pasta is None or not (pasta / arq).exists():
         return None
     import json
-    return json.loads((pasta / "metricas.json").read_text(encoding="utf-8"))
+    return json.loads((pasta / arq).read_text(encoding="utf-8"))
 
 
 NIVEIS = ((0, "rolagem_arfagem_guinada"), (10, "ruido/rnd10"), (20, "ruido/rnd20"),
@@ -492,11 +545,27 @@ def main():
     warnings.filterwarnings("ignore")
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--desde", help="so ensaios com carimbo a partir deste (AAAA-MM-DD)")
+    ap.add_argument("--atitude", choices=("verdadeira", "ahrs"), default="verdadeira",
+                    help="base de atitude (padrao: verdadeira, P3c da revisao)")
+    ap.add_argument("--binario", help="hash do binario do SITL (padrao: o compilado agora)")
     ap.add_argument("--destino", type=Path, default=DESTINO)
     args = ap.parse_args()
+    args.desde = None
+    if args.binario:
+        BASE["binario"] = args.binario
+    else:
+        import run_ensaio
+        BASE["binario"] = run_ensaio.versao_firmware()["binario_sha256"]
+    BASE["atitude"] = args.atitude
+    if args.atitude == "verdadeira":
+        # a Figura 26 sai tambem no AHRS: a diferenca entre as bases e resultado (rev. 2.2)
+        BASE["atitude"] = "ahrs"
+        d = fig_ruido(None, args.destino / "comparacao_ruido_ahrs.pdf")
+        print(f"{'figura: ' + str(d) if d else 'sem ensaios para comparacao_ruido_ahrs.pdf'}")
+        BASE["atitude"] = "verdadeira"
     for nome, fn in (("comparacao_torque.pdf", fig_torque), ("comparacao_degrau.pdf", fig_degrau),
                      ("comparacao_frf.pdf", fig_frf), ("eso_dhat_sitl.pdf", fig_eso),
+                     ("comparacao_impulso.pdf", fig_impulso),
                      ("comparacao_ruido.pdf", fig_ruido),
                      ("comparacao_ff.pdf", fig_alimentacao_direta),
                      ("comparacao_fronteira.pdf", fig_fronteira_sitl),
