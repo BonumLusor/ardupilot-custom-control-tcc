@@ -72,16 +72,18 @@ perturbação, é possível medir tanto os controladores propostos quanto a linh
 de base.
 
 Há ainda um aspecto que distingue o desempenho aceitável em bancada do
-desempenho aceitável em operação: a aeronave real não voa em ar parado. Vento
-médio, rajadas e turbulência atmosférica são a principal fonte de perturbação
-externa sobre um quadrirrotor de pequeno porte, e seu efeito é agravado pela
-baixa velocidade de voo dessas aeronaves, em que o vento chega a 20\,\% a
-50\,\% da velocidade em relação ao ar~\cite{beard2012}. Avaliar um controlador apenas
-pela resposta ao degrau em condição nominal diz, portanto, pouco sobre sua
-utilidade prática. Neste trabalho, as perturbações são tratadas ao mesmo tempo
-como \emph{cenário de ensaio}, por meio de perfis reprodutíveis de torque e de
-vento aplicados igualmente a todos os controladores, e como \emph{objeto de
-projeto}, por meio de mecanismos de estimação e compensação de perturbação
+desempenho aceitável em operação: a aeronave real voa sob perturbações. Para a
+malha de atitude, o que conta são os momentos: os de assimetrias de massa e
+de empuxo, os de rajadas que atingem os rotores de forma desigual e os da
+perda parcial de um motor (Seção~\ref{sec:perturbacoes}). Avaliar um
+controlador apenas pela resposta ao degrau em condição nominal diz, portanto,
+pouco sobre sua utilidade prática. No simulador usado neste trabalho, porém,
+o vento quase não gera momento de atitude: ele age como força no centro de
+massa e desloca a aeronave (Seção~\ref{sec:res-vento}). Por isso, as
+perturbações de atitude são aplicadas diretamente como torque, e tratadas ao
+mesmo tempo como \emph{cenário de ensaio}, por meio de perfis reprodutíveis
+de torque aplicados igualmente a todos os controladores, e como \emph{objeto
+de projeto}, por meio de mecanismos de estimação e compensação de perturbação
 incorporados à lei de controle. A capacidade de rejeição de perturbação passa,
 assim, de efeito colateral a critério explícito de comparação.
 
@@ -129,10 +131,10 @@ exclusivo de ferramentas de código aberto.
           projetá-lo em tempo discreto, na taxa de execução do laço;
     \item modelar e implementar perturbações externas reprodutíveis ---
           perturbações de torque em pulso, em degrau sustentado, em varredura
-          de frequência e estocásticas, além de vento médio, rajada e
-          turbulência ---, compondo cenários de ensaio parametrizáveis, e
-          cenários de robustez com erro de modelo, falha de motor, ruído de
-          giroscópio, saturação e grandes ângulos;
+          de frequência e estocásticas, e uma rajada de vento, para verificar
+          o seu efeito sobre a atitude no simulador ---, compondo cenários de
+          ensaio parametrizáveis, e cenários de robustez com erro de modelo,
+          falha de motor, ruído de giroscópio, saturação e grandes ângulos;
     \item estimar e compensar a perturbação, por um observador de estado
           estendido e por um filtro de Kalman, e comparar essa estratégia à
           da ação integral;
@@ -195,11 +197,12 @@ ensaios-base, entrega um giroscópio praticamente sem ruído
 que isso implica para uma aeronave real.
 
 Quanto às perturbações, o escopo abrange perturbações aditivas de torque nos
-três eixos --- em pulso, em degrau, em varredura e estocásticas ---, os
-modelos de vento médio, rajada determinística e turbulência estocástica
-aplicados de forma uniforme ao volume ocupado pela aeronave e variações da
+três eixos --- em pulso, em degrau, em varredura e estocásticas ---, uma
+rajada de vento uniforme no volume ocupado pela aeronave e variações da
 própria aeronave e dos sensores: erro de modelo, falha de motor e ruído de
-giroscópio. Ficam
+giroscópio. O injetor de perturbações implementa também o vento médio e a
+turbulência de Dryden (Apêndice~\ref{ap:vento}), que não são usados nos
+ensaios. Ficam
 fora do escopo os campos de vento espacialmente distribuídos, as esteiras de
 obstáculos e os efeitos aerodinâmicos de proximidade ao solo ou a paredes, que
 exigiriam simulação fluidodinâmica. Ficam igualmente fora do escopo o voo em
@@ -229,4 +232,5 @@ caminho de integração, caracteriza o PID nativo e compara com ele os
 controladores propostos em todos os grupos de cenários. O
 Capítulo~\ref{cap:conclusoes} responde à pergunta de pesquisa, discute os
 limites encontrados e as limitações do simulador, situa outras técnicas de
-controle e propõe trabalhos futuros.
+controle e propõe trabalhos futuros. O Apêndice~\ref{ap:vento} reúne os
+modelos de vento e a sua implementação no injetor de perturbações.
