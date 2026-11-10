@@ -12,3 +12,8 @@ monografia/tcc.synctex.gz
 
 # material de terceiros (PDFs do minicurso): fora do repositório público
 Material_participante/
+
+# material de trabalho da verificação: só local
+monografia/verificacao/**/*.md
+monografia/verificacao/inventario*.csv
+monografia/verificacao/referencias_propostas.bib
