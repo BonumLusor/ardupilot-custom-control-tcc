@@ -7,12 +7,12 @@
 \label{ap:reproduzir}
 
 Todo o código do trabalho está no repositório
-\url{https://github.com/BonumLusor/ardupilot-custom-control}, sob a licença
+\url{https://github.com/BonumLusor/ardupilot-custom-control-tcc}, sob a licença
 GPLv3, a mesma do ArduPilot. Isso inclui os backends dos controladores, o
 injetor de distúrbios, os cenários, a modelagem, as análises e este texto. Os
 resultados dos Capítulos~\ref{cap:modelagem} a~\ref{cap:resultados} saíram da
 versão da defesa, arquivada no Zenodo com as demais versões sob o DOI
-\url{https://doi.org/10.5281/zenodo.24111095}, que leva sempre à mais recente;
+\url{https://doi.org/10.5281/zenodo.24111748}, que leva sempre à mais recente;
 a página do registro lista todas. Este apêndice
 dá o caminho mínimo, do clone às tabelas e figuras. O \arquivo{README.md} do
 repositório traz os detalhes da instalação e os problemas conhecidos.
@@ -29,7 +29,7 @@ verdadeira e a contagem do \arquivo{SIM_TWIST_TIME} em microssegundos.
 
 \begin{lstlisting}[language=bash,numbers=none]
 git clone --recurse-submodules \
-    https://github.com/BonumLusor/ardupilot-custom-control.git TCC
+    https://github.com/BonumLusor/ardupilot-custom-control-tcc.git TCC
 cd TCC
 ardupilot/Tools/environment_install/install-prereqs-ubuntu.sh -y
 python3 -m venv ~/venv-ardupilot
