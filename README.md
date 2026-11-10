@@ -3,6 +3,10 @@
 Ambiente de simulação do TCC: firmware **ArduPilot** rodando em SITL (*Software-In-The-Loop*),
 com a física e o visual 3D vindos do **Gazebo Harmonic**, e comando pelo **MAVProxy**.
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24111095.svg)](https://doi.org/10.5281/zenodo.24111095)
+Arquivado no Zenodo: o DOI [10.5281/zenodo.24111095](https://doi.org/10.5281/zenodo.24111095)
+leva sempre à versão mais recente.
+
 O planejamento do trabalho está em [`diretivas/geral.md`](diretivas/geral.md);
 a instalação do zero, em [`diretivas/setup.md`](diretivas/setup.md);
 a integração com o VSCode, em [`diretivas/vscode.md`](diretivas/vscode.md).
